@@ -71,6 +71,18 @@ select:hover,select:focus{border-color:var(--coral)}
   border-radius:var(--rs);padding:10px 13px;margin-bottom:14px;line-height:1.65}
 .note b{color:var(--coral-d);font-weight:700}
 
+.yrcard{padding:6px 10px;margin-bottom:11px;overflow-x:auto}
+.yrtab{width:100%;border-collapse:collapse;font-size:12px;min-width:560px}
+.yrtab th{font-size:10px;font-weight:700;letter-spacing:.04em;color:var(--muted);text-transform:uppercase;text-align:right;padding:8px 10px;border-bottom:1px solid var(--line)}
+.yrtab th:first-child{text-align:left}
+.yrtab td{padding:9px 10px;text-align:right;font-family:var(--mono);font-weight:600;border-bottom:1px solid var(--line2)}
+.yrtab tr:last-child td{border-bottom:none}
+.yrtab td.yt-yr{text-align:left;font-family:var(--sans);font-weight:700;display:flex;align-items:center;gap:7px}
+.yrtab td.yt-yr i{width:9px;height:9px;border-radius:2px}
+.yrtab tr.r25 td.yt-yr i{background:var(--navy)} .yrtab tr.r26 td.yt-yr i{background:var(--coral)}
+.yrtab td .d{font-family:var(--mono);font-size:10px;font-weight:700;margin-left:5px}
+.yrtab td .d.up{color:var(--coral-d)} .yrtab td .d.dn{color:var(--navy)}
+
 .grid{display:grid;gap:14px;margin-bottom:14px}
 .g-21{grid-template-columns:1.25fr 1fr}
 .g-11{grid-template-columns:1fr 1fr}
@@ -180,6 +192,8 @@ select:hover,select:focus{border-color:var(--coral)}
     <div class="kpi k-n"><div class="kpi-lbl">조회 경기 수</div><div class="kpi-val" id="kN">—</div><div class="kpi-sub" id="kNS"></div></div>
   </section>
 
+  <div class="card yrcard"><table class="yrtab" id="yrTab"></table></div>
+
   <div class="note" id="insight">분석 대상을 불러오는 중입니다.</div>
 
   <div class="grid g-21">
@@ -202,25 +216,43 @@ select:hover,select:focus{border-color:var(--coral)}
   <div class="grid g-11">
     <div class="card">
       <div class="card-hd">
-        <div><div class="eyebrow">구단별 동원력</div><div class="ctitle">평균 관중 × 좌석 점유율</div><div class="csub">오른쪽 = 동원 많음 · 위쪽 = 만석에 가까움 · 점선 = 만석(100%)</div></div>
+        <div><div class="eyebrow">구단별 동원력 ①</div><div class="ctitle">평균 관중 × 좌석 점유율</div><div class="csub">오른쪽 = 동원 많음 · 위쪽 = 만석에 가까움 · 점선 = 만석(100%)</div></div>
       </div>
       <div class="chwrap" style="height:300px"><canvas id="cScatter"></canvas></div>
     </div>
     <div class="card">
       <div class="card-hd">
-        <div><div class="eyebrow">날씨 영향</div><div class="ctitle" id="wxTitle">강수량 구간별 평균 관중</div><div class="csub">막대 위 = 평균 관중 · 괄호 = 경기 수</div></div>
-        <div class="miniseg" id="wxToggle"><button data-w="rain" class="on">강수량</button><button data-w="temp">기온</button></div>
+        <div><div class="eyebrow">구단별 동원력 ②</div><div class="ctitle">홈 점유율 × 전체경기 점유율</div><div class="csub">전체 = 홈+원정 · 대각선 위 = 원정에서 더 채움(원정 흥행력) · 아래 = 홈 의존형</div></div>
       </div>
-      <div class="chwrap" style="height:300px"><canvas id="cWx"></canvas></div>
+      <div class="chwrap" style="height:300px"><canvas id="cScatter2"></canvas></div>
     </div>
   </div>
 
-  <div class="card">
+  <div class="card" style="margin-bottom:14px">
     <div class="card-hd">
-      <div><div class="eyebrow">대진 효과</div><div class="ctitle">홈 × 원정 평균 관중 히트맵</div><div class="csub">행=홈팀 · 열=원정팀 · 단위: 천명 · 마우스오버 시 경기 수</div></div>
-      <div class="hmleg"><span>적음</span><div style="display:flex;gap:2px" id="hmLeg"></div><span>많음</span></div>
+      <div><div class="eyebrow">날씨 영향</div><div class="ctitle">강수량·기온대별 평균 관중</div><div class="csub">막대 위 = 평균 관중 · 괄호 = 경기 수 · 표본 적은 구간은 해석 주의</div></div>
     </div>
-    <div class="hmscroll"><div id="matchup"></div></div>
+    <div class="g-11" style="display:grid;gap:18px">
+      <div class="chwrap" style="height:240px"><canvas id="cRain"></canvas></div>
+      <div class="chwrap" style="height:240px"><canvas id="cTemp"></canvas></div>
+    </div>
+  </div>
+
+  <div class="grid g-11">
+    <div class="card">
+      <div class="card-hd">
+        <div><div class="eyebrow">대진 효과 · 관중</div><div class="ctitle">홈 × 원정 평균 관중</div><div class="csub">행=홈팀 · 열=원정팀 · 단위: 천명 · 마우스오버 시 경기 수</div></div>
+        <div class="hmleg"><span>적음</span><div style="display:flex;gap:2px" id="hmLegA"></div><span>많음</span></div>
+      </div>
+      <div class="hmscroll"><div id="matchupA"></div></div>
+    </div>
+    <div class="card">
+      <div class="card-hd">
+        <div><div class="eyebrow">대진 효과 · 점유율</div><div class="ctitle">홈 × 원정 좌석 점유율</div><div class="csub">행=홈팀 · 열=원정팀 · 단위: % · 마우스오버 시 경기 수</div></div>
+        <div class="hmleg"><span>낮음</span><div style="display:flex;gap:2px" id="hmLegB"></div><span>높음</span></div>
+      </div>
+      <div class="hmscroll"><div id="matchupB"></div></div>
+    </div>
   </div>
 
   <div class="foot" id="foot"></div>
@@ -242,7 +274,7 @@ const NMP={'LG트윈스':'LG','두산베어스':'두산','삼성라이온즈':'�
 function normTeam(s){if(!s)return'';s=(''+s).trim();if(NM[s])return NM[s];for(const k in NMP)if(s.includes(k))return NMP[k];return s;}
 
 /* ════════ 상태 ════════ */
-let ALL=[], filtered=[], yearSel='2526', wxMode='rain';
+let ALL=[], filtered=[], yearSel='2526';
 const CH={};
 const $=id=>document.getElementById(id);
 const fmt=n=>Math.round(n).toLocaleString('ko-KR');
@@ -295,7 +327,7 @@ function yearMatch(g){return yearSel==='2526'?true:g.yr===+yearSel;}
 function refresh(){
   filtered=ALL.filter(g=>yearMatch(g)&&baseMatch(g));
   $('yrTag').textContent=yearSel==='2526'?'2025 · 2026':yearSel;
-  renderKPIs();renderInsight();renderImpact();renderSplit();renderTrend();renderScatter();renderWx();renderMatchup();renderFoot();
+  renderKPIs();renderYearSummary();renderInsight();renderImpact();renderSplit();renderTrend();renderScatter();renderScatter2();renderRain();renderTemp();renderMatchup();renderFoot();
 }
 
 function metricsFor(yr){
@@ -331,6 +363,24 @@ function renderKPIs(){
   $('kNS').innerHTML=`<span class="cmp fl">주중 ${wd} · 주말 ${we}</span>`;
 }
 
+/* ════════ 연도별 요약 (당해년도 경기수·관중수, 누적 아님) ════════ */
+function renderYearSummary(){
+  const m25=metricsFor(2025),m26=metricsFor(2026);
+  const cell=v=>v==null?'<td>—</td>':v;
+  const row=(lb,m,cls)=>m
+    ? `<tr class="${cls}"><td class="yt-yr"><i></i>${lb}</td><td>${fmt(m.n)}</td><td>${man(m.tot)}만</td><td>${fmt(m.a)}</td><td>${(m.o*100).toFixed(1)}%</td><td>${(m.sell*100).toFixed(0)}%</td></tr>`
+    : `<tr class="${cls}"><td class="yt-yr"><i></i>${lb}</td><td colspan="5" style="text-align:center;color:var(--muted);font-family:var(--sans)">해당 조건 경기 없음</td></tr>`;
+  let deltaRow='';
+  if(m25&&m26){
+    const dv=(a,b,suf='')=>{const d=a?(b-a)/Math.abs(a)*100:0;const c=d>0.5?'up':d<-0.5?'dn':'';const ar=d>0.5?'▲':d<-0.5?'▼':'—';return `<span class="d ${c}">${ar}${Math.abs(d).toFixed(d>=10?0:1)}%</span>`;};
+    deltaRow=`<tr style="border-top:1px solid var(--line)"><td class="yt-yr" style="color:var(--muted);font-weight:600">'25 → '26 증감</td>`+
+      `<td>${dv(m25.n,m26.n)}</td><td>${dv(m25.tot,m26.tot)}</td><td>${dv(m25.a,m26.a)}</td>`+
+      `<td>${dv(m25.o,m26.o)}</td><td>${dv(m25.sell,m26.sell)}</td></tr>`;
+  }
+  $('yrTab').innerHTML=`<thead><tr><th>시즌</th><th>경기수</th><th>누적 관중</th><th>경기당 평균</th><th>점유율</th><th>완전매진</th></tr></thead>`+
+    `<tbody>${row('2025',m25,'r25')}${row('2026',m26,'r26')}${deltaRow}</tbody>`;
+}
+
 /* ════════ 인사이트 ════════ */
 function renderInsight(){
   const el=$('insight');
@@ -354,7 +404,7 @@ function renderImpact(){
   const sub=f=>filtered.filter(f);
   const groups=[
     {g:'요일',rows:[['주말 (금·토·일)',sub(g=>g.series==='WE')],['주중 (화·수·목)',sub(g=>g.series==='WD')]]},
-    {g:'날씨',rows:[['맑음 (0mm)',sub(g=>g.rain!=null&&g.rain<=0)],['우천 (강수)',sub(g=>g.rainY)]]},
+    {g:'날씨',rows:[['맑음 (0mm)',sub(g=>g.rain!=null&&g.rain<=0)],['우천 (강수)',sub(g=>g.rain!=null&&g.rain>0)]]},
     {g:'시즌 구간',rows:[['개막기 (3·4월)',sub(g=>g.mo===3||g.mo===4)],['한여름 (7·8월)',sub(g=>g.mo===7||g.mo===8)],['가을 (9월)',sub(g=>g.mo===9)]]},
   ];
   const items=[];groups.forEach(gr=>gr.rows.forEach(([lb,arr])=>{if(arr.length){const m=avg(arr.map(g=>g.att));items.push({grp:gr.g,lb,dev:(m-base)/base*100,n:arr.length});}}));
@@ -391,7 +441,9 @@ function renderTrend(){
   const s25=yearSel!=='2026',s26=yearSel!=='2025';
   const ds=[];
   if(s25)ds.push({label:'2025',data:monA(2025),borderColor:'#2B3A55',backgroundColor:'#2B3A55',tension:.35,borderWidth:2.5,
-    pointRadius:3.5,pointBackgroundColor:'#fff',pointBorderColor:'#2B3A55',pointBorderWidth:2,spanGaps:false,datalabels:{display:false}});
+    pointRadius:3.5,pointBackgroundColor:'#fff',pointBorderColor:'#2B3A55',pointBorderWidth:2,spanGaps:false,
+    datalabels:{display:ctx=>ctx.dataset.data[ctx.dataIndex]!=null,align:'bottom',anchor:'start',offset:4,
+      formatter:v=>v?(v/1000).toFixed(1):'',color:'#2B3A55',font:{family:"'JetBrains Mono'",size:9.5,weight:'700'}}});
   if(s26)ds.push({label:'2026',data:monA(2026),borderColor:'#E85A3C',backgroundColor:'#E85A3C',tension:.35,borderWidth:3,
     pointRadius:4.5,pointBackgroundColor:'#fff',pointBorderColor:'#E85A3C',pointBorderWidth:2.5,spanGaps:false,
     datalabels:{display:ctx=>ctx.dataset.data[ctx.dataIndex]!=null,align:'top',anchor:'end',offset:4,
@@ -400,7 +452,7 @@ function renderTrend(){
   const lo=vals.length?Math.max(0,Math.floor((Math.min(...vals)-2500)/1000)*1000):0;
   const hi=vals.length?Math.ceil((Math.max(...vals)+2200)/1000)*1000:24000;
   CH.trend=new Chart($('cTrend'),{type:'line',data:{labels:M.map(m=>m+'월'),datasets:ds},
-    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:18,right:10}},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:18,right:10,bottom:6}},
       plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.y?`${c.dataset.label}: ${fmt(c.parsed.y)}명`:''}}},
       scales:{x:{grid:{color:'#F1F3F6'},ticks:{color:'#8A93A0',font:{size:11,weight:600}}},
         y:{min:lo,suggestedMax:hi,grid:{color:'#F1F3F6'},ticks:{callback:v=>(v/1000)+'천',color:'#8A93A0',font:{size:10}}}}},
@@ -441,51 +493,85 @@ function renderScatter(){
     plugins:[ChartDataLabels,occLine]});
 }
 
-/* ════════ 날씨 ════════ */
-function renderWx(){
-  if(CH.wx)CH.wx.destroy();
-  let bins,title;
-  if(wxMode==='rain'){title='강수량 구간별 평균 관중';
-    const defs=[['맑음\n0mm',g=>g.rain!=null&&g.rain<=0],['0~5mm',g=>g.rain>0&&g.rain<=5],
-      ['5~10mm',g=>g.rain>5&&g.rain<=10],['10~15mm',g=>g.rain>10&&g.rain<=15],['15mm+',g=>g.rain>15]];
-    bins=defs.map(([lb,f])=>{const gs=filtered.filter(g=>g.rain!=null&&f(g));return{lb,a:avg(gs.map(g=>g.att)),n:gs.length};});
-  }else{title='기온대별 평균 관중';
-    const defs=[['15°C\n미만',g=>g.temp<15],['15~20°C',g=>g.temp>=15&&g.temp<20],['20~25°C',g=>g.temp>=20&&g.temp<25],
-      ['25~30°C',g=>g.temp>=25&&g.temp<30],['30°C\n이상',g=>g.temp>=30]];
-    bins=defs.map(([lb,f])=>{const gs=filtered.filter(g=>g.temp!=null&&f(g));return{lb,a:avg(gs.map(g=>g.att)),n:gs.length};});
-  }
-  $('wxTitle').textContent=title;
-  const cols=wxMode==='rain'?['#E85A3C','#7E93B0','#9AAAC0','#B3BECD','#6B7A8F']
-                            :['#7E93B0','#5E83A8','#C98A2E','#E07B3C','#E85A3C'];
-  CH.wx=new Chart($('cWx'),{type:'bar',
-    data:{labels:bins.map(b=>`${b.lb}\n(${b.n})`),datasets:[{data:bins.map(b=>b.a),backgroundColor:cols,borderRadius:6,maxBarThickness:60}]},
+/* ════════ 구단 산점도② 홈 점유율 × 전체경기 점유율 ════════ */
+const diagLine={id:'diagLine',afterDraw(chart){
+  const{ctx,scales:{x,y}}=chart;if(!x||!y)return;
+  const lo=Math.max(x.min,y.min),hi=Math.min(x.max,y.max);if(hi<=lo)return;
+  ctx.save();ctx.strokeStyle='rgba(138,147,160,.55)';ctx.lineWidth=1;ctx.setLineDash([5,4]);
+  ctx.beginPath();ctx.moveTo(x.getPixelForValue(lo),y.getPixelForValue(lo));ctx.lineTo(x.getPixelForValue(hi),y.getPixelForValue(hi));ctx.stroke();
+  ctx.setLineDash([]);ctx.fillStyle='#8A93A0';ctx.font='600 9px sans-serif';ctx.textAlign='left';
+  ctx.fillText('홈 = 전체',x.getPixelForValue(hi)-46,y.getPixelForValue(hi)-5);ctx.restore();
+}};
+function renderScatter2(){
+  if(CH.sc2)CH.sc2.destroy();
+  const pts=TEAMS.map(t=>{
+    const home=filtered.filter(g=>g.home===t), all=filtered.filter(g=>g.home===t||g.away===t);
+    if(!home.length||!all.length)return null;
+    return{t,x:+(home.reduce((s,g)=>s+g.occ,0)/home.length*100).toFixed(1),
+      y:+(all.reduce((s,g)=>s+g.occ,0)/all.length*100).toFixed(1),nh:home.length,na:all.length};
+  }).filter(Boolean);
+  if(!pts.length)return;
+  const allv=pts.flatMap(p=>[p.x,p.y]);
+  const lo=Math.max(0,Math.floor((Math.min(...allv)-5)/5)*5),hi=Math.ceil((Math.max(...allv)+5)/5)*5;
+  CH.sc2=new Chart($('cScatter2'),{type:'scatter',
+    data:{datasets:[{data:pts.map(p=>({x:p.x,y:p.y,t:p.t,nh:p.nh,na:p.na})),
+      backgroundColor:pts.map(p=>TC[p.t]||'#888'),borderColor:'#fff',borderWidth:1.5,pointRadius:7,pointHoverRadius:9}]},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:8,right:14,left:2}},
+      plugins:{legend:{display:false},
+        datalabels:{align:'top',anchor:'center',offset:7,formatter:(v,c)=>c.dataset.data[c.dataIndex].t,color:'#16202C',font:{size:11,weight:'700'}},
+        tooltip:{callbacks:{label:c=>{const d=c.raw;return `${d.t}: 홈 ${d.x}% · 전체 ${d.y}% (홈 ${d.nh}·원정 ${d.na-d.nh})`;}}}},
+      scales:{
+        x:{min:lo,max:hi,title:{display:true,text:'홈경기 점유율(%)',color:'#8A93A0',font:{size:10,weight:600}},grid:{color:'#F1F3F6'},ticks:{callback:v=>v+'%',color:'#8A93A0',font:{size:10}}},
+        y:{min:lo,max:hi,title:{display:true,text:'전체경기 점유율(%)',color:'#8A93A0',font:{size:10,weight:600}},grid:{color:'#F1F3F6'},ticks:{callback:v=>v+'%',color:'#8A93A0',font:{size:10}}}}},
+    plugins:[ChartDataLabels,diagLine]});
+}
+
+/* ════════ 날씨 (강수량·기온) ════════ */
+function wxBar(id,bins,cols){
+  if(CH[id])CH[id].destroy();
+  CH[id]=new Chart($(id),{type:'bar',
+    data:{labels:bins.map(b=>`${b.lb}\n(${b.n})`),datasets:[{data:bins.map(b=>b.a),backgroundColor:cols,borderRadius:6,maxBarThickness:64}]},
     options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:22}},
       plugins:{legend:{display:false},
-        datalabels:{display:true,anchor:'end',align:'top',formatter:(v,c)=>bins[c.dataIndex].n?fmt(v):'',
-          color:'#16202C',font:{family:"'JetBrains Mono'",size:10,weight:'700'}},
-        tooltip:{callbacks:{label:c=>`평균 ${fmt(c.parsed.y)}명 · ${bins[c.dataIndex].n}경기`}}},
+        datalabels:{display:true,anchor:'end',align:'top',formatter:(v,c)=>bins[c.dataIndex].n?fmt(v):'',color:'#16202C',font:{family:"'JetBrains Mono'",size:10,weight:'700'}},
+        tooltip:{callbacks:{title:c=>c[0].label.replace(/\n/g,' '),label:c=>`평균 ${fmt(c.parsed.y)}명 · ${bins[c.dataIndex].n}경기`}}},
       scales:{x:{grid:{display:false},ticks:{color:'#8A93A0',font:{size:10},maxRotation:0}},
         y:{grid:{color:'#F1F3F6'},ticks:{callback:v=>(v/1000)+'천',color:'#8A93A0',font:{size:10}}}}},
     plugins:[ChartDataLabels]});
 }
+function renderRain(){
+  const defs=[['맑음\n0mm',g=>g.rain<=0],['0~5mm',g=>g.rain>0&&g.rain<=5],['5~10mm',g=>g.rain>5&&g.rain<=10],['10mm+',g=>g.rain>10]];
+  const bins=defs.map(([lb,f])=>{const gs=filtered.filter(g=>g.rain!=null&&f(g));return{lb,a:avg(gs.map(g=>g.att)),n:gs.length};});
+  wxBar('cRain',bins,['#E85A3C','#7E93B0','#9AAAC0','#6B7A8F']);
+}
+function renderTemp(){
+  const defs=[['15°C\n미만',g=>g.temp<15],['15~20°C',g=>g.temp>=15&&g.temp<20],['20~25°C',g=>g.temp>=20&&g.temp<25],
+    ['25~30°C',g=>g.temp>=25&&g.temp<30],['30°C\n이상',g=>g.temp>=30]];
+  const bins=defs.map(([lb,f])=>{const gs=filtered.filter(g=>g.temp!=null&&f(g));return{lb,a:avg(gs.map(g=>g.att)),n:gs.length};});
+  wxBar('cTemp',bins,['#7E93B0','#5E83A8','#C98A2E','#E07B3C','#E85A3C']);
+}
 
-/* ════════ 대진 히트맵 ════════ */
-function renderMatchup(){
+/* ════════ 대진 히트맵 (관중 · 점유율) ════════ */
+function heatmap(targetId,legId,valFn,fmtCell,rgb){
   const vals=[];
   const mat=TEAMS.map(h=>TEAMS.map(a=>{if(h===a)return null;const gs=filtered.filter(g=>g.home===h&&g.away===a);
-    const v=gs.length?avg(gs.map(g=>g.att)):null;if(v)vals.push(v);return{v,n:gs.length};}));
+    const v=gs.length?valFn(gs):null;if(v!=null)vals.push(v);return{v,n:gs.length};}));
   const mn=vals.length?Math.min(...vals):0,mx=vals.length?Math.max(...vals):1;
   const head=TEAMS.map(a=>`<th>${a}</th>`).join('');
   const body=TEAMS.map((h,hi)=>{
     const cells=TEAMS.map((a,ai)=>{
       if(h===a)return`<td class="hmc diag"></td>`;
-      const d=mat[hi][ai];if(!d||!d.v)return`<td class="hmc empty">·</td>`;
+      const d=mat[hi][ai];if(!d||d.v==null)return`<td class="hmc empty">·</td>`;
       const p=(d.v-mn)/(mx-mn||1),fg=p>0.45?'#fff':'#16202C';
-      return`<td class="hmc" style="background:rgba(232,90,60,${(0.16+p*0.84).toFixed(2)});color:${fg}" title="${h}(홈) vs ${a}: 평균 ${fmt(d.v)}명 · ${d.n}경기">${(d.v/1000).toFixed(1)}</td>`;
+      return`<td class="hmc" style="background:rgba(${rgb},${(0.16+p*0.84).toFixed(2)});color:${fg}" title="${h}(홈) vs ${a}: ${fmtCell(d.v,true)} · ${d.n}경기">${fmtCell(d.v,false)}</td>`;
     }).join('');
     return`<tr><th class="rh" style="color:${TC[h]}">${h}</th>${cells}</tr>`;});
-  $('matchup').innerHTML=`<table class="hmt"><thead><tr><th></th>${head}</tr></thead><tbody>${body.join('')}</tbody></table>`;
-  $('hmLeg').innerHTML=Array.from({length:6},(_,i)=>`<i style="background:rgba(232,90,60,${(0.16+i/5*0.84).toFixed(2)})"></i>`).join('');
+  $(targetId).innerHTML=`<table class="hmt"><thead><tr><th></th>${head}</tr></thead><tbody>${body.join('')}</tbody></table>`;
+  $(legId).innerHTML=Array.from({length:6},(_,i)=>`<i style="background:rgba(${rgb},${(0.16+i/5*0.84).toFixed(2)})"></i>`).join('');
+}
+function renderMatchup(){
+  heatmap('matchupA','hmLegA',gs=>avg(gs.map(g=>g.att)),(v,full)=>full?`평균 ${fmt(v)}명`:(v/1000).toFixed(1),'232,90,60');
+  heatmap('matchupB','hmLegB',gs=>gs.reduce((s,g)=>s+g.occ,0)/gs.length*100,(v,full)=>full?`점유율 ${v.toFixed(1)}%`:Math.round(v),'91,76,182');
 }
 
 /* ════════ 푸터 ════════ */
@@ -498,8 +584,6 @@ function renderFoot(){
 /* ════════ 이벤트 ════════ */
 $('segYear').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
   yearSel=b.dataset.y;[...e.currentTarget.children].forEach(c=>c.classList.toggle('on',c===b));refresh();});
-$('wxToggle').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
-  wxMode=b.dataset.w;[...e.currentTarget.children].forEach(c=>c.classList.toggle('on',c===b));renderWx();});
 ['fH','fA','fS','fM','fW'].forEach(id=>$(id).addEventListener('change',refresh));
 $('resetBtn').addEventListener('click',()=>{['fH','fA','fS','fM','fW'].forEach(id=>$(id).value='');
   yearSel='2526';[...$('segYear').children].forEach(c=>c.classList.toggle('on',c.dataset.y==='2526'));refresh();});
