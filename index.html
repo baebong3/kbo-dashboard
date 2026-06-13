@@ -139,7 +139,16 @@ select:hover,select:focus{border-color:var(--blue)}
 <div class="fbar">
   <div class="fbar-in">
     <span class="flbl">필터</span>
-    <select id="fY" onchange="refresh()"><option value="">전체 시즌</option></select>
+    <select id="fY" onchange="refresh()">
+  <option value="">전체 시즌</option>
+  <option value="2526">2025+2026</option>
+  <option value="2026" selected>2026 시즌</option>
+  <option value="2025">2025 시즌</option>
+  <option value="2024">2024 시즌</option>
+  <option value="2023">2023 시즌</option>
+  <option value="2022">2022 시즌</option>
+  <option value="2021">2021 시즌</option>
+</select>
     <div class="fdiv"></div>
     <select id="fH" onchange="refresh()"><option value="">전체 홈팀</option><option value="LG">LG</option><option value="두산">두산</option><option value="삼성">삼성</option><option value="KIA">KIA</option><option value="SSG">SSG</option><option value="롯데">롯데</option><option value="kt">kt</option><option value="한화">한화</option><option value="NC">NC</option><option value="키움">키움</option></select>
     <select id="fA" onchange="refresh()"><option value="">전체 원정팀</option><option value="LG">LG</option><option value="두산">두산</option><option value="삼성">삼성</option><option value="KIA">KIA</option><option value="SSG">SSG</option><option value="롯데">롯데</option><option value="kt">kt</option><option value="한화">한화</option><option value="NC">NC</option><option value="키움">키움</option></select>
@@ -153,12 +162,7 @@ select:hover,select:focus{border-color:var(--blue)}
 </div>
 
 <div class="page">
-  <div class="kbo-info" id="kboInfo">
-    📊 <strong>데이터 현황:</strong> 현재 2025·2026 KBO 실적 기반 <strong>추정 데이터</strong>로 표시 중 &nbsp;|&nbsp;
-    <strong>실제 경기별 데이터 반영 방법:</strong>
-    ① <code>python fetch_kbo.py</code> 실행 → <code>kbo_games.json</code> 생성 → ⟳ 버튼 클릭<br>
-    &nbsp;&nbsp;&nbsp;&nbsp;또는 ② ⟳ 버튼 클릭 시 브라우저에서 KBO 공식 사이트 직접 접속 시도 (CORS 환경에 따라 성공 여부 다름)
-  </div>
+  <div class="kbo-info" id="kboInfo" style="display:none"></div>
   <div class="banner" id="banner"><span id="bannerMsg"></span></div>
 
   <div class="kpi-row">
@@ -234,6 +238,29 @@ select:hover,select:focus{border-color:var(--blue)}
   </div>
 
   <div class="note" id="noteBar"></div>
+
+  <!-- 팀별 홈+원정 평균관중 비교 -->
+  <div class="chart-card" style="margin-top:16px">
+    <div class="chart-hd">
+      <span class="chart-title">팀별 평균관중 비교</span>
+      <span class="chart-sub">홈경기 평균 vs 팀 참여 전체 경기 평균 (홈+원정)</span>
+    </div>
+    <div style="height:280px;position:relative"><canvas id="cTmAll"></canvas></div>
+  </div>
+
+  <!-- 날씨별 평균관중 -->
+  <div class="chart-card" style="margin-top:16px">
+    <div class="chart-hd">
+      <span class="chart-title">날씨별 평균관중</span>
+      <span class="chart-sub">우천·기온별 관중 변화</span>
+    </div>
+    <div style="display:flex;gap:12px;height:240px">
+      <div style="flex:1;position:relative"><canvas id="cWx1"></canvas></div>
+      <div style="flex:1;position:relative"><canvas id="cWx2"></canvas></div>
+    </div>
+    <div id="wxNote" style="text-align:center;color:#8A92A0;font-size:12px;padding:8px"></div>
+  </div>
+
 </div>
 
 <script>
@@ -314,7 +341,7 @@ function makeAtt(yr,mo,dow,home,away,seed){
 // ALL은 kbo_games.json 로드 후 채워짐
 let ALL=[], filtered=[], tmView='avg';
 
-let CH={};
+let CH={tmAll:null,cWx1:null,cWx2:null};
 
 // 날짜 표시 설정
 const YEST=new Date(2026,5,11);
@@ -409,6 +436,119 @@ function applyRealData(games){
     showBanner(`✅ 실측 ${ALL.length}경기 로드 완료 (${minYr}~${maxYr}) — 최신: ${maxDate}`,'ok');
 }
 
+/* ─── 팀별 홈+원정 비교 차트 ──────────────────────────── */
+function renderTmAll(){
+  if(CH.tmAll) CH.tmAll.destroy();
+  const canvas=document.getElementById('cTmAll');
+  if(!canvas) return;
+  if(!filtered.length){canvas.style.display='none';return;}
+  canvas.style.display='';
+
+  const TEAMS=['LG','두산','삼성','KIA','SSG','롯데','kt','한화','NC','키움'];
+  const homeAvg=[], allAvg=[];
+
+  TEAMS.forEach(t=>{
+    const homeGs=filtered.filter(g=>g.home===t&&g.att>0);
+    const allGs=filtered.filter(g=>(g.home===t||g.away===t)&&g.att>0);
+    homeAvg.push(homeGs.length? Math.round(homeGs.reduce((s,g)=>s+g.att,0)/homeGs.length):0);
+    allAvg.push(allGs.length? Math.round(allGs.reduce((s,g)=>s+g.att,0)/allGs.length):0);
+  });
+
+  CH.tmAll=new Chart(canvas,{
+    type:'bar',
+    data:{
+      labels:TEAMS,
+      datasets:[
+        {label:'홈경기 평균',data:homeAvg,backgroundColor:'rgba(31,94,171,0.8)',borderRadius:4},
+        {label:'홈+원정 평균',data:allAvg,backgroundColor:'rgba(151,196,89,0.7)',borderRadius:4},
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'top',labels:{font:{size:11},boxWidth:12}},
+        datalabels:{display:false}},
+      scales:{
+        x:{grid:{display:false},ticks:{color:'#8A92A0',font:{size:11}}},
+        y:{grid:{color:'#F0F2F5'},ticks:{callback:v=>v?v.toLocaleString():'',color:'#8A92A0',font:{size:10}},
+           title:{display:true,text:'평균관중(명)',font:{size:10},color:'#8A92A0'}}
+      }
+    }
+  });
+}
+
+/* ─── 날씨별 평균관중 차트 ─────────────────────────────── */
+function renderWeather(){
+  ['cWx1','cWx2'].forEach(id=>{const c=document.getElementById(id);if(c&&CH[id]){CH[id].destroy();delete CH[id];}});
+  const wxNote=document.getElementById('wxNote');
+  const wxGs=filtered.filter(g=>g.att>0&&g.temp_avg!=null);
+
+  if(!wxGs.length){
+    if(wxNote) wxNote.textContent='날씨 데이터 없음 — fetch_weather.py 실행 후 kbo_games.json 업로드 필요';
+    return;
+  }
+  if(wxNote) wxNote.textContent='';
+
+  /* 차트1: 우천 여부 */
+  const rainGs=wxGs.filter(g=>g.rain_yn);
+  const clearGs=wxGs.filter(g=>!g.rain_yn);
+  const rainAvg=rainGs.length?Math.round(rainGs.reduce((s,g)=>s+g.att,0)/rainGs.length):0;
+  const clearAvg=clearGs.length?Math.round(clearGs.reduce((s,g)=>s+g.att,0)/clearGs.length):0;
+
+  const c1=document.getElementById('cWx1');
+  if(c1) CH.cWx1=new Chart(c1,{
+    type:'bar',
+    data:{
+      labels:[`맑음/흐림\n(${clearGs.length}경기)`,`우천\n(${rainGs.length}경기)`],
+      datasets:[{
+        data:[clearAvg,rainAvg],
+        backgroundColor:['rgba(31,94,171,0.75)','rgba(100,160,240,0.75)'],
+        borderRadius:6,
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},datalabels:{display:false},
+        title:{display:true,text:'우천 여부별 평균관중',font:{size:12},color:'#1A3A6B'}},
+      scales:{
+        x:{grid:{display:false},ticks:{color:'#8A92A0',font:{size:11}}},
+        y:{grid:{color:'#F0F2F5'},ticks:{callback:v=>v?v.toLocaleString():'',color:'#8A92A0',font:{size:10}}}
+      }
+    }
+  });
+
+  /* 차트2: 기온대별 */
+  const TBINS=[
+    {label:'15°C\n미만',min:-99,max:15},
+    {label:'15~20°C',min:15,max:20},
+    {label:'20~25°C',min:20,max:25},
+    {label:'25~30°C',min:25,max:30},
+    {label:'30°C\n이상',min:30,max:99},
+  ];
+  const tData=TBINS.map(b=>{
+    const gs=wxGs.filter(g=>g.temp_avg>=b.min&&g.temp_avg<b.max);
+    return{label:b.label,avg:gs.length?Math.round(gs.reduce((s,g)=>s+g.att,0)/gs.length):0,count:gs.length};
+  });
+  const TCOLS=['rgba(100,160,240,0.8)','rgba(80,180,120,0.8)','rgba(255,190,60,0.8)','rgba(255,130,60,0.8)','rgba(220,60,60,0.8)'];
+
+  const c2=document.getElementById('cWx2');
+  if(c2) CH.cWx2=new Chart(c2,{
+    type:'bar',
+    data:{
+      labels:tData.map(d=>`${d.label}\n(${d.count})`),
+      datasets:[{data:tData.map(d=>d.avg),backgroundColor:TCOLS,borderRadius:6}]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},datalabels:{display:false},
+        title:{display:true,text:'기온대별 평균관중',font:{size:12},color:'#1A3A6B'}},
+      scales:{
+        x:{grid:{display:false},ticks:{color:'#8A92A0',font:{size:10},maxRotation:0}},
+        y:{grid:{color:'#F0F2F5'},ticks:{callback:v=>v?v.toLocaleString():'',color:'#8A92A0',font:{size:10}}}
+      }
+    }
+  });
+}
+
 function normTeam(name){
   if(!name)return'';
   const s=name.trim();
@@ -475,13 +615,21 @@ function showBanner(msg,type){
    필터 & 렌더
 ══════════════════════════════════════════════ */
 function buildFilters(){
-  const years=[...new Set(ALL.map(g=>g.yr))].filter(Boolean).sort((a,b)=>b-a);
+  // 실제 데이터에 있는 연도만 활성화
+  const years=new Set(ALL.map(g=>g.yr).filter(Boolean));
   const sel=document.getElementById('fY');
+  [...sel.options].forEach(opt=>{
+    const yr=+opt.value;
+    if(yr>=2021&&yr<=2099) opt.disabled=!years.has(yr);
+    if(opt.value==='2526') opt.disabled=!years.has(2025)&&!years.has(2026);
+  });
+  // 현재 선택값이 비활성이면 최신 유효 연도로
   const cur=sel.value;
-  sel.innerHTML='<option value="">전체 시즌</option>';
-  years.forEach(yr=>{sel.innerHTML+=`<option value="${yr}">${yr} 시즌</option>`;});
-  if(cur&&years.map(String).includes(String(cur)))sel.value=cur;
-  else if(years.length>0)sel.value=String(years[0]);
+  const curOpt=sel.options[sel.selectedIndex];
+  if(curOpt&&curOpt.disabled){
+    const sorted=[...years].sort((a,b)=>b-a);
+    if(sorted.length) sel.value=String(sorted[0]);
+  }
 }
 function refresh(){
   const fy=document.getElementById('fY').value;
@@ -492,14 +640,15 @@ function refresh(){
   const today=new Date(); today.setHours(23,59,59,0);
   filtered=ALL.filter(g=>{
     if(g.date && new Date(g.date)>today) return false;
-    if(fy && g.yr!==+fy) return false;
+    if(fy==='2526'){if(g.yr!==2025&&g.yr!==2026)return false;}
+    else if(fy && g.yr!==+fy) return false;
     if(fh && g.home!==fh) return false;
     if(fa && g.away!==fa) return false;
     if(fs && g.series!==fs) return false;
     if(fm && g.mo!==+fm) return false;
     return true;
   });
-  renderKPIs();renderTrend();renderRecent();renderTmBars();renderDow();renderCumul();renderTmHm();renderHm();renderHist();renderNote();
+  renderKPIs();renderTrend();renderRecent();renderTmBars();renderDow();renderCumul();renderTmHm();renderHm();renderHist();renderTmAll();renderWeather();renderNote();
 }
 function resetFilters(){buildFilters();['fH','fA','fS','fM'].forEach(id=>document.getElementById(id).value='');refresh();}
 
@@ -742,8 +891,6 @@ function renderNote(){
 }
 
 /* 실행 */
-refresh();
-
 window.addEventListener('load',()=>{
   ['k1','k2','k3','k4'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='…';});
   tryFetchLive()
