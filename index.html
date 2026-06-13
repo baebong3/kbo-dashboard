@@ -53,6 +53,7 @@ select:hover,select:focus{border-color:var(--coral)}
 .banner{display:none;align-items:center;gap:8px;font-size:12px;padding:9px 13px;border-radius:var(--rs);margin-bottom:14px}
 .banner.show{display:flex}
 .banner.ok{background:var(--coral-s);color:var(--coral-d)}
+.banner.warn{background:var(--navy-s);color:var(--navy)}
 .banner.err{background:var(--coral-s);color:var(--coral-d)}
 
 .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:11px;margin-bottom:11px}
@@ -291,12 +292,23 @@ async function loadData(){
       if(d.games&&d.games.length){ingest(d.games);
         $('srcBadge').textContent='실측 '+ALL.length+'경기';
         $('updTime').textContent=(d.updated||'')+' 경기까지';
-        banner(`kbo_games.json 로드 완료 — 2025·2026 ${ALL.length}경기 분석`,'ok');return true;}}
+        const dup=window.__dupRemoved||0;
+        banner(dup>0
+          ? `로드 완료 — 중복 ${dup.toLocaleString()}건 제거 후 2025·2026 ${ALL.length}경기 분석`
+          : `kbo_games.json 로드 완료 — 2025·2026 ${ALL.length}경기 분석`, dup>0?'warn':'ok');
+        return true;}}
     throw new Error('no data');
   }catch(e){$('srcBadge').textContent='로드 실패';$('updTime').textContent='데이터 없음';
     banner('kbo_games.json을 불러오지 못했습니다. 같은 폴더에 파일이 있는지 확인하세요.','err');return false;}
 }
-function ingest(games){
+function ingest(raw){
+  // 같은 경기가 여러 번 저장된 경우(수집 누적) game_id 기준으로 1건만 사용
+  const seen=new Set();
+  const games=raw.filter(g=>{
+    const k=g.game_id||`${g.yr||g.year}-${g.mo||g.month}-${g.day}-${g.home}-${g.away}`;
+    if(seen.has(k))return false; seen.add(k); return true;
+  });
+  const dupRemoved=raw.length-games.length;
   ALL=games.map(g=>{
     const dt=g.date?new Date(g.date):null;const dow=dt?dt.getDay():2;
     const home=normTeam(g.home),away=normTeam(g.away||'');const att=+g.att;
@@ -307,6 +319,7 @@ function ingest(games){
       temp:g.temp_avg??null,rain:g.rain_mm??null,rainY:g.rain_yn??(g.rain_mm>0)};
   }).filter(Boolean);
   buildFilters();
+  window.__dupRemoved=dupRemoved;
 }
 function buildFilters(){
   const present=new Set(ALL.map(g=>g.home));
@@ -405,7 +418,6 @@ function renderImpact(){
   const groups=[
     {g:'요일',rows:[['주말 (금·토·일)',sub(g=>g.series==='WE')],['주중 (화·수·목)',sub(g=>g.series==='WD')]]},
     {g:'날씨',rows:[['맑음 (0mm)',sub(g=>g.rain!=null&&g.rain<=0)],['우천 (강수)',sub(g=>g.rain!=null&&g.rain>0)]]},
-    {g:'시즌 구간',rows:[['개막기 (3·4월)',sub(g=>g.mo===3||g.mo===4)],['한여름 (7·8월)',sub(g=>g.mo===7||g.mo===8)],['가을 (9월)',sub(g=>g.mo===9)]]},
   ];
   const items=[];groups.forEach(gr=>gr.rows.forEach(([lb,arr])=>{if(arr.length){const m=avg(arr.map(g=>g.att));items.push({grp:gr.g,lb,dev:(m-base)/base*100,n:arr.length});}}));
   const maxAbs=Math.max(...items.map(i=>Math.abs(i.dev)),5);
