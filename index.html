@@ -289,43 +289,10 @@ function makeAtt(yr,mo,dow,home,away,seed){
   return Math.min(CAP[home]||25000,Math.max(1500,Math.round(raw)));
 }
 
-function buildSched(){
-  const out=[];
-  const seasons=[
-    {yr:2025,s:new Date(2025,2,22),e:new Date(2025,8,21)},
-    {yr:2026,s:new Date(2026,2,28),e:new Date(2026,5,11)}
-  ];
-  seasons.forEach(({yr,s,e})=>{
-    const days=[];let d=new Date(s);
-    while(d<=e){if(d.getDay()!==1)days.push(new Date(d));d.setDate(d.getDate()+1);}
-    let dayIdx=0;
-    for(let cycle=0;dayIdx<days.length;cycle++){
-      for(let ri=0;ri<9&&dayIdx<days.length;ri++,dayIdx++){
-        const dt=days[dayIdx];
-        const mo=dt.getMonth()+1,dow=dt.getDay();
-        for(let pi=0;pi<5;pi++){
-          const [home,away]=getPair(ri,pi,cycle);
-          out.push({yr,mo,dow,dow_nm:DOWNAME[dow],home,away,
-            att:makeAtt(yr,mo,dow,home,away,`${yr}${cycle}${ri}${pi}${home}`),
-            series:[5,6,0].includes(dow)?'WE':'WD',
-            date:new Date(dt),dateStr:`${mo}/${dt.getDate()}`
-          });
-        }
-      }
-    }
-  });
-  const GBY=27.5;
-  TEAMS.forEach(t=>{
-    const gs=out.filter(g=>g.yr===2026&&g.home===t);
-    if(!gs.length)return;
-    const cur=gs.reduce((s,g)=>s+g.att,0);
-    const tgt=(R26H[t]||HBASE[t])/GBY*gs.length;
-    const sc=tgt/cur;
-    gs.forEach(g=>g.att=Math.min(CAP[t]||25000,Math.max(1500,Math.round(g.att*sc))));
-  });
-  return out.sort((a,b)=>b.date-a.date);
-}
-let ALL=buildSched(), filtered=[], tmView='avg';
+/* ── 실측 데이터만 표시 (시뮬레이션 없음) ── */
+// ALL은 kbo_games.json 로드 후 채워짐
+let ALL=[], filtered=[], tmView='avg';
+
 let CH={};
 
 // 날짜 표시 설정
@@ -385,33 +352,57 @@ async function fetchKBO(){
 }
 
 function applyRealData(games){
-  /** 실제 경기 데이터 적용 — 홈/원정/관중/날짜 정규화 */
+  /** 실제 경기 데이터만 사용 — 시뮬레이션 없음 */
   const DMAP={'월':1,'화':2,'수':3,'목':4,'금':5,'토':6,'일':0};
   const normalized=games.map(g=>{
     const dt=g.date?new Date(g.date):null;
     const dow=dt?dt.getDay():(DMAP[g.dow]??2);
+    const home=normTeam(g.home);
+    const away=normTeam(g.away||'');
+    if(!home||+g.att<100) return null;
     return{
-      yr:g.yr||+g.year, mo:g.mo||+g.month, day:g.day,
+      yr:+(g.yr||g.year), mo:+(g.mo||g.month), day:+g.day,
       dow, dow_nm:DOWNAME[dow]||g.dow||'?',
-      home:normTeam(g.home), away:normTeam(g.away||''),
-      att:+g.att, series:g.series||([5,6,0].includes(dow)?'WE':'WD'),
-      date:dt, dateStr:g.dateStr||`${g.mo||g.month}/${g.day}`
+      home, away,
+      att:+g.att,
+      series:g.series||([5,6,0].includes(dow)?'WE':'WD'),
+      date:dt,
+      dateStr:g.dateStr||`${+(g.mo||g.month)}/${+g.day}`
     };
-  }).filter(g=>g.att>500&&g.home);
-  // 실측이 있는 년·월은 실측으로, 없는 구간은 시뮬 유지
-  const realKeys=new Set(normalized.map(g=>`${g.yr}-${g.mo}`));
-  const simOnly=ALL.filter(g=>!realKeys.has(`${g.yr}-${g.mo}`));
-  ALL=[...normalized,...simOnly].sort((a,b)=>(b.date||0)-(a.date||0));
+  }).filter(Boolean);
+
+  if(!normalized.length){
+    showBanner('⚠️ kbo_games.json에 유효한 경기 데이터가 없습니다.','warn');
+    return;
+  }
+
+  // 실측 데이터만으로 교체 (시뮬레이션 섞지 않음)
+  ALL=normalized.sort((a,b)=>(b.date||0)-(a.date||0));
+
+  const minYr=Math.min(...ALL.map(g=>g.yr));
+  const maxDate=ALL[0]?.dateStr||'?';
+  document.getElementById('srcBadge').textContent=`실측 ${ALL.length}경기 (${minYr}~)`;
+  document.getElementById('srcBadge').className='src-badge src-live';
+  document.getElementById('kboInfo').style.display='none';
+  showBanner(`✅ 실측 ${ALL.length}경기 로드 완료 — 최신: ${maxDate}`,'ok');
   refresh();
 }
 
 function normTeam(name){
   if(!name)return'';
+  const s=name.trim();
+  // 정확히 일치하는 단축명
+  const EXACT={'LG':'LG','두산':'두산','삼성':'삼성','KIA':'KIA','SSG':'SSG',
+    '롯데':'롯데','kt':'kt','KT':'kt','한화':'한화','NC':'NC','키움':'키움'};
+  if(EXACT[s])return EXACT[s];
+  // 부분 매칭
   const MAP={'LG트윈스':'LG','두산베어스':'두산','삼성라이온즈':'삼성','KIA타이거즈':'KIA',
-    'SSG랜더스':'SSG','롯데자이언츠':'롯데','kt wiz':'kt','KT위즈':'kt','한화이글스':'한화',
-    'NC다이노스':'NC','키움히어로즈':'키움'};
-  for(const[k,v]of Object.entries(MAP))if(name.includes(k))return v;
-  return name.trim();
+    'SSG랜더스':'SSG','롯데자이언츠':'롯데','kt wiz':'kt','KT위즈':'kt','KT wiz':'kt',
+    '한화이글스':'한화','NC다이노스':'NC','키움히어로즈':'키움','히어로즈':'키움',
+    '넥센':'키움','우리':'키움','현대':'현대','SK':'SSG','OB':'두산','MBC':'LG',
+    '해태':'KIA','빙그레':'한화'};
+  for(const[k,v]of Object.entries(MAP))if(s.includes(k))return v;
+  return s;
 }
 
 function parseKBOCrowd(html,yr,mo){
@@ -483,6 +474,11 @@ function fmt(n){return Math.round(n).toLocaleString('ko-KR');}
 function occ(r){if(r>=.95)return'#A32D2D';if(r>=.80)return'#854F0B';if(r>=.60)return'#1F5EAB';return'#0F6E56';}
 
 function renderKPIs(){
+  if(!filtered.length){
+    ['k1','k2','k3','k4'].forEach(id=>document.getElementById(id).textContent='—');
+    ['k1s','k2s','k3s','k4s'].forEach(id=>document.getElementById(id).innerHTML='<span class="neu">데이터 없음</span>');
+    return;
+  }
   const atts=filtered.map(g=>g.att),tot=atts.reduce((s,v)=>s+v,0);
   const sold=filtered.filter(g=>g.att/(CAP[g.home]||25000)>=.9).length;
   document.getElementById('k1').textContent=tot>=10000?Math.round(tot/10000)+'만 명':fmt(tot)+'명';
@@ -520,6 +516,11 @@ function renderTrend(){
 
 /* 최근경기 — 날짜 내림차순 */
 function renderRecent(){
+  if(!filtered.length){
+    document.getElementById('recentSub').textContent='';
+    document.getElementById('recentList').innerHTML='<div style="padding:20px;text-align:center;color:#8A92A0;font-size:12px">📭 kbo_games.json을 불러오면 실제 경기 데이터가 표시됩니다.<br>⟳ 버튼을 클릭하거나 GitHub에 kbo_games.json을 업로드하세요.</div>';
+    return;
+  }
   const items=filtered.slice(0,8);
   if(items.length&&items[0].date){
     document.getElementById('recentSub').textContent=`최근 ${items.length}경기 · 최신 ${items[0].date.toLocaleDateString('ko-KR')}`;
@@ -540,6 +541,7 @@ function renderRecent(){
 
 /* 구단별 막대 */
 function renderTmBars(){
+  if(!filtered.length){document.getElementById('tmBars').innerHTML='<div style="padding:16px;text-align:center;color:#8A92A0;font-size:12px">데이터 없음</div>';return;}
   const td=TEAMS.map(t=>{const gs=filtered.filter(g=>g.home===t);const a=avg(gs.map(g=>g.att));return{t,a,oc:a/(CAP[t]||20000),cnt:gs.length};}).filter(d=>d.cnt>0).sort((a,b)=>tmView==='avg'?b.a-a.a:b.oc-a.oc);
   const mx=Math.max(...td.map(d=>tmView==='avg'?d.a:d.oc),1);
   document.getElementById('tmBars').innerHTML=td.map(d=>{const v=tmView==='avg'?d.a:d.oc;const p=Math.round(v/mx*100);const op=Math.round(d.oc*100);const oc=occ(d.oc);
