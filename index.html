@@ -720,9 +720,17 @@ function renderHist(){
 
 /* 노트 */
 function renderNote(){
-  const fy=document.getElementById('fY').value,fh=document.getElementById('fH').value,fa=document.getElementById('fA').value;
-  const parts=[];if(fh)parts.push(`홈:${fh}`);if(fa)parts.push(`원정:${fa}`);if(fy)parts.push(`${fy}시즌`);
-  document.getElementById('noteBar').textContent=`${parts.length?'['+parts.join('·')+'] ':''}2026.6.3 실측: 275경기·504만1,891명·LG 68.7만·삼성 66.7만·두산 60.4만·롯데 51.5만·SSG 48만. 2025 전 시즌 조회 가능. ⟳ KBO 최신 관중 반영 버튼으로 실측 데이터 업데이트 가능 (allorigins.win 프록시 경유).`;
+  const nb=document.getElementById('noteBar');
+  if(!nb)return;
+  if(!filtered.length){nb.textContent='';return;}
+  const tot=filtered.reduce((s,g)=>s+g.att,0);
+  const avg=Math.round(tot/filtered.length);
+  const years=[...new Set(filtered.map(g=>g.yr))].sort();
+  const yrStr=years.length===1?`${years[0]}시즌`:`${years[0]}~${years[years.length-1]}시즌`;
+  const fh=document.getElementById('fH').value;
+  const fa=document.getElementById('fA').value;
+  const parts=[];if(fh)parts.push(`홈:${fh}`);if(fa)parts.push(`원정:${fa}`);
+  nb.textContent=`[${yrStr}${parts.length?'·'+parts.join('·'):''}] ${filtered.length.toLocaleString()}경기 · 누적 ${Math.round(tot/10000).toLocaleString()}만명 · 경기당 평균 ${avg.toLocaleString()}명`;
 }
 
 /* 실행 */
@@ -1450,13 +1458,31 @@ function renderHist(){
 
 /* 노트 */
 function renderNote(){
-  const fy=document.getElementById('fY').value,fh=document.getElementById('fH').value,fa=document.getElementById('fA').value;
-  const parts=[];if(fh)parts.push(`홈:${fh}`);if(fa)parts.push(`원정:${fa}`);if(fy)parts.push(`${fy}시즌`);
-  document.getElementById('noteBar').textContent=`${parts.length?'['+parts.join('·')+'] ':''}2026.6.3 실측: 275경기·504만1,891명·LG 68.7만·삼성 66.7만·두산 60.4만·롯데 51.5만·SSG 48만. 2025 전 시즌 조회 가능. ⟳ KBO 최신 관중 반영 버튼으로 실측 데이터 업데이트 가능 (allorigins.win 프록시 경유).`;
+  const fy=document.getElementById('fY').value;
+  const fh=document.getElementById('fH').value;
+  const fa=document.getElementById('fA').value;
+  const nb=document.getElementById('noteBar');
+  if(!nb)return;
+  if(!filtered.length){nb.textContent='';return;}
+  // 실제 데이터 기반 요약
+  const tot=filtered.reduce((s,g)=>s+g.att,0);
+  const avg=Math.round(tot/filtered.length);
+  const years=[...new Set(filtered.map(g=>g.yr))].sort();
+  const yrStr=years.length===1?`${years[0]}시즌`:`${years[0]}~${years[years.length-1]}시즌`;
+  const latest=filtered[0]?.date?.toLocaleDateString?.('ko-KR')||filtered[0]?.dateStr||'';
+  const parts=[];
+  if(fh)parts.push(`홈:${fh}`);
+  if(fa)parts.push(`원정:${fa}`);
+  nb.textContent=`[${yrStr}${parts.length?'·'+parts.join('·'):''}] ${filtered.length}경기 · 누적 ${Math.round(tot/10000)}만명 · 경기당 평균 ${avg.toLocaleString()}명 · 최신 ${latest}`;
 }
 
 /* 실행 */
-refresh();
+window.addEventListener('load',()=>{
+  ['k1','k2','k3','k4'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='…';});
+  tryFetchLive()
+    .then(()=>{buildFilters();refresh();})
+    .catch(()=>{buildFilters();refresh();});
+});
 </script>
 </body>
 </html>
