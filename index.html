@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>KBO 관중 대시보드 | (주)서던포스트</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<style>
+:root{--navy:#003087;--blue:#1F5EAB;--blt:#E6F1FB;--teal:#0F6E56;--tlt:#E1F5EE;--amber:#854F0B;--alt:#FAEEDA;--red:#A32D2D;--rlt:#FCEBEB;--g100:#F0F2F5;--g200:#E2E6EC;--g400:#8A92A0;--border:#E2E6EC;--r:10px;--rsm:6px;--fn:'Noto Sans KR',sans-serif;--mono:'JetBrains Mono',monospace}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--fn);background:var(--g100);color:#1A2233;font-size:13px;line-height:1.5;min-height:100vh}
+/* 상단바 */
+.topbar{background:var(--navy);position:sticky;top:0;z-index:100;padding:0 20px}
+.tb-in{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:52px}
+.tb-logo{font-size:15px;font-weight:700;color:#fff}
+.tb-sub{font-size:11px;opacity:.6;color:#fff}
+.tb-right{display:flex;align-items:center;gap:10px}
+.live-badge{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.1);border-radius:20px;padding:4px 10px;font-size:11px;color:#fff}
+.live-dot{width:7px;height:7px;border-radius:50%;background:#4CD964;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.upd-area{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.upd-time{font-size:11px;color:rgba(255,255,255,.55)}
+.src-badge{font-size:10px;padding:2px 8px;border-radius:8px;font-weight:500}
+.src-live{background:#E1F5EE;color:#0F6E56}
+.src-sim{background:#E6F1FB;color:#185FA5}
+.src-err{background:#FAEEDA;color:#854F0B}
+/* 필터바 */
+.fbar{background:#fff;border-bottom:1px solid var(--border);padding:9px 20px;position:sticky;top:52px;z-index:90}
+.fbar-in{max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.flbl{font-size:11px;color:var(--g400);font-weight:500}
+.fdiv{width:1px;height:20px;background:var(--border)}
+select{font-family:var(--fn);font-size:12px;padding:5px 10px;border:1px solid var(--border);border-radius:var(--rsm);background:#fff;color:#1A2233;cursor:pointer;outline:none}
+select:hover,select:focus{border-color:var(--blue)}
+.btn{font-family:var(--fn);font-size:11px;padding:5px 11px;border:1px solid var(--border);border-radius:var(--rsm);background:#fff;color:var(--g400);cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:4px}
+.btn:hover{border-color:var(--blue);color:var(--blue)}
+.btn-kbo{border-color:var(--teal);color:var(--teal);font-weight:500}
+.btn-kbo:hover{background:var(--tlt)}
+.btn-kbo:disabled{opacity:.5;cursor:not-allowed}
+/* 레이아웃 */
+.page{max-width:1200px;margin:0 auto;padding:0 20px 40px}
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0}
+.kpi{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:14px 16px}
+.kpi-ic{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;margin-bottom:8px}
+.ic-b{background:var(--blt)}.ic-t{background:var(--tlt)}.ic-a{background:var(--alt)}.ic-r{background:var(--rlt)}
+.kpi-lbl{font-size:11px;color:var(--g400);margin-bottom:3px}
+.kpi-val{font-family:var(--mono);font-size:22px;font-weight:600;line-height:1}
+.kpi-sub{font-size:11px;margin-top:5px}
+.up{color:var(--teal)}.dn{color:var(--red)}.neu{color:var(--g400)}
+.card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px 18px}
+.card-hd{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;gap:8px}
+.ctitle{font-size:13px;font-weight:500}
+.csub{font-size:11px;color:var(--g400);margin-top:2px}
+.g32{display:grid;grid-template-columns:3fr 2fr;gap:14px}
+.g22{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.gap{margin-top:14px}
+.ch{position:relative;width:100%}
+.leg-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.leg{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--g400)}
+.leg-sq{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.tabr{display:flex;gap:3px;background:var(--g100);border-radius:var(--rsm);padding:3px;flex-shrink:0}
+.tbb{font-family:var(--fn);font-size:11px;padding:4px 10px;border:none;border-radius:5px;background:transparent;color:var(--g400);cursor:pointer;transition:all .15s}
+.tbb.on{background:#fff;color:var(--blue);font-weight:500;box-shadow:0 1px 3px rgba(0,0,0,.07)}
+/* 최근경기 */
+.rg-hd{display:grid;grid-template-columns:88px 36px 60px 52px 1fr 52px;padding:4px 0 6px;border-bottom:1px solid var(--border)}
+.rg-hd span{font-size:10px;color:var(--g400);font-weight:500}
+.rg-row{display:grid;grid-template-columns:88px 36px 60px 52px 1fr 52px;padding:5px 0;border-bottom:1px solid var(--g100);align-items:center}
+.rg-row:last-child{border-bottom:none}
+.rg-row div{font-size:11px}
+.badge{display:inline-block;padding:1px 5px;border-radius:8px;font-size:9px;font-weight:500}
+.b25{background:var(--tlt);color:var(--teal)}.b26{background:var(--rlt);color:var(--red)}
+.bwd{background:var(--g100);color:var(--g400)}.bwe{background:var(--blt);color:var(--blue)}
+.bmn{background:#FFF9E7;color:#633806}
+.occ-m{height:4px;background:var(--g100);border-radius:2px;margin-top:3px;overflow:hidden}
+.occ-mf{height:100%;border-radius:2px}
+/* 막대들 */
+.tbr{display:flex;align-items:center;gap:7px;padding:3px 0}
+.tb-nm{min-width:52px;font-size:11px;font-weight:500;text-align:right}
+.tb-trk{flex:1;height:10px;background:var(--g100);border-radius:4px;overflow:hidden}
+.tb-fl{height:100%;border-radius:4px;transition:width .5s}
+.tb-vl{font-family:var(--mono);font-size:11px;font-weight:600;min-width:60px;text-align:right}
+.tb-oc{font-size:10px;min-width:36px;text-align:right;color:var(--g400)}
+.dwr{display:flex;align-items:center;gap:7px;padding:3px 0}
+.dw-l{min-width:20px;font-size:12px;font-weight:500}
+.dw-tr{flex:1;height:11px;background:var(--g100);border-radius:4px;overflow:hidden}
+.dw-fl{height:100%;border-radius:4px;transition:width .5s}
+.dw-n{font-family:var(--mono);font-size:11px;font-weight:600;min-width:58px;text-align:right}
+.dw-c{font-size:10px;color:var(--g400);min-width:34px;text-align:right}
+/* 시리즈 */
+.sc{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.sb{border-radius:var(--r);padding:10px 12px}
+.swd{background:var(--g100)}.swe{background:var(--blt)}
+.slbl{font-size:10px;color:var(--g400);margin-bottom:2px}
+.slbl-we{font-size:10px;color:var(--blue);margin-bottom:2px}
+.sv{font-family:var(--mono);font-size:17px;font-weight:600}
+.sv-we{font-family:var(--mono);font-size:17px;font-weight:600;color:var(--blue)}
+.sm{font-size:10px;color:var(--g400);margin-top:2px}
+.sm-we{font-size:10px;color:var(--blue);margin-top:2px}
+/* 히트맵 */
+.hmsc{overflow-x:auto}
+.hmt{border-collapse:separate;border-spacing:3px;white-space:nowrap}
+.hmt th{font-size:9px;font-weight:500;color:var(--g400);padding:0 2px 4px;text-align:center}
+.hmt th.rh{min-width:42px;text-align:right;padding-right:6px;font-size:10px}
+.hmc{width:50px;height:22px;border-radius:4px;text-align:center;vertical-align:middle;font-family:var(--mono);font-size:10px;font-weight:600;cursor:default}
+.hmc:hover{opacity:.8}
+.hm-leg{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--g400)}
+.hm-sq{width:14px;height:10px;border-radius:3px}
+/* 구단×월 */
+.tmc{width:46px;height:22px;border-radius:4px;text-align:center;vertical-align:middle;font-family:var(--mono);font-size:10px;font-weight:600;cursor:default}
+/* 배너 */
+.banner{border-radius:var(--rsm);padding:9px 13px;font-size:11px;display:none;align-items:center;gap:8px;margin-bottom:12px}
+.banner.show{display:flex}
+.bn-ok{background:var(--tlt);border:1px solid var(--teal);color:var(--teal)}
+.bn-warn{background:var(--alt);border:1px solid var(--amber);color:var(--amber)}
+.bn-err{background:var(--rlt);border:1px solid var(--red);color:var(--red)}
+.kbo-info{background:var(--blt);border:1px solid #85B7EB;border-radius:var(--rsm);padding:9px 13px;font-size:11px;color:#0C447C;margin-bottom:12px;line-height:1.6}
+.divider{border:none;border-top:1px solid var(--border);margin:10px 0}
+.note{font-size:10px;color:var(--g400);background:var(--g100);border-radius:var(--rsm);padding:7px 10px;margin-top:14px;line-height:1.6}
+@media(max-width:900px){.kpi-row{grid-template-columns:repeat(2,1fr)}.g32,.g22{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="tb-in">
+    <div><div class="tb-logo">KBO 관중 분석 대시보드</div><div class="tb-sub">(주)서던포스트 · 2025–2026 KBO 리그</div></div>
+    <div class="tb-right">
+      <div class="live-badge"><div class="live-dot"></div>Live</div>
+      <div class="upd-area">
+        <span class="upd-time" id="updTime"></span>
+        <span class="src-badge src-sim" id="srcBadge">시뮬레이션 기반</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="fbar">
+  <div class="fbar-in">
+    <span class="flbl">필터</span>
+    <select id="fY" onchange="refresh()"><option value="">2025+2026</option><option value="2025">2025 시즌</option><option value="2026">2026 시즌</option></select>
+    <div class="fdiv"></div>
+    <select id="fH" onchange="refresh()"><option value="">전체 홈팀</option><option value="LG">LG</option><option value="두산">두산</option><option value="삼성">삼성</option><option value="KIA">KIA</option><option value="SSG">SSG</option><option value="롯데">롯데</option><option value="kt">kt</option><option value="한화">한화</option><option value="NC">NC</option><option value="키움">키움</option></select>
+    <select id="fA" onchange="refresh()"><option value="">전체 원정팀</option><option value="LG">LG</option><option value="두산">두산</option><option value="삼성">삼성</option><option value="KIA">KIA</option><option value="SSG">SSG</option><option value="롯데">롯데</option><option value="kt">kt</option><option value="한화">한화</option><option value="NC">NC</option><option value="키움">키움</option></select>
+    <div class="fdiv"></div>
+    <select id="fS" onchange="refresh()"><option value="">주중+주말</option><option value="WD">주중 (화·수·목)</option><option value="WE">주말 (금·토·일)</option></select>
+    <select id="fM" onchange="refresh()"><option value="">전체 월</option><option value="3">3월</option><option value="4">4월</option><option value="5">5월</option><option value="6">6월</option><option value="7">7월</option><option value="8">8월</option><option value="9">9월</option></select>
+    <div class="fdiv"></div>
+    <button class="btn" onclick="resetFilters()">↺ 초기화</button>
+    <button class="btn btn-kbo" id="fetchBtn" onclick="fetchKBO()">⟳ KBO 최신 관중 반영</button>
+  </div>
+</div>
+
+<div class="page">
+  <div class="kbo-info" id="kboInfo">
+    📊 <strong>데이터 현황:</strong> 현재 2025·2026 KBO 실적 기반 <strong>추정 데이터</strong>로 표시 중 &nbsp;|&nbsp;
+    <strong>실제 경기별 데이터 반영 방법:</strong>
+    ① <code>python fetch_kbo.py</code> 실행 → <code>kbo_games.json</code> 생성 → ⟳ 버튼 클릭<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;또는 ② ⟳ 버튼 클릭 시 브라우저에서 KBO 공식 사이트 직접 접속 시도 (CORS 환경에 따라 성공 여부 다름)
+  </div>
+  <div class="banner" id="banner"><span id="bannerMsg"></span></div>
+
+  <div class="kpi-row">
+    <div class="kpi"><div class="kpi-ic ic-b">👥</div><div class="kpi-lbl">누적 관중</div><div class="kpi-val" id="k1">—</div><div class="kpi-sub" id="k1s"></div></div>
+    <div class="kpi"><div class="kpi-ic ic-t">📈</div><div class="kpi-lbl">경기당 평균</div><div class="kpi-val" id="k2">—</div><div class="kpi-sub" id="k2s"></div></div>
+    <div class="kpi"><div class="kpi-ic ic-a">🗓</div><div class="kpi-lbl">조회 경기수</div><div class="kpi-val" id="k3">—</div><div class="kpi-sub" id="k3s"></div></div>
+    <div class="kpi"><div class="kpi-ic ic-r">🎫</div><div class="kpi-lbl">매진(90%+)</div><div class="kpi-val" id="k4">—</div><div class="kpi-sub" id="k4s"></div></div>
+  </div>
+
+  <div class="g32">
+    <div class="card">
+      <div class="card-hd">
+        <div><div class="ctitle">월별 경기당 평균관중 추이</div><div class="csub">2026년 완료 달(3·4·5월) 실선 · 6월 진행중 점선</div></div>
+        <div class="leg-row"><span class="leg"><span class="leg-sq" style="background:#97C459"></span>2025</span><span class="leg"><span class="leg-sq" style="background:#1F5EAB"></span>2026 확정</span><span class="leg"><span class="leg-sq" style="background:#B4B2A9"></span>진행중</span></div>
+      </div>
+      <div class="ch" style="height:205px"><canvas id="cTrend" role="img" aria-label="월별 평균관중 추이 차트">추이</canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-hd">
+        <div><div class="ctitle">최근 경기</div><div class="csub" id="recentSub"></div></div>
+        <span style="font-size:10px;padding:2px 7px;border-radius:8px;background:var(--tlt);color:var(--teal);font-weight:500">최신순</span>
+      </div>
+      <div class="rg-hd"><span>날짜</span><span>요일</span><span>홈팀</span><span>원정팀</span><span>관중</span><span>점유율</span></div>
+      <div id="recentList"></div>
+    </div>
+  </div>
+
+  <div class="g22 gap">
+    <div class="card">
+      <div class="card-hd">
+        <div><div class="ctitle">구단별 홈 평균관중</div><div class="csub">구장 수용인원 상한 적용</div></div>
+        <div class="tabr" id="tmTab"><button class="tbb on" onclick="setV('avg',this)">평균관중</button><button class="tbb" onclick="setV('occ',this)">점유율</button></div>
+      </div>
+      <div id="tmBars"></div>
+    </div>
+    <div class="card">
+      <div class="ctitle" style="margin-bottom:8px">요일별 평균관중</div>
+      <div id="dwBars"></div>
+      <hr class="divider">
+      <div style="font-size:12px;font-weight:500;margin-bottom:6px">주중 vs 주말 3연전</div>
+      <div class="sc" id="serCmp"></div>
+    </div>
+  </div>
+
+  <div class="g22 gap">
+    <div class="card">
+      <div class="card-hd">
+        <div><div class="ctitle">누적 관중 비교</div><div class="csub">경기 수 기준 · 2026 흥행 페이스 확인</div></div>
+        <div class="leg-row"><span class="leg"><span class="leg-sq" style="background:#97C459"></span>2025</span><span class="leg"><span class="leg-sq" style="background:#1F5EAB"></span>2026</span></div>
+      </div>
+      <div class="ch" style="height:210px"><canvas id="cCumul" role="img" aria-label="누적관중 비교">누적</canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-hd">
+        <div><div class="ctitle">구단×월 평균관중 히트맵</div><div class="csub">홈팀별 월별 흐름 · 단위: 천명</div></div>
+        <div class="hm-leg"><span>낮음</span><div style="display:flex;gap:2px" id="tmLeg"></div><span>높음</span></div>
+      </div>
+      <div style="overflow-x:auto"><div id="tmHm"></div></div>
+    </div>
+  </div>
+
+  <div class="card gap">
+    <div class="card-hd">
+      <div><div class="ctitle">대진별 평균관중 히트맵</div><div class="csub">홈(↓) × 원정(→) · 마우스오버 시 경기수 확인</div></div>
+      <div class="hm-leg"><span>낮음</span><div style="display:flex;gap:2px" id="hmLeg"></div><span>높음</span></div>
+    </div>
+    <div class="hmsc"><div id="hmMap"></div></div>
+  </div>
+
+  <div class="card gap">
+    <div class="card-hd"><div class="ctitle">관중 분포</div><div class="csub">구간별 경기수 · 막대 위 숫자 = 경기 수</div></div>
+    <div class="ch" style="height:195px"><canvas id="cHist" role="img" aria-label="관중수 분포">분포</canvas></div>
+  </div>
+
+  <div class="note" id="noteBar"></div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════
+   상수
+══════════════════════════════════════════════ */
+const TEAMS=['LG','두산','삼성','KIA','SSG','롯데','kt','한화','NC','키움'];
+const CAP={LG:25000,두산:25000,삼성:24000,KIA:22244,SSG:23000,롯데:24000,kt:20000,한화:20007,NC:22000,키움:16744};
+const TC={LG:'#1F5EAB',두산:'#444444',삼성:'#1D9E75',KIA:'#E24B4A',SSG:'#D85A30',롯데:'#BA7517',kt:'#534AB7',한화:'#D4537E',NC:'#3B6D11',키움:'#0F6E56'};
+const HBASE={LG:21288,두산:18789,삼성:22466,KIA:15319,SSG:17563,롯데:21423,kt:13831,한화:13863,NC:13030,키움:12110};
+const OPP={LG:2800,두산:2200,삼성:2500,KIA:1500,SSG:1200,롯데:1800,kt:800,한화:2300,NC:500,키움:300};
+const RIV={'LG_두산':3500,'두산_LG':3500,'삼성_롯데':2200,'롯데_삼성':2200,'LG_한화':1800,'한화_LG':1800};
+// 요일 효과 (getDay() 기준: 0=일,2=화,3=수,4=목,5=금,6=토)
+const DEFX={0:4354,1:-8000,2:-3946,3:-3346,4:-2646,5:754,6:5754};
+// 월 효과
+const MMFX={2025:{3:-4346,4:-1246,5:0,6:454,7:354,8:-646,9:1754},2026:{3:-2800,4:-1200,5:200,6:600,7:400,8:-400,9:1900}};
+const DOWNAME=['일','월','화','수','목','금','토'];
+// 2025 실측 월별 평균 (확인값)
+const M25R={3:18500,4:16400,5:17200,6:17500,7:16000,8:17000,9:20000};
+// 2026 확정 월별 평균 (3~5월 실측 기반)
+const M26R={3:19800,4:17600,5:18420};
+// 2026 구단별 홈관중 (6/3 확인)
+const R26H={LG:687060,삼성:666949,두산:604041,롯데:515079,SSG:480248,KIA:459000,한화:486000,kt:405000,키움:378000,NC:351000};
+// 10팀 정규 라운드로빈 — 9라운드×5경기, 모든 대진 균등 커버
+// Fix team 0, rotate 1-9 (표준 알고리즘)
+const RR9 = [
+  [[0,1],[2,9],[3,8],[4,7],[5,6]],
+  [[0,2],[3,1],[4,9],[5,8],[6,7]],
+  [[0,3],[4,2],[5,1],[6,9],[7,8]],
+  [[0,4],[5,3],[6,2],[7,1],[8,9]],
+  [[0,5],[6,4],[7,3],[8,2],[9,1]],
+  [[0,6],[7,5],[8,4],[9,3],[1,2]],
+  [[0,7],[8,6],[9,5],[1,4],[2,3]],
+  [[0,8],[9,7],[1,6],[2,5],[3,4]],
+  [[0,9],[1,8],[2,7],[3,6],[4,5]],
+];
+// 홈/원정 전환: cycle이 짝수면 [a,b]→a홈, 홀수면 b홈
+function getPair(roundIdx, pairInRound, cycle){
+  const [a,b]=RR9[roundIdx%9][pairInRound];
+  return cycle%2===0?[TEAMS[a],TEAMS[b]]:[TEAMS[b],TEAMS[a]];
+}
+
+/* ══════════════════════════════════════════════
+   날짜 기반 일정 생성 (2025 전체 + 2026 ~6/11)
+══════════════════════════════════════════════ */
+function hsh(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h)+s.charCodeAt(i);return h>>>0;}
+function rnd(k){return((hsh(k)*1664525+1013904223)>>>0)%2001-1000;}
+
+function makeAtt(yr,mo,dow,home,away,seed){
+  const mfx=(MMFX[yr]||{})[mo]||0;
+  const b26=yr===2026?1200:0;
+  const raw=(HBASE[home]||15000)+(OPP[away]||500)+(RIV[home+'_'+away]||0)+b26+(DEFX[dow]||0)+mfx+rnd(seed);
+  return Math.min(CAP[home]||25000,Math.max(1500,Math.round(raw)));
+}
+
+/* ── 실측 데이터만 표시 (시뮬레이션 없음) ── */
+// ALL은 kbo_games.json 로드 후 채워짐
+let ALL=[], filtered=[], tmView='avg';
+
+let CH={};
+
+// 날짜 표시 설정
+const YEST=new Date(2026,5,11);
+document.getElementById('updTime').textContent=YEST.toLocaleDateString('ko-KR')+' 경기까지';
+
+/* ══════════════════════════════════════════════
+   KBO 공식 관중 데이터 Fetch (CORS 프록시 경유)
+══════════════════════════════════════════════ */
+async function fetchKBO(){
+  const btn=document.getElementById('fetchBtn');
+  btn.textContent='⟳ 로딩중...'; btn.disabled=true;
+
+  // ── 1순위: 같은 폴더의 kbo_games.json (fetch_kbo.py 결과)
+  try{
+    const r=await fetch('./kbo_games.json?t='+Date.now(),{cache:'no-store'});
+    if(r.ok){
+      const data=await r.json();
+      if(data.games&&data.games.length>100){
+        applyRealData(data.games);
+        document.getElementById('srcBadge').textContent=`실측 ${data.games.length}경기 (${data.updated||''})`;
+        document.getElementById('srcBadge').className='src-badge src-live';
+        document.getElementById('kboInfo').style.display='none';
+        showBanner(`✅ kbo_games.json 로드 — ${data.games.length}경기 실측 데이터 적용`,'ok');
+        btn.textContent='⟳ KBO 최신 관중 반영'; btn.disabled=false;
+        return;
+      }
+    }
+  }catch(e){}
+
+  // ── 2순위: 브라우저에서 KBO 직접 fetch (allorigins.win 프록시)
+  showBanner('KBO 관중 데이터 수집 중... (20~40초 소요)','ok');
+  const results=[];
+  for(const [yr,mos] of [[2025,['03','04','05','06','07','08','09']],[2026,['03','04','05','06']]]){
+    for(const mo of mos){
+      try{
+        const kboUrl=`https://www.koreabaseball.com/Record/Crowd/GraphDaily.aspx?leId=1&srId=0&seasonId=${yr}&monthId=${mo}`;
+        const proxy=`https://api.allorigins.win/raw?url=${encodeURIComponent(kboUrl)}`;
+        const r=await fetch(proxy,{signal:AbortSignal.timeout(18000)});
+        const html=await r.text();
+        const parsed=parseKBOCrowd(html,yr,+mo);
+        results.push(...parsed);
+        await new Promise(res=>setTimeout(res,500));
+      }catch(e){}
+    }
+  }
+  if(results.length>50){
+    applyRealData(results);
+    document.getElementById('srcBadge').textContent=`KBO 실측 ${results.length}경기`;
+    document.getElementById('srcBadge').className='src-badge src-live';
+    document.getElementById('kboInfo').style.display='none';
+    showBanner(`✅ KBO 실측 ${results.length}경기 반영`,'ok');
+  }else{
+    showBanner('⚠️ KBO 직접 수집 실패. fetch_kbo.py 실행 후 재시도 권장.','warn');
+  }
+  btn.textContent='⟳ KBO 최신 관중 반영'; btn.disabled=false;
+}
+
+function applyRealData(games){
+  /** 실제 경기 데이터만 사용 — 시뮬레이션 없음 */
+  const DMAP={'월':1,'화':2,'수':3,'목':4,'금':5,'토':6,'일':0};
+  const normalized=games.map(g=>{
+    const dt=g.date?new Date(g.date):null;
+    const dow=dt?dt.getDay():(DMAP[g.dow]??2);
+    const home=normTeam(g.home);
+    const away=normTeam(g.away||'');
+    if(!home||+g.att<100) return null;
+    return{
+      yr:+(g.yr||g.year), mo:+(g.mo||g.month), day:+g.day,
+      dow, dow_nm:DOWNAME[dow]||g.dow||'?',
+      home, away,
+      att:+g.att,
+      series:g.series||([5,6,0].includes(dow)?'WE':'WD'),
+      date:dt,
+      dateStr:g.dateStr||`${+(g.mo||g.month)}/${+g.day}`
+    };
+  }).filter(Boolean);
+
+  if(!normalized.length){
+    showBanner('⚠️ kbo_games.json에 유효한 경기 데이터가 없습니다.','warn');
+    return;
+  }
+
+  // 실측 데이터만으로 교체 (시뮬레이션 섞지 않음)
+  ALL=normalized.sort((a,b)=>(b.date||0)-(a.date||0));
+
+  const minYr=Math.min(...ALL.map(g=>g.yr));
+  const maxDate=ALL[0]?.dateStr||'?';
+  document.getElementById('srcBadge').textContent=`실측 ${ALL.length}경기 (${minYr}~)`;
+  document.getElementById('srcBadge').className='src-badge src-live';
+  document.getElementById('kboInfo').style.display='none';
+  showBanner(`✅ 실측 ${ALL.length}경기 로드 완료 — 최신: ${maxDate}`,'ok');
+  refresh();
+}
+
+function normTeam(name){
+  if(!name)return'';
+  const s=name.trim();
+  // 정확히 일치하는 단축명
+  const EXACT={'LG':'LG','두산':'두산','삼성':'삼성','KIA':'KIA','SSG':'SSG',
+    '롯데':'롯데','kt':'kt','KT':'kt','한화':'한화','NC':'NC','키움':'키움'};
+  if(EXACT[s])return EXACT[s];
+  // 부분 매칭
+  const MAP={'LG트윈스':'LG','두산베어스':'두산','삼성라이온즈':'삼성','KIA타이거즈':'KIA',
+    'SSG랜더스':'SSG','롯데자이언츠':'롯데','kt wiz':'kt','KT위즈':'kt','KT wiz':'kt',
+    '한화이글스':'한화','NC다이노스':'NC','키움히어로즈':'키움','히어로즈':'키움',
+    '넥센':'키움','우리':'키움','현대':'현대','SK':'SSG','OB':'두산','MBC':'LG',
+    '해태':'KIA','빙그레':'한화'};
+  for(const[k,v]of Object.entries(MAP))if(s.includes(k))return v;
+  return s;
+}
+
+function parseKBOCrowd(html,yr,mo){
+  const games=[];
+  try{
+    const parser=new DOMParser();
+    const doc=parser.parseFromString(html,'text/html');
+    const rows=doc.querySelectorAll('table tr');
+    rows.forEach(row=>{
+      const cells=[...row.querySelectorAll('td')].map(td=>td.textContent.replace(/\s+/g,' ').trim());
+      if(cells.length<3)return;
+      // 날짜 파싱
+      const dateM=cells.join(' ').match(/(\d{1,2})[.\/](\d{1,2})/);
+      if(!dateM)return;
+      const day=+dateM[2];
+      // 관중 파싱 (마지막 4자리+ 숫자)
+      const attM=cells.slice().reverse().find(c=>/^[\d,]{4,}$/.test(c.replace(/명/,'')));
+      if(!attM)return;
+      const att=+attM.replace(/[,명]/g,'');
+      if(att<500||att>60000)return;
+      // 팀 파싱
+      const TMAP={'삼성':'삼성','LG':'LG','KT':'kt','KIA':'KIA','한화':'한화','두산':'두산','SSG':'SSG','롯데':'롯데','키움':'키움','NC':'NC','kt':'kt'};
+      const found=[];
+      cells.forEach(c=>{for(const[k,v]of Object.entries(TMAP))if(c.includes(k)&&!found.includes(v))found.push(v);});
+      if(!found.length)return;
+      const home=found[0],away=found[1]||'';
+      const dt=new Date(yr,mo-1,day);
+      const dow=dt.getDay();
+      games.push({yr,mo,day,dow,dow_nm:DOWNAME[dow],home,away,att,
+        series:[5,6,0].includes(dow)?'WE':'WD',date:dt,dateStr:`${mo}/${day}`});
+    });
+  }catch(e){}
+  return games;
+}
+
+
+
+/* ══════════════════════════════════════════════
+   배너
+══════════════════════════════════════════════ */
+function showBanner(msg,type){
+  const b=document.getElementById('banner');
+  b.className=`banner show ${type==='ok'?'bn-ok':type==='warn'?'bn-warn':'bn-err'}`;
+  document.getElementById('bannerMsg').textContent=msg;
+  if(type!=='ok'||msg.includes('완료'))setTimeout(()=>b.classList.remove('show'),7000);
+}
+
+/* ══════════════════════════════════════════════
+   필터 & 렌더
+══════════════════════════════════════════════ */
+function refresh(){
+  const fy=document.getElementById('fY').value,fh=document.getElementById('fH').value;
+  const fa=document.getElementById('fA').value,fs=document.getElementById('fS').value,fm=document.getElementById('fM').value;
+  filtered=ALL.filter(g=>{
+    if(fy&&g.yr!==+fy)return false;
+    if(fh&&g.home!==fh)return false;
+    if(fa&&g.away!==fa)return false;
+    if(fs&&g.series!==fs)return false;
+    if(fm&&g.mo!==+fm)return false;
+    return true;
+  });
+  renderKPIs();renderTrend();renderRecent();renderTmBars();renderDow();renderCumul();renderTmHm();renderHm();renderHist();renderNote();
+}
+function resetFilters(){['fY','fH','fA','fS','fM'].forEach(id=>document.getElementById(id).value='');refresh();}
+
+/* KPI */
+function avg(a){return a.length?Math.round(a.reduce((s,v)=>s+v,0)/a.length):0;}
+function fmt(n){return Math.round(n).toLocaleString('ko-KR');}
+function occ(r){if(r>=.95)return'#A32D2D';if(r>=.80)return'#854F0B';if(r>=.60)return'#1F5EAB';return'#0F6E56';}
+
+function renderKPIs(){
+  if(!filtered.length){
+    ['k1','k2','k3','k4'].forEach(id=>document.getElementById(id).textContent='—');
+    ['k1s','k2s','k3s','k4s'].forEach(id=>document.getElementById(id).innerHTML='<span class="neu">데이터 없음</span>');
+    return;
+  }
+  const atts=filtered.map(g=>g.att),tot=atts.reduce((s,v)=>s+v,0);
+  const sold=filtered.filter(g=>g.att/(CAP[g.home]||25000)>=.9).length;
+  document.getElementById('k1').textContent=tot>=10000?Math.round(tot/10000)+'만 명':fmt(tot)+'명';
+  document.getElementById('k1s').innerHTML=`<span class="neu">${fmt(filtered.length)}경기 합산</span>`;
+  document.getElementById('k2').textContent=fmt(avg(atts))+'명';
+  const a25=avg(filtered.filter(g=>g.yr===2025).map(g=>g.att));
+  const a26=avg(filtered.filter(g=>g.yr===2026).map(g=>g.att));
+  const d=a25&&a26?Math.round((a26-a25)/a25*100):0;
+  document.getElementById('k2s').innerHTML=a25&&a26?`<span class="${d>=0?'up':'dn'}">${d>=0?'▲':'▼'} 전년比 ${Math.abs(d)}%</span>`:`<span class="neu">단일 시즌</span>`;
+  document.getElementById('k3').textContent=fmt(filtered.length)+'경기';
+  document.getElementById('k3s').innerHTML=`<span class="neu">주중 ${filtered.filter(g=>g.series==='WD').length} · 주말 ${filtered.filter(g=>g.series==='WE').length}</span>`;
+  document.getElementById('k4').textContent=sold+'경기';
+  document.getElementById('k4s').innerHTML=`<span class="${sold?'up':'neu'}">${filtered.length?Math.round(sold/filtered.length*100):0}%</span>`;
+}
+
+/* 추이 */
+function renderTrend(){
+  const M=[3,4,5,6,7,8,9],D26=[3,4,5];
+  const d25=M.map(m=>(M25R[m]&&filtered.some(g=>g.yr===2025&&g.mo===m))?M25R[m]:avg(filtered.filter(g=>g.yr===2025&&g.mo===m).map(g=>g.att))||null);
+  const d26c=M.map(m=>D26.includes(m)?((M26R[m]&&filtered.some(g=>g.yr===2026&&g.mo===m))?M26R[m]:avg(filtered.filter(g=>g.yr===2026&&g.mo===m).map(g=>g.att))||null):null);
+  const d26w=M.map(m=>m===6?avg(filtered.filter(g=>g.yr===2026&&g.mo===m).map(g=>g.att))||null:null);
+  if(CH.trend)CH.trend.destroy();
+  CH.trend=new Chart(document.getElementById('cTrend'),{type:'line',
+    data:{labels:M.map(m=>m+'월'),datasets:[
+      {label:'2025',data:d25,borderColor:'#97C459',backgroundColor:'rgba(151,196,89,.1)',fill:true,tension:.4,pointRadius:4,pointBackgroundColor:'#97C459',pointBorderColor:'#fff',pointBorderWidth:2,spanGaps:false,borderWidth:2.5},
+      {label:'2026 확정',data:d26c,borderColor:'#1F5EAB',backgroundColor:'rgba(31,94,171,.12)',fill:true,tension:.4,pointRadius:5,pointBackgroundColor:'#1F5EAB',pointBorderColor:'#fff',pointBorderWidth:2,spanGaps:false,borderWidth:3},
+      {label:'2026 진행중',data:d26w,borderColor:'#B4B2A9',fill:false,tension:.4,pointRadius:5,pointBackgroundColor:'#B4B2A9',pointBorderColor:'#fff',pointBorderWidth:2,spanGaps:false,borderWidth:2,borderDash:[5,4]},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},datalabels:{display:false},
+      tooltip:{callbacks:{label:ctx=>ctx.parsed.y?`${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString('ko-KR')}명`:null}}},
+      scales:{x:{grid:{color:'#F0F2F5'},ticks:{color:'#8A92A0',font:{size:11}}},
+        y:{ticks:{callback:v=>`${Math.round(v/1000)}천`,color:'#8A92A0',font:{size:10}},grid:{color:'#F0F2F5'},suggestedMin:10000}}}
+  });
+}
+
+/* 최근경기 — 날짜 내림차순 */
+function renderRecent(){
+  if(!filtered.length){
+    document.getElementById('recentSub').textContent='';
+    document.getElementById('recentList').innerHTML='<div style="padding:20px;text-align:center;color:#8A92A0;font-size:12px">📭 kbo_games.json을 불러오면 실제 경기 데이터가 표시됩니다.<br>⟳ 버튼을 클릭하거나 GitHub에 kbo_games.json을 업로드하세요.</div>';
+    return;
+  }
+  const items=filtered.slice(0,8);
+  if(items.length&&items[0].date){
+    document.getElementById('recentSub').textContent=`최근 ${items.length}경기 · 최신 ${items[0].date.toLocaleDateString('ko-KR')}`;
+  }
+  document.getElementById('recentList').innerHTML=items.map(g=>{
+    const op=Math.round(g.att/(CAP[g.home]||25000)*100);
+    const oc=occ(g.att/(CAP[g.home]||25000));
+    return`<div class="rg-row">
+      <div style="color:#8A92A0">${g.yr}/${g.dateStr||g.mo} <span class="badge ${g.yr===2025?'b25':'b26'}">'${String(g.yr).slice(2)}</span></div>
+      <div><span class="badge ${g.series==='WE'?'bwe':'bwd'}">${g.dow_nm||DOWNAME[g.dow]||'?'}</span></div>
+      <div style="font-weight:500;color:${TC[g.home]}">${g.home}</div>
+      <div style="color:#8A92A0">${g.away}</div>
+      <div><strong style="font-family:'JetBrains Mono',monospace;font-size:12px">${g.att.toLocaleString()}</strong></div>
+      <div style="color:${oc};font-family:'JetBrains Mono',monospace;font-size:11px">${op}%<div class="occ-m"><div class="occ-mf" style="width:${Math.min(100,op)}%;background:${oc}"></div></div></div>
+    </div>`;
+  }).join('');
+}
+
+/* 구단별 막대 */
+function renderTmBars(){
+  if(!filtered.length){document.getElementById('tmBars').innerHTML='<div style="padding:16px;text-align:center;color:#8A92A0;font-size:12px">데이터 없음</div>';return;}
+  const td=TEAMS.map(t=>{const gs=filtered.filter(g=>g.home===t);const a=avg(gs.map(g=>g.att));return{t,a,oc:a/(CAP[t]||20000),cnt:gs.length};}).filter(d=>d.cnt>0).sort((a,b)=>tmView==='avg'?b.a-a.a:b.oc-a.oc);
+  const mx=Math.max(...td.map(d=>tmView==='avg'?d.a:d.oc),1);
+  document.getElementById('tmBars').innerHTML=td.map(d=>{const v=tmView==='avg'?d.a:d.oc;const p=Math.round(v/mx*100);const op=Math.round(d.oc*100);const oc=occ(d.oc);
+    return`<div class="tbr"><span class="tb-nm" style="color:${TC[d.t]}">${d.t}</span><div class="tb-trk"><div class="tb-fl" style="width:${p}%;background:${TC[d.t]}CC"></div></div><span class="tb-vl">${tmView==='avg'?d.a.toLocaleString()+'명':op+'%'}</span><span class="tb-oc" style="color:${oc}">${tmView==='avg'?op+'%':d.a.toLocaleString()+'명'}</span></div>`;
+  }).join('');
+}
+function setV(v,btn){tmView=v;document.querySelectorAll('#tmTab .tbb').forEach(b=>b.classList.remove('on'));btn.classList.add('on');renderTmBars();}
+
+/* 요일별 */
+function renderDow(){
+  const DS=['화','수','목','금','토','일'];const WE=['금','토','일'];
+  const dd=DS.map(d=>{const gs=filtered.filter(g=>g.dow_nm===d);return{d,a:avg(gs.map(g=>g.att)),cnt:gs.length};}).filter(d=>d.cnt>0);
+  const mx=Math.max(...dd.map(d=>d.a),1);
+  document.getElementById('dwBars').innerHTML=dd.map(d=>{const p=Math.round(d.a/mx*100);const we=WE.includes(d.d);
+    return`<div class="dwr"><span class="dw-l" style="color:${we?'#1F5EAB':'#8A92A0'}">${d.d}</span><div class="dw-tr"><div class="dw-fl" style="width:${p}%;background:${we?'#1F5EAB':'#B4B2A9'}"></div></div><span class="dw-n" style="color:${we?'#1F5EAB':'#1A2233'}">${d.a.toLocaleString()}</span><span class="dw-c">${d.cnt}경기</span></div>`;
+  }).join('');
+  const wdA=avg(filtered.filter(g=>g.series==='WD').map(g=>g.att));
+  const weA=avg(filtered.filter(g=>g.series==='WE').map(g=>g.att));
+  const df=wdA&&weA?Math.round((weA-wdA)/wdA*100):0;
+  const wdN=filtered.filter(g=>g.series==='WD').length,weN=filtered.filter(g=>g.series==='WE').length;
+  document.getElementById('serCmp').innerHTML=`<div class="sb swd"><div class="slbl">주중 3연전</div><div class="sv">${wdA.toLocaleString()}<span style="font-size:11px;color:#8A92A0;font-weight:400"> 명</span></div><div class="sm">${wdN}경기</div></div><div class="sb swe"><div class="slbl-we">주말 3연전</div><div class="sv-we">${weA.toLocaleString()}<span style="font-size:11px;font-weight:400"> 명</span></div><div class="sm-we">${weN}경기 <strong>+${df}%</strong></div></div>`;
+}
+
+/* 누적 관중 비교 — incremental 방식 (정확한 누적 계산) */
+function renderCumul(){
+  if(CH.cumul)CH.cumul.destroy();
+  const step=20,maxG=720;
+  const gs25=[...ALL.filter(g=>g.yr===2025)].sort((a,b)=>a.date-b.date);
+  const gs26=[...ALL.filter(g=>g.yr===2026)].sort((a,b)=>a.date-b.date);
+  const N=Math.ceil(maxG/step);
+  const labels=Array.from({length:N},(_,i)=>`${(i+1)*step}`);
+  function mkCumul(gs){
+    let tot=0;const res=[];
+    for(let i=0;i<N;i++){
+      const n=(i+1)*step;
+      if(n>gs.length){res.push(null);continue;}
+      // 이전 누적에 새 경기만 추가 (정확한 증분 방식)
+      const prev=i*step;
+      for(let j=prev;j<n&&j<gs.length;j++) tot+=gs[j].att;
+      res.push(Math.round(tot/1e4*10)/10);
+    }
+    return res;
+  }
+  const c25=mkCumul(gs25), c26=mkCumul(gs26);
+  // 2026이 끝나는 마지막 비null 지점 표시
+  const last26idx=c26.reduce((li,v,i)=>v!==null?i:li,-1);
+  const last26val=last26idx>=0?c26[last26idx]:null;
+  const last25same=last26idx>=0?c25[last26idx]:null;
+  CH.cumul=new Chart(document.getElementById('cCumul'),{type:'line',
+    data:{labels,datasets:[
+      {label:'2025',data:c25,borderColor:'#97C459',backgroundColor:'rgba(151,196,89,.06)',fill:true,tension:.3,pointRadius:0,spanGaps:false,borderWidth:2},
+      {label:'2026 (진행중)',data:c26,borderColor:'#1F5EAB',backgroundColor:'rgba(31,94,171,.1)',fill:true,tension:.3,pointRadius:0,spanGaps:false,borderWidth:2.5},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},datalabels:{display:false},
+        tooltip:{callbacks:{
+          label:ctx=>ctx.parsed.y!=null?`${ctx.dataset.label}: 누적 ${ctx.parsed.y}만 명`:null,
+          afterBody:(items)=>{
+            const i=items[0]?.dataIndex;
+            if(i===undefined)return[];
+            const v25=c25[i],v26=c26[i];
+            if(v25&&v26){const d=Math.round((v26-v25)*10)/10;return[`2026 - 2025: ${d>=0?'+':''}${d}만명 (${d>=0?'▲':'▼'})`];}
+            return[];
+          }
+        }}},
+      scales:{x:{title:{display:true,text:'누적 경기 수',font:{size:10},color:'#8A92A0'},grid:{color:'#F0F2F5'},ticks:{color:'#8A92A0',font:{size:10},maxTicksLimit:10}},
+        y:{title:{display:true,text:'누적 관중(만 명)',font:{size:10},color:'#8A92A0'},ticks:{callback:v=>`${v}만`,color:'#8A92A0',font:{size:10}},grid:{color:'#F0F2F5'}}}},
+    plugins:[{
+      id:'endLabel',
+      afterDraw(chart){
+        if(last26val===null)return;
+        const {ctx,chartArea:{right,top,bottom,left}}=chart;
+        const meta26=chart.getDatasetMeta(1);
+        const meta25=chart.getDatasetMeta(0);
+        const pt26=meta26.data[last26idx];
+        if(!pt26)return;
+        ctx.save();
+        const diff=last25same!=null?Math.round((last26val-last25same)*10)/10:null;
+        const lines=[
+          {t:`2026 → ${last26val}만명`,c:'#1F5EAB',b:true},
+          ...(last25same!=null?[
+            {t:`2025:  ${last25same}만명`,c:'#5A8A30',b:false},
+            {t:`차이: ${diff>=0?'+':''}${diff}만명`,c:diff>=0?'#0F6E56':'#A32D2D',b:true},
+          ]:[]),
+        ];
+        const lh=15,pd=6,bw=112,bh=lines.length*lh+pd*2;
+        // 라벨 박스를 선 끝점 기준으로 겹치지 않게 배치
+        let lx=pt26.x+10;
+        let ly=pt26.y-bh-8;
+        if(ly<top+4)ly=pt26.y+10;
+        if(lx+bw>right+20)lx=pt26.x-bw-10;
+        ctx.fillStyle='rgba(255,255,255,0.93)';
+        ctx.strokeStyle='#BDD0EE';ctx.lineWidth=0.8;
+        ctx.beginPath();ctx.roundRect(lx-pd,ly-pd,bw,bh,5);
+        ctx.fill();ctx.stroke();
+        lines.forEach((l,i)=>{
+          ctx.font=(l.b?'bold ':'')+`11px 'Noto Sans KR',sans-serif`;
+          ctx.fillStyle=l.c;ctx.textAlign='left';
+          ctx.fillText(l.t,lx,ly+i*lh+11);
+        });
+        ctx.beginPath();ctx.arc(pt26.x,pt26.y,4,0,Math.PI*2);
+        ctx.fillStyle='#1F5EAB';ctx.fill();
+        ctx.strokeStyle='white';ctx.lineWidth=1.5;ctx.stroke();
+        ctx.restore();
+      }
+    }]
+  });
+}
+
+/* 구단×월 히트맵 */
+function renderTmHm(){
+  const fy=document.getElementById('fY').value;
+  const months=fy==='2026'?[3,4,5,6]:fy==='2025'?[3,4,5,6,7,8,9]:[3,4,5,6,7,8,9];
+  const vals=[];
+  const mat=TEAMS.map(t=>months.map(m=>{const gs=filtered.filter(g=>g.home===t&&g.mo===m);const v=gs.length?avg(gs.map(g=>g.att)):null;if(v)vals.push(v);return{v,cnt:gs.length};}));
+  const mn=vals.length?Math.min(...vals):0,mx=vals.length?Math.max(...vals):1;
+  const hd=months.map(m=>`<th style="font-size:10px;color:#8A92A0;padding:0 3px 4px;text-align:center">${m}월</th>`).join('');
+  const rows=TEAMS.map((t,ti)=>{const cells=months.map((_,mi)=>{const d=mat[ti][mi];if(!d||!d.v)return`<td class="tmc" style="background:#F0F2F5;color:#8A92A0">—</td>`;const p=(d.v-mn)/(mx-mn||1);const col=TC[t];const hex=Math.round((0.12+p*0.78)*255).toString(16).padStart(2,'0');const fg=p>.55?'#fff':'#1A2233';return`<td class="tmc" style="background:${col}${hex};color:${fg}" title="${t} ${months[mi]}월: ${d.v.toLocaleString()}명">${Math.round(d.v/1000)}천</td>`;}).join('');return`<tr><th style="font-size:10px;color:${TC[t]};font-weight:600;text-align:right;padding-right:7px;white-space:nowrap;min-width:44px">${t}</th>${cells}</tr>`;}).join('');
+  document.getElementById('tmHm').innerHTML=`<table style="border-collapse:separate;border-spacing:3px;white-space:nowrap"><thead><tr><th style="min-width:44px"></th>${hd}</tr></thead><tbody>${rows}</tbody></table>`;
+  document.getElementById('tmLeg').innerHTML=Array.from({length:5},(_,i)=>`<div class="hm-sq" style="background:rgba(31,94,171,${(.12+i/4*.72).toFixed(2)})"></div>`).join('');
+}
+
+/* 대진 히트맵 */
+function renderHm(){
+  const vals=[];const mat=TEAMS.map(h=>TEAMS.map(a=>{if(h===a)return null;const gs=filtered.filter(g=>g.home===h&&g.away===a);const v=gs.length?avg(gs.map(g=>g.att)):null;if(v)vals.push(v);return{v,cnt:gs.length};}));
+  const mn=vals.length?Math.min(...vals):0,mx=vals.length?Math.max(...vals):1;
+  const hd=TEAMS.map(a=>`<th style="font-size:9px;color:#8A92A0;padding:0 2px 4px;text-align:center">${a}</th>`).join('');
+  const rows=TEAMS.map((h,hi)=>{const cells=TEAMS.map((a,ai)=>{if(h===a)return`<td class="hmc" style="background:#F0F2F5"></td>`;const d=mat[hi][ai];if(!d||!d.v)return`<td class="hmc" style="background:#F0F2F5;color:#8A92A0">—</td>`;const p=(d.v-mn)/(mx-mn||1);const al=(.1+p*.78).toFixed(2);const fg=p>.55?'#042C53':'#0C447C';return`<td class="hmc" style="background:rgba(31,94,171,${al});color:${fg}" title="${h} vs ${a}: ${d.v.toLocaleString()}명 (${d.cnt}경기)">${Math.round(d.v/1000)}천</td>`;}).join('');return`<tr><th class="rh" style="font-size:10px;color:${TC[h]};font-weight:600;text-align:right;padding-right:6px;white-space:nowrap;min-width:42px">${h}</th>${cells}</tr>`;}).join('');
+  document.getElementById('hmMap').innerHTML=`<table class="hmt"><thead><tr><th style="min-width:42px"></th>${hd}</tr></thead><tbody>${rows}</tbody></table>`;
+  document.getElementById('hmLeg').innerHTML=Array.from({length:6},(_,i)=>`<div class="hm-sq" style="background:rgba(31,94,171,${(.1+i/5*.78).toFixed(2)})"></div>`).join('');
+}
+
+/* 히스토그램 */
+function renderHist(){
+  if(CH.hist)CH.hist.destroy();
+  const bins=[0,5000,10000,15000,18000,20000,22000,25001];
+  const lbls=['~5천','5~1만','1~1.5만','1.5~1.8만','1.8~2만','2~2.2만','2.2만+'];
+  const counts=Array(7).fill(0);
+  filtered.forEach(g=>{const i=bins.findIndex((_,i)=>g.att>=bins[i]&&g.att<bins[i+1]);if(i>=0)counts[i]++;});
+  CH.hist=new Chart(document.getElementById('cHist'),{type:'bar',
+    data:{labels:lbls,datasets:[{data:counts,backgroundColor:'#85B7EB',borderColor:'#1F5EAB',borderWidth:1}]},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:22}},
+      plugins:{legend:{display:false},datalabels:{anchor:'end',align:'top',color:'#3C4554',font:{family:"'JetBrains Mono',monospace",size:11,weight:'600'},formatter:v=>v>0?v:''},
+        tooltip:{callbacks:{label:ctx=>`${ctx.parsed.y}경기`}}},
+      scales:{x:{grid:{display:false},ticks:{color:'#8A92A0',font:{size:10}}},y:{ticks:{color:'#8A92A0',font:{size:10}},grid:{color:'#F0F2F5'}}}},
+    plugins:[ChartDataLabels]
+  });
+}
+
+/* 노트 */
+function renderNote(){
+  const fy=document.getElementById('fY').value,fh=document.getElementById('fH').value,fa=document.getElementById('fA').value;
+  const parts=[];if(fh)parts.push(`홈:${fh}`);if(fa)parts.push(`원정:${fa}`);if(fy)parts.push(`${fy}시즌`);
+  document.getElementById('noteBar').textContent=`${parts.length?'['+parts.join('·')+'] ':''}2026.6.3 실측: 275경기·504만1,891명·LG 68.7만·삼성 66.7만·두산 60.4만·롯데 51.5만·SSG 48만. 2025 전 시즌 조회 가능. ⟳ KBO 최신 관중 반영 버튼으로 실측 데이터 업데이트 가능 (allorigins.win 프록시 경유).`;
+}
+
+/* 실행 */
+refresh();
+</script>
+</body>
+</html>
