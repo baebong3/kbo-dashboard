@@ -423,7 +423,6 @@ function applyRealData(games){
       wind_ms:g.wind_ms??null,
     };
   }).filter(Boolean);
-  }).filter(Boolean);
 
   if(!normalized.length){
     showBanner('⚠️ kbo_games.json에 유효한 경기 데이터가 없습니다.','warn');
@@ -439,7 +438,11 @@ function applyRealData(games){
   document.getElementById('srcBadge').textContent=`실측 ${ALL.length}경기 (${minYr}~${maxYr})`;
   document.getElementById('srcBadge').className='src-badge src-live';
   document.getElementById('kboInfo').style.display='none';
-    showBanner(`✅ 실측 ${ALL.length}경기 로드 완료 (${minYr}~${maxYr}) — 최신: ${maxDate}`,'ok');
+  // 상단바 날짜를 실제 데이터 최신일에 연동 (하드코딩 제거)
+  if(ALL[0]&&ALL[0].date){
+    document.getElementById('updTime').textContent=ALL[0].date.toLocaleDateString('ko-KR')+' 경기까지';
+  }
+  showBanner(`✅ 실측 ${ALL.length}경기 로드 완료 (${minYr}~${maxYr}) — 최신: ${maxDate}`,'ok');
 }
 
 /* ─── 팀별 홈+원정 비교 차트 ──────────────────────────── */
@@ -904,7 +907,7 @@ function renderNote(){
 /* 실행 */
 window.addEventListener('load',()=>{
   ['k1','k2','k3','k4'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='…';});
-  tryFetchLive()
+  fetchKBO()
     .then(()=>{buildFilters();refresh();})
     .catch(()=>{buildFilters();refresh();});
 });
