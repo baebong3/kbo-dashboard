@@ -415,8 +415,14 @@ function applyRealData(games){
       att:+g.att,
       series:g.series||([5,6,0].includes(dow)?'WE':'WD'),
       date:dt,
-      dateStr:g.dateStr||`${+(g.mo||g.month)}/${+g.day}`
+      dateStr:g.dateStr||`${+(g.mo||g.month)}/${+g.day}`,
+      temp_avg:g.temp_avg??null,
+      rain_mm:g.rain_mm??null,
+      rain_yn:g.rain_yn??false,
+      weather:g.weather??null,
+      wind_ms:g.wind_ms??null,
     };
+  }).filter(Boolean);
   }).filter(Boolean);
 
   if(!normalized.length){
@@ -507,7 +513,7 @@ function renderWeather(){
     },
     options:{
       responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},datalabels:{display:false},
+      plugins:{legend:{display:false},datalabels:{display:true,anchor:'end',align:'top',formatter:v=>v?v.toLocaleString()+'명':'',color:'#1A3A6B',font:{size:11,weight:'bold'}},
         title:{display:true,text:'우천 여부별 평균관중',font:{size:12},color:'#1A3A6B'}},
       scales:{
         x:{grid:{display:false},ticks:{color:'#8A92A0',font:{size:11}}},
@@ -539,7 +545,7 @@ function renderWeather(){
     },
     options:{
       responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},datalabels:{display:false},
+      plugins:{legend:{display:false},datalabels:{display:true,anchor:'end',align:'top',formatter:v=>v?v.toLocaleString()+'명':'',color:'#1A3A6B',font:{size:10,weight:'bold'}},
         title:{display:true,text:'기온대별 평균관중',font:{size:12},color:'#1A3A6B'}},
       scales:{
         x:{grid:{display:false},ticks:{color:'#8A92A0',font:{size:10},maxRotation:0}},
@@ -680,21 +686,37 @@ function renderKPIs(){
 
 /* 추이 */
 function renderTrend(){
-  const M=[3,4,5,6,7,8,9],D26=[3,4,5];
-  const d25=M.map(m=>(M25R[m]&&filtered.some(g=>g.yr===2025&&g.mo===m))?M25R[m]:avg(filtered.filter(g=>g.yr===2025&&g.mo===m).map(g=>g.att))||null);
-  const d26c=M.map(m=>D26.includes(m)?((M26R[m]&&filtered.some(g=>g.yr===2026&&g.mo===m))?M26R[m]:avg(filtered.filter(g=>g.yr===2026&&g.mo===m).map(g=>g.att))||null):null);
-  const d26w=M.map(m=>m===6?avg(filtered.filter(g=>g.yr===2026&&g.mo===m).map(g=>g.att))||null:null);
   if(CH.trend)CH.trend.destroy();
+  const fy=document.getElementById('fY').value;
+  const M=[3,4,5,6,7,8,9];
+
+  function monthAvg(yr,mo){
+    const gs=filtered.filter(g=>g.yr===yr&&g.mo===mo&&g.att>0);
+    return gs.length?Math.round(gs.reduce((s,g)=>s+g.att,0)/gs.length):null;
+  }
+
+  const show25=(fy===''||fy==='2025'||fy==='2526');
+  const show26=(fy===''||fy==='2026'||fy==='2526');
+
+  const d25=show25?M.map(m=>monthAvg(2025,m)):M.map(()=>null);
+  const d26=show26?M.map(m=>monthAvg(2026,m)):M.map(()=>null);
+
+  // 단일 연도 선택 시 해당 연도만
+  const show_other=(fy!==''&&fy!=='2526'&&fy!=='2025'&&fy!=='2026');
+  const d_other=show_other?M.map(m=>monthAvg(+fy,m)):M.map(()=>null);
+
+  const datasets=[];
+  if(show25) datasets.push({label:'2025',data:d25,borderColor:'#97C459',backgroundColor:'rgba(151,196,89,.1)',fill:true,tension:.4,pointRadius:4,pointBackgroundColor:'#97C459',pointBorderColor:'#fff',pointBorderWidth:2,spanGaps:false,borderWidth:2.5});
+  if(show26) datasets.push({label:'2026',data:d26,borderColor:'#1F5EAB',backgroundColor:'rgba(31,94,171,.12)',fill:true,tension:.4,pointRadius:5,pointBackgroundColor:'#1F5EAB',pointBorderColor:'#fff',pointBorderWidth:2,spanGaps:false,borderWidth:3});
+  if(show_other) datasets.push({label:`${fy}시즌`,data:d_other,borderColor:'#E67E22',backgroundColor:'rgba(230,126,34,.1)',fill:true,tension:.4,pointRadius:4,pointBackgroundColor:'#E67E22',pointBorderColor:'#fff',pointBorderWidth:2,spanGaps:false,borderWidth:2.5});
+
   CH.trend=new Chart(document.getElementById('cTrend'),{type:'line',
-    data:{labels:M.map(m=>m+'월'),datasets:[
-      {label:'2025',data:d25,borderColor:'#97C459',backgroundColor:'rgba(151,196,89,.1)',fill:true,tension:.4,pointRadius:4,pointBackgroundColor:'#97C459',pointBorderColor:'#fff',pointBorderWidth:2,spanGaps:false,borderWidth:2.5},
-      {label:'2026 확정',data:d26c,borderColor:'#1F5EAB',backgroundColor:'rgba(31,94,171,.12)',fill:true,tension:.4,pointRadius:5,pointBackgroundColor:'#1F5EAB',pointBorderColor:'#fff',pointBorderWidth:2,spanGaps:false,borderWidth:3},
-      {label:'2026 진행중',data:d26w,borderColor:'#B4B2A9',fill:false,tension:.4,pointRadius:5,pointBackgroundColor:'#B4B2A9',pointBorderColor:'#fff',pointBorderWidth:2,spanGaps:false,borderWidth:2,borderDash:[5,4]},
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},datalabels:{display:false},
-      tooltip:{callbacks:{label:ctx=>ctx.parsed.y?`${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString('ko-KR')}명`:null}}},
+    data:{labels:M.map(m=>m+'월'),datasets},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:datasets.length>1,position:'top',labels:{font:{size:11},boxWidth:12}},datalabels:{display:false},
+        tooltip:{callbacks:{label:ctx=>ctx.parsed.y?`${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString('ko-KR')}명`:null}}},
       scales:{x:{grid:{color:'#F0F2F5'},ticks:{color:'#8A92A0',font:{size:11}}},
-        y:{ticks:{callback:v=>`${Math.round(v/1000)}천`,color:'#8A92A0',font:{size:10}},grid:{color:'#F0F2F5'},suggestedMin:10000}}}
+        y:{ticks:{callback:v=>`${Math.round(v/1000)}천`,color:'#8A92A0',font:{size:10}},grid:{color:'#F0F2F5'},suggestedMin:5000}}}
   });
 }
 
@@ -752,90 +774,79 @@ function renderDow(){
 /* 누적 관중 비교 — incremental 방식 (정확한 누적 계산) */
 function renderCumul(){
   if(CH.cumul)CH.cumul.destroy();
-  const step=20,maxG=720;
-  const gs25=[...ALL.filter(g=>g.yr===2025)].sort((a,b)=>a.date-b.date);
-  const gs26=[...ALL.filter(g=>g.yr===2026)].sort((a,b)=>a.date-b.date);
+  const fy=document.getElementById('fY').value;
+  const step=20, maxG=720;
+
+  // 연도 필터에 따라 비교 연도 결정
+  const years=[...new Set(filtered.map(g=>g.yr))].sort();
+  const COLORS=['#1F5EAB','#97C459','#E67E22','#8E44AD','#E74C3C','#1ABC9C'];
+
+  if(!years.length){
+    const canvas=document.getElementById('cCumul');
+    if(canvas)canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
+    return;
+  }
+
   const N=Math.ceil(maxG/step);
   const labels=Array.from({length:N},(_,i)=>`${(i+1)*step}`);
+
   function mkCumul(gs){
     let tot=0;const res=[];
     for(let i=0;i<N;i++){
       const n=(i+1)*step;
       if(n>gs.length){res.push(null);continue;}
-      // 이전 누적에 새 경기만 추가 (정확한 증분 방식)
-      const prev=i*step;
-      for(let j=prev;j<n&&j<gs.length;j++) tot+=gs[j].att;
+      for(let j=i*step;j<n&&j<gs.length;j++) tot+=gs[j].att;
       res.push(Math.round(tot/1e4*10)/10);
     }
     return res;
   }
-  const c25=mkCumul(gs25), c26=mkCumul(gs26);
-  // 2026이 끝나는 마지막 비null 지점 표시
-  const last26idx=c26.reduce((li,v,i)=>v!==null?i:li,-1);
-  const last26val=last26idx>=0?c26[last26idx]:null;
-  const last25same=last26idx>=0?c25[last26idx]:null;
+
+  const datasets=years.map((yr,i)=>{
+    const gs=[...filtered.filter(g=>g.yr===yr)].sort((a,b)=>a.date-b.date);
+    return{
+      label:`${yr}시즌`,
+      data:mkCumul(gs),
+      borderColor:COLORS[i%COLORS.length],
+      backgroundColor:COLORS[i%COLORS.length].replace(')',',0.08)').replace('rgb','rgba'),
+      fill:true,tension:.3,pointRadius:0,spanGaps:false,
+      borderWidth:yr===2026?2.5:2,
+    };
+  });
+
+  // 마지막 비null 포인트 라벨 (가장 최신 연도)
+  const lastYr=years[years.length-1];
+  const lastDs=datasets.find(d=>d.label===`${lastYr}시즌`);
+  const lastIdx=lastDs?lastDs.data.reduce((li,v,i)=>v!==null?i:li,-1):-1;
+  const lastVal=lastIdx>=0?lastDs.data[lastIdx]:null;
+
   CH.cumul=new Chart(document.getElementById('cCumul'),{type:'line',
-    data:{labels,datasets:[
-      {label:'2025',data:c25,borderColor:'#97C459',backgroundColor:'rgba(151,196,89,.06)',fill:true,tension:.3,pointRadius:0,spanGaps:false,borderWidth:2},
-      {label:'2026 (진행중)',data:c26,borderColor:'#1F5EAB',backgroundColor:'rgba(31,94,171,.1)',fill:true,tension:.3,pointRadius:0,spanGaps:false,borderWidth:2.5},
-    ]},
+    data:{labels,datasets},
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},datalabels:{display:false},
-        tooltip:{callbacks:{
-          label:ctx=>ctx.parsed.y!=null?`${ctx.dataset.label}: 누적 ${ctx.parsed.y}만 명`:null,
-          afterBody:(items)=>{
-            const i=items[0]?.dataIndex;
-            if(i===undefined)return[];
-            const v25=c25[i],v26=c26[i];
-            if(v25&&v26){const d=Math.round((v26-v25)*10)/10;return[`2026 - 2025: ${d>=0?'+':''}${d}만명 (${d>=0?'▲':'▼'})`];}
-            return[];
-          }
-        }}},
-      scales:{x:{title:{display:true,text:'누적 경기 수',font:{size:10},color:'#8A92A0'},grid:{color:'#F0F2F5'},ticks:{color:'#8A92A0',font:{size:10},maxTicksLimit:10}},
-        y:{title:{display:true,text:'누적 관중(만 명)',font:{size:10},color:'#8A92A0'},ticks:{callback:v=>`${v}만`,color:'#8A92A0',font:{size:10}},grid:{color:'#F0F2F5'}}}},
+      plugins:{legend:{display:years.length>1,position:'top',labels:{font:{size:11},boxWidth:12}},
+        datalabels:{display:false},
+        tooltip:{callbacks:{label:ctx=>ctx.parsed.y!=null?`${ctx.dataset.label}: 누적 ${ctx.parsed.y}만 명`:null}}},
+      scales:{
+        x:{title:{display:true,text:'경기 수',font:{size:10},color:'#8A92A0'},grid:{color:'#F0F2F5'},ticks:{color:'#8A92A0',font:{size:10},maxTicksLimit:10}},
+        y:{title:{display:true,text:'누적(만명)',font:{size:10},color:'#8A92A0'},ticks:{callback:v=>`${v}만`,color:'#8A92A0',font:{size:10}},grid:{color:'#F0F2F5'}}}},
     plugins:[{
       id:'endLabel',
       afterDraw(chart){
-        if(last26val===null)return;
-        const {ctx,chartArea:{right,top,bottom,left}}=chart;
-        const meta26=chart.getDatasetMeta(1);
-        const meta25=chart.getDatasetMeta(0);
-        const pt26=meta26.data[last26idx];
-        if(!pt26)return;
+        if(!lastVal)return;
+        const{ctx,chartArea:{top}}=chart;
+        const meta=chart.getDatasetMeta(datasets.length-1);
+        const pt=meta.data[lastIdx];
+        if(!pt)return;
         ctx.save();
-        const diff=last25same!=null?Math.round((last26val-last25same)*10)/10:null;
-        const lines=[
-          {t:`2026 → ${last26val}만명`,c:'#1F5EAB',b:true},
-          ...(last25same!=null?[
-            {t:`2025:  ${last25same}만명`,c:'#5A8A30',b:false},
-            {t:`차이: ${diff>=0?'+':''}${diff}만명`,c:diff>=0?'#0F6E56':'#A32D2D',b:true},
-          ]:[]),
-        ];
-        const lh=15,pd=6,bw=112,bh=lines.length*lh+pd*2;
-        // 라벨 박스를 선 끝점 기준으로 겹치지 않게 배치
-        let lx=pt26.x+10;
-        let ly=pt26.y-bh-8;
-        if(ly<top+4)ly=pt26.y+10;
-        if(lx+bw>right+20)lx=pt26.x-bw-10;
-        ctx.fillStyle='rgba(255,255,255,0.93)';
-        ctx.strokeStyle='#BDD0EE';ctx.lineWidth=0.8;
-        ctx.beginPath();ctx.roundRect(lx-pd,ly-pd,bw,bh,5);
-        ctx.fill();ctx.stroke();
-        lines.forEach((l,i)=>{
-          ctx.font=(l.b?'bold ':'')+`11px 'Noto Sans KR',sans-serif`;
-          ctx.fillStyle=l.c;ctx.textAlign='left';
-          ctx.fillText(l.t,lx,ly+i*lh+11);
-        });
-        ctx.beginPath();ctx.arc(pt26.x,pt26.y,4,0,Math.PI*2);
-        ctx.fillStyle='#1F5EAB';ctx.fill();
-        ctx.strokeStyle='white';ctx.lineWidth=1.5;ctx.stroke();
+        ctx.fillStyle='rgba(255,255,255,0.9)';ctx.strokeStyle='#BDD0EE';ctx.lineWidth=0.8;
+        ctx.beginPath();ctx.roundRect(pt.x+6,pt.y-20,90,22,4);ctx.fill();ctx.stroke();
+        ctx.fillStyle='#1A3A6B';ctx.font='bold 10px sans-serif';ctx.textAlign='left';
+        ctx.fillText(`${lastYr}: ${lastVal}만명`,pt.x+10,pt.y-4);
         ctx.restore();
       }
     }]
   });
 }
 
-/* 구단×월 히트맵 */
 function renderTmHm(){
   const fy=document.getElementById('fY').value;
   const months=fy==='2026'?[3,4,5,6]:fy==='2025'?[3,4,5,6,7,8,9]:[3,4,5,6,7,8,9];
