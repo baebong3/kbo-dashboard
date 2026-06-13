@@ -2,45 +2,60 @@ name: KBO 관중 데이터 자동 업데이트
 
 on:
   schedule:
+    # 매일 오전 8시 30분 KST (= UTC 23:30 전날) 자동 실행
     - cron: '30 23 * * *'
   workflow_dispatch:
+    # 수동 실행 버튼 (GitHub 웹에서 언제든 수동 실행 가능)
 
+# peaceiris 배포는 contents: write 만 필요 (gh-pages 브랜치에 push)
 permissions:
   contents: write
-  pages: write
-  id-token: write
-
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   update-and-deploy:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      # 1. 저장소 체크아웃
+      - name: 저장소 체크아웃
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      # 2. Python 설정
+      - name: Python 3.11 설정
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          cache: 'pip'
 
-      - name: 패키지 설치 및 브라우저 설치
+      # 3. 의존성 설치
+      - name: 패키지 설치
         run: |
-          pip install playwright requests beautifulsoup4
-          playwright install chromium
-          playwright install-deps chromium
+          pip install -r requirements.txt
+          playwright install chromium --with-deps
 
+      # 4. KBO 관중 데이터 수집 (경기·관중)
       - name: KBO 관중 데이터 수집
-        run: python fetch_daily.py
+        run: python fetch_kbo.py
+        continue-on-error: true  # 수집 실패해도 배포는 계속
+
+      # 5. 날씨 데이터 보강 (신규 경기에만 API 호출, 기존 건은 자동 스킵)
+      - name: 경기 날씨 데이터 보강
+        run: python fetch_weather.py
         continue-on-error: true
 
-      - name: 변경사항 커밋
+      # 6. 배포 날짜 계산 (KST) → 이후 스텝에서 env 로 참조
+      - name: 배포 날짜 계산(KST)
+        run: echo "DEPLOY_DATE=$(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M KST')" >> "$GITHUB_ENV"
+
+      # 7. 변경사항 커밋 (kbo_games.json 업데이트)
+      - name: 데이터 파일 커밋
         run: |
-          git config user.email "actions@github.com"
-          git config user.name "github-actions"
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
           git add kbo_games.json || true
-          git diff --staged --quiet || git commit -m "KBO 데이터 업데이트 $(TZ=Asia/Seoul date '+%Y-%m-%d')"
+          git diff --staged --quiet || git commit -m "📊 KBO 데이터 자동 업데이트 ${DEPLOY_DATE}"
           git push || true
 
+      # 8. GitHub Pages 배포
       - name: GitHub Pages 배포
         uses: peaceiris/actions-gh-pages@v4
         with:
@@ -48,3 +63,4 @@ jobs:
           publish_dir: ./
           publish_branch: gh-pages
           exclude_assets: '.github,*.py,*.txt,*.md'
+          commit_message: "🚀 대시보드 배포 ${{ env.DEPLOY_DATE }}"
