@@ -30,7 +30,7 @@ jobs:
           playwright install-deps chromium
 
       - name: KBO 관중 데이터 수집
-        run: python fetch_kbo.py
+        run: python fetch_daily.py
         continue-on-error: true
 
       - name: 변경사항 커밋

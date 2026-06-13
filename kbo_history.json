@@ -1,0 +1,447 @@
+{
+  "generated": "2026-06-13T03:51:24.281011",
+  "description": "KBO 리그 1982~2025 연도별 관중 집계 | C=공식확인, E=추정",
+  "note": "1982~1999 출처: KBO 연감·Wikipedia / 2009·2016·2019·2024·2025 Wikipedia 공식확인 / 나머지 E=추정",
+  "total_years": 44,
+  "years": [
+    {
+      "year": 1982,
+      "total_games": 240,
+      "total_att": 1438768,
+      "avg_att": 5995,
+      "champions": "OB 베어스",
+      "source": "C",
+      "event": "KBO 리그 창설 (6개 구단)"
+    },
+    {
+      "year": 1983,
+      "total_games": 240,
+      "total_att": 1756228,
+      "avg_att": 7318,
+      "champions": "해태 타이거즈",
+      "source": "C",
+      "event": "",
+      "yoy_pct": 22.1
+    },
+    {
+      "year": 1984,
+      "total_games": 240,
+      "total_att": 2027641,
+      "avg_att": 8448,
+      "champions": "롯데 자이언츠",
+      "source": "C",
+      "event": "",
+      "yoy_pct": 15.5
+    },
+    {
+      "year": 1985,
+      "total_games": 240,
+      "total_att": 2340560,
+      "avg_att": 9752,
+      "champions": "삼성 라이온즈",
+      "source": "C",
+      "event": "",
+      "yoy_pct": 15.4
+    },
+    {
+      "year": 1986,
+      "total_games": 330,
+      "total_att": 3827960,
+      "avg_att": 11600,
+      "champions": "해태 타이거즈",
+      "source": "C",
+      "event": "8개 구단으로 확대 (빙그레·삼성청보 추가)",
+      "yoy_pct": 63.5
+    },
+    {
+      "year": 1987,
+      "total_games": 330,
+      "total_att": 4054025,
+      "avg_att": 12285,
+      "champions": "해태 타이거즈",
+      "source": "C",
+      "event": "",
+      "yoy_pct": 5.9
+    },
+    {
+      "year": 1988,
+      "total_games": 330,
+      "total_att": 4136290,
+      "avg_att": 12534,
+      "champions": "해태 타이거즈",
+      "source": "C",
+      "event": "서울 올림픽 개최 → 관중 급증",
+      "yoy_pct": 2.0
+    },
+    {
+      "year": 1989,
+      "total_games": 350,
+      "total_att": 2753055,
+      "avg_att": 7866,
+      "champions": "해태 타이거즈",
+      "source": "C",
+      "event": "팀 수 조정·경기 운영 변경으로 급감",
+      "yoy_pct": -33.4
+    },
+    {
+      "year": 1990,
+      "total_games": 396,
+      "total_att": 2898000,
+      "avg_att": 7318,
+      "champions": "LG 트윈스",
+      "source": "C",
+      "event": "",
+      "yoy_pct": 5.3
+    },
+    {
+      "year": 1991,
+      "total_games": 396,
+      "total_att": 3205038,
+      "avg_att": 8094,
+      "champions": "해태 타이거즈",
+      "source": "C",
+      "event": "",
+      "yoy_pct": 10.6
+    },
+    {
+      "year": 1992,
+      "total_games": 396,
+      "total_att": 3628706,
+      "avg_att": 9163,
+      "champions": "롯데 자이언츠",
+      "source": "C",
+      "event": "",
+      "yoy_pct": 13.2
+    },
+    {
+      "year": 1993,
+      "total_games": 396,
+      "total_att": 2831543,
+      "avg_att": 7150,
+      "champions": "해태 타이거즈",
+      "source": "C",
+      "event": "",
+      "yoy_pct": -22.0
+    },
+    {
+      "year": 1994,
+      "total_games": 420,
+      "total_att": 4477545,
+      "avg_att": 10661,
+      "champions": "LG 트윈스",
+      "source": "C",
+      "event": "역대 최다 관중 (당시 기록) LG 우승",
+      "yoy_pct": 58.1
+    },
+    {
+      "year": 1995,
+      "total_games": 420,
+      "total_att": 3971688,
+      "avg_att": 9456,
+      "champions": "OB 베어스",
+      "source": "C",
+      "event": "",
+      "yoy_pct": -11.3
+    },
+    {
+      "year": 1996,
+      "total_games": 520,
+      "total_att": 4552413,
+      "avg_att": 8754,
+      "champions": "해태 타이거즈",
+      "source": "C",
+      "event": "",
+      "yoy_pct": 14.6
+    },
+    {
+      "year": 1997,
+      "total_games": 520,
+      "total_att": 3753049,
+      "avg_att": 7217,
+      "champions": "해태 타이거즈",
+      "source": "C",
+      "event": "",
+      "yoy_pct": -17.6
+    },
+    {
+      "year": 1998,
+      "total_games": 432,
+      "total_att": 2665076,
+      "avg_att": 6170,
+      "champions": "현대 유니콘스",
+      "source": "C",
+      "event": "IMF 경제위기 → 관중 급감",
+      "yoy_pct": -29.0
+    },
+    {
+      "year": 1999,
+      "total_games": 520,
+      "total_att": 3090131,
+      "avg_att": 5942,
+      "champions": "한화 이글스",
+      "source": "C",
+      "event": "",
+      "yoy_pct": 15.9
+    },
+    {
+      "year": 2000,
+      "total_games": 532,
+      "total_att": 3610938,
+      "avg_att": 6788,
+      "champions": "현대 유니콘스",
+      "source": "E",
+      "event": "",
+      "yoy_pct": 16.9
+    },
+    {
+      "year": 2001,
+      "total_games": 532,
+      "total_att": 3475890,
+      "avg_att": 6533,
+      "champions": "두산 베어스",
+      "source": "E",
+      "event": "",
+      "yoy_pct": -3.7
+    },
+    {
+      "year": 2002,
+      "total_games": 532,
+      "total_att": 3791395,
+      "avg_att": 7127,
+      "champions": "삼성 라이온즈",
+      "source": "E",
+      "event": "",
+      "yoy_pct": 9.1
+    },
+    {
+      "year": 2003,
+      "total_games": 532,
+      "total_att": 3699437,
+      "avg_att": 6952,
+      "champions": "삼성 라이온즈",
+      "source": "E",
+      "event": "",
+      "yoy_pct": -2.4
+    },
+    {
+      "year": 2004,
+      "total_games": 532,
+      "total_att": 3465311,
+      "avg_att": 6513,
+      "champions": "현대 유니콘스",
+      "source": "E",
+      "event": "",
+      "yoy_pct": -6.3
+    },
+    {
+      "year": 2005,
+      "total_games": 532,
+      "total_att": 3482037,
+      "avg_att": 6545,
+      "champions": "삼성 라이온즈",
+      "source": "E",
+      "event": "",
+      "yoy_pct": 0.5
+    },
+    {
+      "year": 2006,
+      "total_games": 532,
+      "total_att": 4009762,
+      "avg_att": 7537,
+      "champions": "삼성 라이온즈",
+      "source": "E",
+      "event": "WBC 한국 4강 신화 → 야구 붐 시작",
+      "yoy_pct": 15.2
+    },
+    {
+      "year": 2007,
+      "total_games": 532,
+      "total_att": 5253668,
+      "avg_att": 9875,
+      "champions": "SK 와이번스",
+      "source": "E",
+      "event": "",
+      "yoy_pct": 31.0
+    },
+    {
+      "year": 2008,
+      "total_games": 532,
+      "total_att": 5840283,
+      "avg_att": 10979,
+      "champions": "SK 와이번스",
+      "source": "E",
+      "event": "베이징 올림픽 금메달 → 폭발적 인기",
+      "yoy_pct": 11.2
+    },
+    {
+      "year": 2009,
+      "total_games": 532,
+      "total_att": 5925285,
+      "avg_att": 11138,
+      "champions": "KIA 타이거즈",
+      "source": "C",
+      "event": "첫 연간 관중 500만 돌파",
+      "yoy_pct": 1.5
+    },
+    {
+      "year": 2010,
+      "total_games": 532,
+      "total_att": 5957773,
+      "avg_att": 11199,
+      "champions": "SK 와이번스",
+      "source": "E",
+      "event": "",
+      "yoy_pct": 0.5
+    },
+    {
+      "year": 2011,
+      "total_games": 532,
+      "total_att": 5932070,
+      "avg_att": 11150,
+      "champions": "삼성 라이온즈",
+      "source": "E",
+      "event": "",
+      "yoy_pct": -0.4
+    },
+    {
+      "year": 2012,
+      "total_games": 576,
+      "total_att": 7161477,
+      "avg_att": 12432,
+      "champions": "삼성 라이온즈",
+      "source": "E",
+      "event": "",
+      "yoy_pct": 20.7
+    },
+    {
+      "year": 2013,
+      "total_games": 576,
+      "total_att": 6701491,
+      "avg_att": 11634,
+      "champions": "삼성 라이온즈",
+      "source": "E",
+      "event": "",
+      "yoy_pct": -6.4
+    },
+    {
+      "year": 2014,
+      "total_games": 576,
+      "total_att": 6561740,
+      "avg_att": 11392,
+      "champions": "삼성 라이온즈",
+      "source": "E",
+      "event": "",
+      "yoy_pct": -2.1
+    },
+    {
+      "year": 2015,
+      "total_games": 576,
+      "total_att": 7360860,
+      "avg_att": 12780,
+      "champions": "두산 베어스",
+      "source": "E",
+      "event": "NC·KT 추가로 10개 구단 완성",
+      "yoy_pct": 12.2
+    },
+    {
+      "year": 2016,
+      "total_games": 720,
+      "total_att": 8339577,
+      "avg_att": 11582,
+      "champions": "두산 베어스",
+      "source": "C",
+      "event": "10개 구단 첫 풀시즌 (720경기) → 관중 신기록",
+      "yoy_pct": 13.3
+    },
+    {
+      "year": 2017,
+      "total_games": 720,
+      "total_att": 8400688,
+      "avg_att": 11667,
+      "champions": "KIA 타이거즈",
+      "source": "E",
+      "event": "",
+      "yoy_pct": 0.7
+    },
+    {
+      "year": 2018,
+      "total_games": 720,
+      "total_att": 8073742,
+      "avg_att": 11213,
+      "champions": "SK 와이번스",
+      "source": "E",
+      "event": "",
+      "yoy_pct": -3.9
+    },
+    {
+      "year": 2019,
+      "total_games": 720,
+      "total_att": 7286008,
+      "avg_att": 10119,
+      "champions": "두산 베어스",
+      "source": "C",
+      "event": "",
+      "yoy_pct": -9.8
+    },
+    {
+      "year": 2020,
+      "total_games": 720,
+      "total_att": 132870,
+      "avg_att": 184,
+      "champions": "NC 다이노스",
+      "source": "E",
+      "event": "COVID-19 무관중 시즌 (5~9월 무관중, 10월 제한 입장)",
+      "yoy_pct": -98.2
+    },
+    {
+      "year": 2021,
+      "total_games": 720,
+      "total_att": 1353476,
+      "avg_att": 1880,
+      "champions": "KT wiz",
+      "source": "E",
+      "event": "COVID-19 제한 관중 (30% 이하 수용)",
+      "yoy_pct": 918.6
+    },
+    {
+      "year": 2022,
+      "total_games": 720,
+      "total_att": 5905052,
+      "avg_att": 8201,
+      "champions": "SSG 랜더스",
+      "source": "E",
+      "event": "거리두기 해제 → 빠른 회복",
+      "yoy_pct": 336.3
+    },
+    {
+      "year": 2023,
+      "total_games": 720,
+      "total_att": 8044626,
+      "avg_att": 11173,
+      "champions": "LG 트윈스",
+      "source": "E",
+      "event": "관중 800만 돌파 (2017년 이후 최초)",
+      "yoy_pct": 36.2
+    },
+    {
+      "year": 2024,
+      "total_games": 720,
+      "total_att": 10731646,
+      "avg_att": 15115,
+      "champions": "KIA 타이거즈",
+      "source": "C",
+      "event": "관중 1000만 돌파 ← 역사적 이정표",
+      "yoy_pct": 33.4
+    },
+    {
+      "year": 2025,
+      "total_games": 720,
+      "total_att": 12312492,
+      "avg_att": 17101,
+      "champions": "LG 트윈스",
+      "source": "C",
+      "event": "역대 최다 관중 1,231만 명 신기록",
+      "yoy_pct": 14.7
+    }
+  ]
+}
