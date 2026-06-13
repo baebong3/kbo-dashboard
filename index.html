@@ -169,7 +169,7 @@ select:hover,select:focus{border-color:var(--blue)}
     <div class="kpi"><div class="kpi-ic ic-b">👥</div><div class="kpi-lbl">누적 관중</div><div class="kpi-val" id="k1">—</div><div class="kpi-sub" id="k1s"></div></div>
     <div class="kpi"><div class="kpi-ic ic-t">📈</div><div class="kpi-lbl">경기당 평균</div><div class="kpi-val" id="k2">—</div><div class="kpi-sub" id="k2s"></div></div>
     <div class="kpi"><div class="kpi-ic ic-a">🗓</div><div class="kpi-lbl">조회 경기수</div><div class="kpi-val" id="k3">—</div><div class="kpi-sub" id="k3s"></div></div>
-    <div class="kpi"><div class="kpi-ic ic-r">🎫</div><div class="kpi-lbl">매진(90%+)</div><div class="kpi-val" id="k4">—</div><div class="kpi-sub" id="k4s"></div></div>
+    <div class="kpi"><div class="kpi-ic ic-r">🎫</div><div class="kpi-lbl">완전 매진(100%)</div><div class="kpi-val" id="k4">—</div><div class="kpi-sub" id="k4s"></div></div>
   </div>
 
   <div class="g32">
@@ -230,6 +230,14 @@ select:hover,select:focus{border-color:var(--blue)}
       <div class="hm-leg"><span>낮음</span><div style="display:flex;gap:2px" id="hmLeg"></div><span>높음</span></div>
     </div>
     <div class="hmsc"><div id="hmMap"></div></div>
+  </div>
+
+  <div class="card gap">
+    <div class="card-hd">
+      <div><div class="ctitle">연도별 총 관중수</div><div class="csub" id="annualSub">1982~ 시즌 연간 집계 · 단위: 만명 · 막대 위 숫자 = 만명</div></div>
+      <div class="leg-row"><span class="leg"><span class="leg-sq" style="background:#1F5EAB"></span>연간 확정</span><span class="leg"><span class="leg-sq" style="background:#E67E22"></span>2026 진행중</span></div>
+    </div>
+    <div class="ch" style="height:230px"><canvas id="cAnnual" role="img" aria-label="연도별 총 관중수">연도별</canvas></div>
   </div>
 
   <div class="card gap">
@@ -473,15 +481,16 @@ function renderTmAll(){
       ]
     },
     options:{
-      responsive:true,maintainAspectRatio:false,
+      responsive:true,maintainAspectRatio:false,layout:{padding:{top:20}},
       plugins:{legend:{position:'top',labels:{font:{size:11},boxWidth:12}},
-        datalabels:{display:false}},
+        datalabels:{display:true,anchor:'end',align:'top',formatter:v=>v?(v/10000).toFixed(1)+'만':'',color:'#3C4554',font:{size:9,weight:'600'}}},
       scales:{
         x:{grid:{display:false},ticks:{color:'#8A92A0',font:{size:11}}},
         y:{grid:{color:'#F0F2F5'},ticks:{callback:v=>v?v.toLocaleString():'',color:'#8A92A0',font:{size:10}},
            title:{display:true,text:'평균관중(명)',font:{size:10},color:'#8A92A0'}}
       }
-    }
+    },
+    plugins:[ChartDataLabels]
   });
 }
 
@@ -497,32 +506,38 @@ function renderWeather(){
   }
   if(wxNote) wxNote.textContent='';
 
-  /* 차트1: 우천 여부 */
-  const rainGs=wxGs.filter(g=>g.rain_yn);
-  const clearGs=wxGs.filter(g=>!g.rain_yn);
-  const rainAvg=rainGs.length?Math.round(rainGs.reduce((s,g)=>s+g.att,0)/rainGs.length):0;
-  const clearAvg=clearGs.length?Math.round(clearGs.reduce((s,g)=>s+g.att,0)/clearGs.length):0;
+  /* 차트1: 강수량 구간별 (0mm 맑음 → 5mm 단위) */
+  const RBINS=[
+    {label:'맑음\n(0mm)',  min:-1,  max:0.0001},
+    {label:'0~5mm',       min:0.0001, max:5},
+    {label:'5~10mm',      min:5,   max:10},
+    {label:'10~15mm',     min:10,  max:15},
+    {label:'15mm\n이상',   min:15,  max:99999},
+  ];
+  const rData=RBINS.map(b=>{
+    const gs=wxGs.filter(g=>g.rain_mm!=null&&g.rain_mm>b.min&&g.rain_mm<=b.max);
+    return{label:b.label,avg:gs.length?Math.round(gs.reduce((s,g)=>s+g.att,0)/gs.length):0,count:gs.length};
+  });
+  const RCOLS=['rgba(31,94,171,0.80)','rgba(90,160,235,0.80)','rgba(120,180,210,0.80)','rgba(150,175,195,0.80)','rgba(120,140,165,0.85)'];
 
   const c1=document.getElementById('cWx1');
   if(c1) CH.cWx1=new Chart(c1,{
     type:'bar',
     data:{
-      labels:[`맑음/흐림\n(${clearGs.length}경기)`,`우천\n(${rainGs.length}경기)`],
-      datasets:[{
-        data:[clearAvg,rainAvg],
-        backgroundColor:['rgba(31,94,171,0.75)','rgba(100,160,240,0.75)'],
-        borderRadius:6,
-      }]
+      labels:rData.map(d=>`${d.label}\n(${d.count})`),
+      datasets:[{data:rData.map(d=>d.avg),backgroundColor:RCOLS,borderRadius:6}]
     },
     options:{
-      responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},datalabels:{display:true,anchor:'end',align:'top',formatter:v=>v?v.toLocaleString()+'명':'',color:'#1A3A6B',font:{size:11,weight:'bold'}},
-        title:{display:true,text:'우천 여부별 평균관중',font:{size:12},color:'#1A3A6B'}},
+      responsive:true,maintainAspectRatio:false,layout:{padding:{top:20}},
+      plugins:{legend:{display:false},
+        datalabels:{display:true,anchor:'end',align:'top',formatter:v=>v?v.toLocaleString()+'명':'',color:'#1A3A6B',font:{size:10,weight:'bold'}},
+        title:{display:true,text:'강수량 구간별 평균관중',font:{size:12},color:'#1A3A6B'}},
       scales:{
-        x:{grid:{display:false},ticks:{color:'#8A92A0',font:{size:11}}},
+        x:{grid:{display:false},ticks:{color:'#8A92A0',font:{size:10},maxRotation:0}},
         y:{grid:{color:'#F0F2F5'},ticks:{callback:v=>v?v.toLocaleString():'',color:'#8A92A0',font:{size:10}}}
       }
-    }
+    },
+    plugins:[ChartDataLabels]
   });
 
   /* 차트2: 기온대별 */
@@ -547,14 +562,15 @@ function renderWeather(){
       datasets:[{data:tData.map(d=>d.avg),backgroundColor:TCOLS,borderRadius:6}]
     },
     options:{
-      responsive:true,maintainAspectRatio:false,
+      responsive:true,maintainAspectRatio:false,layout:{padding:{top:20}},
       plugins:{legend:{display:false},datalabels:{display:true,anchor:'end',align:'top',formatter:v=>v?v.toLocaleString()+'명':'',color:'#1A3A6B',font:{size:10,weight:'bold'}},
         title:{display:true,text:'기온대별 평균관중',font:{size:12},color:'#1A3A6B'}},
       scales:{
         x:{grid:{display:false},ticks:{color:'#8A92A0',font:{size:10},maxRotation:0}},
         y:{grid:{color:'#F0F2F5'},ticks:{callback:v=>v?v.toLocaleString():'',color:'#8A92A0',font:{size:10}}}
       }
-    }
+    },
+    plugins:[ChartDataLabels]
   });
 }
 
@@ -673,7 +689,7 @@ function renderKPIs(){
     return;
   }
   const atts=filtered.map(g=>g.att),tot=atts.reduce((s,v)=>s+v,0);
-  const sold=filtered.filter(g=>g.att/(getCAP(g.home,g.yr)||25000)>=.9).length;
+  const sold=filtered.filter(g=>g.att/(getCAP(g.home,g.yr)||25000)>=1).length;
   document.getElementById('k1').textContent=tot>=10000?Math.round(tot/10000)+'만 명':fmt(tot)+'명';
   document.getElementById('k1s').innerHTML=`<span class="neu">${fmt(filtered.length)}경기 합산</span>`;
   document.getElementById('k2').textContent=fmt(avg(atts))+'명';
@@ -713,13 +729,17 @@ function renderTrend(){
   if(show26) datasets.push({label:'2026',data:d26,borderColor:'#1F5EAB',backgroundColor:'rgba(31,94,171,.12)',fill:true,tension:.4,pointRadius:5,pointBackgroundColor:'#1F5EAB',pointBorderColor:'#fff',pointBorderWidth:2,spanGaps:false,borderWidth:3});
   if(show_other) datasets.push({label:`${fy}시즌`,data:d_other,borderColor:'#E67E22',backgroundColor:'rgba(230,126,34,.1)',fill:true,tension:.4,pointRadius:4,pointBackgroundColor:'#E67E22',pointBorderColor:'#fff',pointBorderWidth:2,spanGaps:false,borderWidth:2.5});
 
+  // y축 최소값: 표시 데이터 최저점보다 약간 아래로 올려 선 간격을 분리 (값 잘림 없음)
+  const _vals=[...d25,...d26,...d_other].filter(v=>v!=null);
+  const yMin=_vals.length?Math.max(0,Math.floor((Math.min(..._vals)-2000)/1000)*1000):8000;
+
   CH.trend=new Chart(document.getElementById('cTrend'),{type:'line',
     data:{labels:M.map(m=>m+'월'),datasets},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:datasets.length>1,position:'top',labels:{font:{size:11},boxWidth:12}},datalabels:{display:false},
         tooltip:{callbacks:{label:ctx=>ctx.parsed.y?`${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString('ko-KR')}명`:null}}},
       scales:{x:{grid:{color:'#F0F2F5'},ticks:{color:'#8A92A0',font:{size:11}}},
-        y:{ticks:{callback:v=>`${Math.round(v/1000)}천`,color:'#8A92A0',font:{size:10}},grid:{color:'#F0F2F5'},suggestedMin:5000}}}
+        y:{ticks:{callback:v=>`${Math.round(v/1000)}천`,color:'#8A92A0',font:{size:10}},grid:{color:'#F0F2F5'},min:yMin}}}
   });
 }
 
@@ -811,7 +831,7 @@ function renderCumul(){
       data:mkCumul(gs),
       borderColor:COLORS[i%COLORS.length],
       backgroundColor:COLORS[i%COLORS.length].replace(')',',0.08)').replace('rgb','rgba'),
-      fill:true,tension:.3,pointRadius:0,spanGaps:false,
+      fill:false,tension:.3,pointRadius:0,spanGaps:false,
       borderWidth:yr===2026?2.5:2,
     };
   });
@@ -889,6 +909,52 @@ function renderHist(){
   });
 }
 
+/* 연도별 총 관중수 (kbo_history.json 1982~2025 + 라이브 2026) */
+let HIST=null, CH_annual=null;
+async function loadHistory(){
+  try{
+    const r=await fetch('./kbo_history.json?t='+Date.now(),{cache:'no-store'});
+    if(r.ok){HIST=await r.json();}
+  }catch(e){}
+  renderAnnual();
+}
+function renderAnnual(){
+  const canvas=document.getElementById('cAnnual');
+  if(!canvas||!HIST||!HIST.years) return;
+  if(CH_annual) CH_annual.destroy();
+
+  // 연간 확정치(만명): kbo_history.json의 그 해 총계 (누적 아님)
+  const rows=HIST.years.filter(y=>y.total_att>0).map(y=>({yr:y.year, man:Math.round(y.total_att/10000)}));
+  const maxHistYr=Math.max(...rows.map(r=>r.yr));
+
+  // 2026 진행중: 라이브 데이터에서 그 해 합계만 (시즌 누계 ≠ 누적 그래프)
+  let liveRow=null;
+  if(ALL&&ALL.length){
+    const att26=ALL.filter(g=>g.yr===2026).reduce((s,g)=>s+g.att,0);
+    if(att26>0 && 2026>maxHistYr) liveRow={yr:2026, man:Math.round(att26/10000), live:true};
+  }
+  const all=liveRow?[...rows,liveRow]:rows;
+
+  const labels=all.map(r=>`'${String(r.yr).slice(2)}`);
+  const data=all.map(r=>r.man);
+  const colors=all.map(r=>r.live?'#E67E22':'#1F5EAB');
+
+  document.getElementById('annualSub').textContent=
+    `${all[0].yr}~${all[all.length-1].yr} 연간 집계 · 단위: 만명${liveRow?' · 2026은 진행중(현재까지)':''}`;
+
+  CH_annual=new Chart(canvas,{type:'bar',
+    data:{labels,datasets:[{data,backgroundColor:colors,borderRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:20}},
+      plugins:{legend:{display:false},
+        datalabels:{display:true,anchor:'end',align:'top',rotation:-90,offset:2,
+          formatter:v=>v>0?v:'',color:'#3C4554',font:{family:"'JetBrains Mono',monospace",size:8,weight:'600'}},
+        tooltip:{callbacks:{label:ctx=>`${all[ctx.dataIndex].yr}년: ${ctx.parsed.y.toLocaleString()}만명${all[ctx.dataIndex].live?' (진행중)':''}`}}},
+      scales:{x:{grid:{display:false},ticks:{color:'#8A92A0',font:{size:9},maxRotation:0,autoSkip:false}},
+        y:{grid:{color:'#F0F2F5'},ticks:{callback:v=>`${v}만`,color:'#8A92A0',font:{size:10}}}}},
+    plugins:[ChartDataLabels]
+  });
+}
+
 /* 노트 */
 function renderNote(){
   const nb=document.getElementById('noteBar');
@@ -907,9 +973,10 @@ function renderNote(){
 /* 실행 */
 window.addEventListener('load',()=>{
   ['k1','k2','k3','k4'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='…';});
+  loadHistory();
   fetchKBO()
-    .then(()=>{buildFilters();refresh();})
-    .catch(()=>{buildFilters();refresh();});
+    .then(()=>{buildFilters();refresh();renderAnnual();})
+    .catch(()=>{buildFilters();refresh();renderAnnual();});
 });
 </script>
 </body>
