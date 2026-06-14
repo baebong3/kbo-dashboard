@@ -231,7 +231,7 @@ select:hover,select:focus{border-color:var(--coral)}
 
   <div class="card" style="margin-bottom:14px">
     <div class="card-hd">
-      <div><div class="eyebrow">날씨 영향</div><div class="ctitle">강수량·기온대별 평균 관중</div><div class="csub">막대 위 = 평균 관중 · 괄호 = 경기 수 · 표본 적은 구간은 해석 주의</div></div>
+      <div><div class="eyebrow">날씨 영향</div><div class="ctitle">강수량·기온대별 평균 관중</div><div class="csub">막대 위 = 평균 관중 · 괄호 = 경기 수 · 5mm+는 우천취소·돔구장 영향으로 표본 적어 해석 주의</div></div>
     </div>
     <div class="g-11" style="display:grid;gap:18px">
       <div class="chwrap" style="height:240px"><canvas id="cRain"></canvas></div>
@@ -294,7 +294,7 @@ async function loadData(){
         $('updTime').textContent=(d.updated||'')+' 경기까지';
         const dup=window.__dupRemoved||0;
         banner(dup>0
-          ? `로드 완료 — 중복 ${dup.toLocaleString()}건 제거 후 2025·2026 ${ALL.length}경기 분석`
+          ? `로드 완료 — 정리 ${dup.toLocaleString()}건(중복·가짜 매치업) 제거 후 2025·2026 ${ALL.length}경기 분석`
           : `kbo_games.json 로드 완료 — 2025·2026 ${ALL.length}경기 분석`, dup>0?'warn':'ok');
         return true;}}
     throw new Error('no data');
@@ -311,7 +311,20 @@ function ingest(raw){
   raw.forEach(g=>{if(!g.game_id){const mk=matchKey(g);if(!seenMatch.has(mk)){seenMatch.add(mk);uniq.push(g);}}});
   const games=uniq;
   const dupRemoved=raw.length-games.length;
-  ALL=games.map(g=>{
+  // 가짜 매치업 제거: 한 팀이 하루에 서로 다른 2팀 이상과 경기한 날짜는 수집 오류 → 통째로 제외
+  // (더블헤더는 같은 상대와 2경기이므로 상대 집합 크기가 1 → 정상 유지)
+  const byDate={};
+  games.forEach(g=>{const d=g.date||`${g.yr}-${g.mo}-${g.day}`;(byDate[d]=byDate[d]||[]).push(g);});
+  const badDates=new Set();
+  Object.entries(byDate).forEach(([d,recs])=>{
+    const opp={};
+    recs.forEach(r=>{const h=normTeam(r.home),a=normTeam(r.away||'');
+      if(h&&a){(opp[h]=opp[h]||new Set()).add(a);(opp[a]=opp[a]||new Set()).add(h);}});
+    if(Object.values(opp).some(s=>s.size>1)) badDates.add(d);
+  });
+  const clean=games.filter(g=>!badDates.has(g.date||`${g.yr}-${g.mo}-${g.day}`));
+  const fakeRemoved=games.length-clean.length;
+  ALL=clean.map(g=>{
     const dt=g.date?new Date(g.date):null;const dow=dt?dt.getDay():2;
     const home=normTeam(g.home),away=normTeam(g.away||'');const att=+g.att;
     if(!home||!att||att<100)return null;
@@ -321,7 +334,7 @@ function ingest(raw){
       temp:g.temp_avg??null,rain:g.rain_mm??null,rainY:g.rain_yn??(g.rain_mm>0)};
   }).filter(Boolean);
   buildFilters();
-  window.__dupRemoved=dupRemoved;
+  window.__dupRemoved=dupRemoved+fakeRemoved;
 }
 function buildFilters(){
   const present=new Set(ALL.map(g=>g.home));
@@ -554,9 +567,11 @@ function wxBar(id,bins,cols){
     plugins:[ChartDataLabels]});
 }
 function renderRain(){
-  const defs=[['맑음\n0mm',g=>g.rain<=0],['0~5mm',g=>g.rain>0&&g.rain<=5],['5~10mm',g=>g.rain>5&&g.rain<=10],['10mm+',g=>g.rain>10]];
+  const defs=[['맑음\n0mm',g=>g.rain<=0],['0~5mm',g=>g.rain>0&&g.rain<=5],['5mm+',g=>g.rain>5]];
   const bins=defs.map(([lb,f])=>{const gs=filtered.filter(g=>g.rain!=null&&f(g));return{lb,a:avg(gs.map(g=>g.att)),n:gs.length};});
-  wxBar('cRain',bins,['#E85A3C','#7E93B0','#9AAAC0','#6B7A8F']);
+  // 5mm+ 는 우천취소·돔구장 영향으로 표본이 적어 저신뢰 → 라벨 표시 + 흐린 색
+  if(bins[2]) bins[2].lb='5mm+\n표본적음';
+  wxBar('cRain',bins,['#E85A3C','#7E93B0','#C2C9D3']);
 }
 function renderTemp(){
   const defs=[['15°C\n미만',g=>g.temp<15],['15~20°C',g=>g.temp>=15&&g.temp<20],['20~25°C',g=>g.temp>=20&&g.temp<25],
