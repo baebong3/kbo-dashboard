@@ -207,7 +207,7 @@ select:hover,select:focus{border-color:var(--coral)}
     </div>
     <div class="card">
       <div class="card-hd">
-        <div><div class="eyebrow">시즌 흐름</div><div class="ctitle">월별 평균 관중</div><div class="csub">2025 vs 2026</div></div>
+        <div><div class="eyebrow">시즌 흐름</div><div class="ctitle">월별 평균 관중</div><div class="csub">2025 vs 2026 · *2026년 6월은 진행 중(잠정)</div></div>
         <div class="legbox"><span class="lg"><i style="background:var(--navy)"></i>2025</span><span class="lg"><i style="background:var(--coral)"></i>2026</span></div>
       </div>
       <div class="chwrap" style="height:300px"><canvas id="cTrend"></canvas></div>
@@ -467,14 +467,20 @@ function renderTrend(){
   const monA=yr=>M.map(m=>{const gs=ALL.filter(g=>g.yr===yr&&g.mo===m&&baseMatch(g));return gs.length?avg(gs.map(g=>g.att)):null;});
   const s25=yearSel!=='2026',s26=yearSel!=='2025';
   const ds=[];
+  // 같은 달에서 값이 큰 쪽은 라벨을 위, 작은 쪽은 아래로 자동 배치 → 충돌 방지·정상 표기
+  const tAlign=ctx=>{const i=ctx.dataIndex,me=ctx.dataset.data[i];if(me==null)return 'top';
+    let o=null;ctx.chart.data.datasets.forEach(d=>{if(d!==ctx.dataset&&d.data[i]!=null)o=d.data[i];});
+    if(o==null)return ctx.dataset.label==='2025'?'bottom':'top';return me>=o?'top':'bottom';};
   if(s25)ds.push({label:'2025',data:monA(2025),borderColor:'#2B3A55',backgroundColor:'#2B3A55',tension:.35,borderWidth:2.5,
     pointRadius:3.5,pointBackgroundColor:'#fff',pointBorderColor:'#2B3A55',pointBorderWidth:2,spanGaps:false,
-    datalabels:{display:ctx=>ctx.dataset.data[ctx.dataIndex]!=null,align:'bottom',anchor:'start',offset:4,
+    datalabels:{display:ctx=>ctx.dataset.data[ctx.dataIndex]!=null,align:tAlign,anchor:'center',offset:7,
       formatter:v=>v?(v/1000).toFixed(1):'',color:'#2B3A55',font:{family:"'JetBrains Mono'",size:9.5,weight:'700'}}});
-  if(s26)ds.push({label:'2026',data:monA(2026),borderColor:'#E85A3C',backgroundColor:'#E85A3C',tension:.35,borderWidth:3,
-    pointRadius:4.5,pointBackgroundColor:'#fff',pointBorderColor:'#E85A3C',pointBorderWidth:2.5,spanGaps:false,
-    datalabels:{display:ctx=>ctx.dataset.data[ctx.dataIndex]!=null,align:'top',anchor:'end',offset:4,
-      formatter:v=>v?(v/1000).toFixed(1):'',color:'#C6452B',font:{family:"'JetBrains Mono'",size:10,weight:'700'}}});
+  if(s26){const d26=monA(2026),last=d26.reduce((a,v,i)=>v!=null?i:a,-1);
+    ds.push({label:'2026',data:d26,borderColor:'#E85A3C',backgroundColor:'#E85A3C',tension:.35,borderWidth:3,
+    pointRadius:d26.map((v,i)=>i===last?6:4.5),pointStyle:d26.map((v,i)=>i===last?'rectRot':'circle'),
+    pointBackgroundColor:d26.map((v,i)=>i===last?'#E85A3C':'#fff'),pointBorderColor:'#E85A3C',pointBorderWidth:2.5,spanGaps:false,
+    datalabels:{display:ctx=>ctx.dataset.data[ctx.dataIndex]!=null,align:tAlign,anchor:'center',offset:7,
+      formatter:(v,c)=>v?(v/1000).toFixed(1)+(c.dataIndex===last?'*':''):'',color:'#C6452B',font:{family:"'JetBrains Mono'",size:10,weight:'700'}}});}
   const vals=ds.flatMap(d=>d.data).filter(v=>v!=null);
   const lo=vals.length?Math.max(0,Math.floor((Math.min(...vals)-2500)/1000)*1000):0;
   const hi=vals.length?Math.ceil((Math.max(...vals)+2200)/1000)*1000:24000;
@@ -492,8 +498,37 @@ const occLine={id:'occLine',afterDraw(chart){
   if(!y)return;const yp=y.getPixelForValue(100);if(yp<chart.chartArea.top||yp>chart.chartArea.bottom)return;
   ctx.save();ctx.strokeStyle='rgba(43,58,85,.35)';ctx.lineWidth=1;ctx.setLineDash([5,4]);
   ctx.beginPath();ctx.moveTo(left,yp);ctx.lineTo(right,yp);ctx.stroke();
-  ctx.setLineDash([]);ctx.fillStyle='#8A93A0';ctx.font='600 10px sans-serif';ctx.textAlign='right';
-  ctx.fillText('만석 100%',right-2,yp-4);ctx.restore();
+  ctx.setLineDash([]);ctx.fillStyle='#8A93A0';ctx.font='600 10px sans-serif';ctx.textAlign='left';
+  ctx.fillText('만석 100%',left+2,yp-4);ctx.restore();
+}};
+/* 산점도 라벨 충돌 회피 엔진 (점 주변 8방향 탐색 + 리더선) */
+function _ovl(a,b){return !(a.x+a.w<b.x||b.x+b.w<a.x||a.y+a.h<b.y||b.y+b.h<a.y);}
+const scatterLabels={id:'scatterLabels',afterDatasetsDraw(chart){
+  const ds=chart.data.datasets[0];if(!ds)return;const meta=chart.getDatasetMeta(0);
+  const ca=chart.chartArea,ctx=chart.ctx;ctx.save();
+  ctx.font="700 11px Pretendard,'Apple SD Gothic Neo',sans-serif";ctx.textBaseline='middle';
+  const placed=[],r=7,th=14;
+  meta.data.forEach((el,i)=>{
+    const t=ds.data[i]&&ds.data[i].t;if(!t)return;
+    const tw=ctx.measureText(t).width,px=el.x,py=el.y;
+    const cand=[[0,-(r+8),'c'],[0,(r+8),'c'],[r+8,0,'l'],[-(r+8),0,'r'],
+      [r+7,-(r+4),'l'],[-(r+7),-(r+4),'r'],[r+7,(r+4),'l'],[-(r+7),(r+4),'r'],
+      [0,-(r+22),'c'],[0,(r+22),'c']];
+    let ch=null;
+    for(const[dx,dy,al]of cand){
+      const lx=px+dx,ly=py+dy,bx=al==='l'?lx:al==='r'?lx-tw:lx-tw/2;
+      const box={x:bx-3,y:ly-th/2,w:tw+6,h:th};
+      if(box.x<ca.left||box.x+box.w>ca.right||box.y<ca.top||box.y+box.h>ca.bottom)continue;
+      if(placed.some(p=>_ovl(p,box)))continue;ch={lx,ly,al,dx,dy,box};break;
+    }
+    if(!ch){const lx=px,ly=py-(r+8),bx=lx-tw/2;ch={lx,ly,al:'c',dx:0,dy:-(r+8),box:{x:bx-3,y:ly-th/2,w:tw+6,h:th}};}
+    placed.push(ch.box);
+    if(ch.al!=='c'||Math.abs(ch.dy)>r+14){ctx.strokeStyle='rgba(150,158,170,.55)';ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(ch.al==='l'?ch.lx-2:ch.al==='r'?ch.lx+2:ch.lx,ch.ly);ctx.stroke();}
+    ctx.textAlign=ch.al==='l'?'left':ch.al==='r'?'right':'center';
+    ctx.fillStyle='#16202C';ctx.fillText(t,ch.lx,ch.ly);
+  });
+  ctx.restore();
 }};
 function renderScatter(){
   if(CH.sc)CH.sc.destroy();
@@ -509,15 +544,14 @@ function renderScatter(){
       backgroundColor:pts.map(p=>TC[p.t]||'#888'),borderColor:'#fff',borderWidth:1.5,pointRadius:7,pointHoverRadius:9}]},
     options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:8,right:14,left:2}},
       plugins:{legend:{display:false},
-        datalabels:{align:'top',anchor:'center',offset:7,formatter:(v,c)=>c.dataset.data[c.dataIndex].t,
-          color:'#16202C',font:{size:11,weight:'700'}},
+        datalabels:{display:false},
         tooltip:{callbacks:{label:c=>{const d=c.raw;return `${d.t}: 평균 ${fmt(d.x)}명 · 점유율 ${d.y}% · ${d.n}경기`;}}}},
       scales:{
         x:{min:xmin,max:xmax,title:{display:true,text:'경기당 평균 관중',color:'#8A93A0',font:{size:10,weight:600}},
           grid:{color:'#F1F3F6'},ticks:{callback:v=>(v/1000)+'천',color:'#8A93A0',font:{size:10}}},
         y:{min:ymin,max:ymax,title:{display:true,text:'평균 좌석 점유율(%)',color:'#8A93A0',font:{size:10,weight:600}},
           grid:{color:'#F1F3F6'},ticks:{callback:v=>v+'%',color:'#8A93A0',font:{size:10}}}}},
-    plugins:[ChartDataLabels,occLine]});
+    plugins:[occLine,scatterLabels]});
 }
 
 /* ════════ 구단 산점도② 홈 점유율 × 전체경기 점유율 ════════ */
@@ -527,7 +561,7 @@ const diagLine={id:'diagLine',afterDraw(chart){
   ctx.save();ctx.strokeStyle='rgba(138,147,160,.55)';ctx.lineWidth=1;ctx.setLineDash([5,4]);
   ctx.beginPath();ctx.moveTo(x.getPixelForValue(lo),y.getPixelForValue(lo));ctx.lineTo(x.getPixelForValue(hi),y.getPixelForValue(hi));ctx.stroke();
   ctx.setLineDash([]);ctx.fillStyle='#8A93A0';ctx.font='600 9px sans-serif';ctx.textAlign='left';
-  ctx.fillText('홈 = 전체',x.getPixelForValue(hi)-46,y.getPixelForValue(hi)-5);ctx.restore();
+  ctx.fillText('대각선 = 홈·전체 동일',x.getPixelForValue(lo)+6,y.getPixelForValue(lo)-7);ctx.restore();
 }};
 function renderScatter2(){
   if(CH.sc2)CH.sc2.destroy();
@@ -545,12 +579,12 @@ function renderScatter2(){
       backgroundColor:pts.map(p=>TC[p.t]||'#888'),borderColor:'#fff',borderWidth:1.5,pointRadius:7,pointHoverRadius:9}]},
     options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:8,right:14,left:2}},
       plugins:{legend:{display:false},
-        datalabels:{align:'top',anchor:'center',offset:7,formatter:(v,c)=>c.dataset.data[c.dataIndex].t,color:'#16202C',font:{size:11,weight:'700'}},
+        datalabels:{display:false},
         tooltip:{callbacks:{label:c=>{const d=c.raw;return `${d.t}: 홈 ${d.x}% · 전체 ${d.y}% (홈 ${d.nh}·원정 ${d.na-d.nh})`;}}}},
       scales:{
         x:{min:lo,max:hi,title:{display:true,text:'홈경기 점유율(%)',color:'#8A93A0',font:{size:10,weight:600}},grid:{color:'#F1F3F6'},ticks:{callback:v=>v+'%',color:'#8A93A0',font:{size:10}}},
         y:{min:lo,max:hi,title:{display:true,text:'전체경기 점유율(%)',color:'#8A93A0',font:{size:10,weight:600}},grid:{color:'#F1F3F6'},ticks:{callback:v=>v+'%',color:'#8A93A0',font:{size:10}}}}},
-    plugins:[ChartDataLabels,diagLine]});
+    plugins:[diagLine,scatterLabels]});
 }
 
 /* ════════ 날씨 (강수량·기온) ════════ */
