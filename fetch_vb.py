@@ -113,7 +113,8 @@ def get_att(page, info):
             const txt = document.body.innerText || '';
             const hasFinal = /종료/.test(txt);
             const hasScore = /\\d+\\s*[:：]\\s*\\d+/.test(txt);
-            const teamsOk  = txt.includes(home) && txt.includes(away);
+            const T = txt.toUpperCase();
+            const teamsOk  = T.includes(home.toUpperCase()) && T.includes(away.toUpperCase());
             const dateOk   = txt.includes(dateDot);   // 그 경기의 실제 날짜가 페이지에 있어야(스테일 차단)
             let att = 0;
             const m = txt.match(/관중[\\s\\n]*([\\d,]{3,7})/);
