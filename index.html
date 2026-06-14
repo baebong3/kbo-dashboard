@@ -302,12 +302,14 @@ async function loadData(){
     banner('kbo_games.json을 불러오지 못했습니다. 같은 폴더에 파일이 있는지 확인하세요.','err');return false;}
 }
 function ingest(raw){
-  // 같은 경기가 여러 번 저장된 경우(수집 누적) game_id 기준으로 1건만 사용
-  const seen=new Set();
-  const games=raw.filter(g=>{
-    const k=g.game_id||`${g.yr||g.year}-${g.mo||g.month}-${g.day}-${g.home}-${g.away}`;
-    if(seen.has(k))return false; seen.add(k); return true;
-  });
+  // 중복 제거: ① game_id 있는 경기 우선 채택(더블헤더는 game_id가 달라 모두 보존)
+  //           ② game_id 없는 잔여는 같은 (날짜+정렬 팀쌍)이 아직 없을 때만 채택
+  //           → game_id가 없거나 홈/원정이 뒤바뀐 중복본도 안전하게 제거
+  const matchKey=g=>`${g.yr||g.year}-${g.mo||g.month}-${g.day}|`+[normTeam(g.home),normTeam(g.away||'')].sort().join('-');
+  const seenId=new Set(), seenMatch=new Set(), uniq=[];
+  raw.forEach(g=>{if(g.game_id&&!seenId.has(g.game_id)){seenId.add(g.game_id);uniq.push(g);seenMatch.add(matchKey(g));}});
+  raw.forEach(g=>{if(!g.game_id){const mk=matchKey(g);if(!seenMatch.has(mk)){seenMatch.add(mk);uniq.push(g);}}});
+  const games=uniq;
   const dupRemoved=raw.length-games.length;
   ALL=games.map(g=>{
     const dt=g.date?new Date(g.date):null;const dow=dt?dt.getDay():2;
