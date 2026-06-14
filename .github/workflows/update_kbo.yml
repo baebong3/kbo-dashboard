@@ -19,7 +19,7 @@ permissions:
 
 jobs:
   update-and-deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       # 1. 저장소 체크아웃
       - name: 저장소 체크아웃
