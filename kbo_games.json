@@ -1,5 +1,5 @@
 {
-  "generated": "2026-06-14T13:00:07.319748",
+  "generated": "2026-06-14T13:24:34.429017",
   "updated": "2026-06-13",
   "total": 3843,
   "games": [
@@ -794,7 +794,12 @@
       "series": "WE",
       "date": "2026-06-06",
       "dateStr": "6/6",
-      "game_id": "20260606HTHH0"
+      "game_id": "20260606HTHH0",
+      "temp_avg": 28.2,
+      "rain_mm": 0.0,
+      "wind_ms": 2.8,
+      "weather": "구름조금",
+      "rain_yn": false
     },
     {
       "yr": 2026,
@@ -807,7 +812,12 @@
       "series": "WE",
       "date": "2026-06-06",
       "dateStr": "6/6",
-      "game_id": "20260606NCWO0"
+      "game_id": "20260606NCWO0",
+      "temp_avg": 26.5,
+      "rain_mm": 0.0,
+      "wind_ms": 3.8,
+      "weather": "흐림",
+      "rain_yn": false
     },
     {
       "yr": 2026,
@@ -838,7 +848,12 @@
       "series": "WE",
       "date": "2026-06-06",
       "dateStr": "6/6",
-      "game_id": "20260606SKLG0"
+      "game_id": "20260606SKLG0",
+      "temp_avg": 26.4,
+      "rain_mm": 0.0,
+      "wind_ms": 2.3,
+      "weather": "흐림",
+      "rain_yn": false
     },
     {
       "yr": 2026,
@@ -869,7 +884,12 @@
       "series": "WE",
       "date": "2026-06-06",
       "dateStr": "6/6",
-      "game_id": "20260606HHWO0"
+      "game_id": "20260606HHWO0",
+      "temp_avg": 26.5,
+      "rain_mm": 0.0,
+      "wind_ms": 3.8,
+      "weather": "흐림",
+      "rain_yn": false
     },
     {
       "yr": 2026,
@@ -882,7 +902,12 @@
       "series": "WE",
       "date": "2026-06-06",
       "dateStr": "6/6",
-      "game_id": "20260606LTLG0"
+      "game_id": "20260606LTLG0",
+      "temp_avg": 26.4,
+      "rain_mm": 0.0,
+      "wind_ms": 2.3,
+      "weather": "흐림",
+      "rain_yn": false
     },
     {
       "yr": 2026,
@@ -949,7 +974,12 @@
       "series": "WE",
       "date": "2026-06-05",
       "dateStr": "6/5",
-      "game_id": "20260605HHSS0"
+      "game_id": "20260605HHSS0",
+      "temp_avg": 25.8,
+      "rain_mm": 0.0,
+      "wind_ms": 5.4,
+      "weather": "대체로맑음",
+      "rain_yn": false
     },
     {
       "yr": 2026,
@@ -962,7 +992,12 @@
       "series": "WE",
       "date": "2026-06-05",
       "dateStr": "6/5",
-      "game_id": "20260605KTHT0"
+      "game_id": "20260605KTHT0",
+      "temp_avg": 21.8,
+      "rain_mm": 0.0,
+      "wind_ms": 4.6,
+      "weather": "흐림",
+      "rain_yn": false
     },
     {
       "yr": 2026,
@@ -975,7 +1010,12 @@
       "series": "WE",
       "date": "2026-06-05",
       "dateStr": "6/5",
-      "game_id": "20260605LTSK0"
+      "game_id": "20260605LTSK0",
+      "temp_avg": 21.7,
+      "rain_mm": 0.0,
+      "wind_ms": 5.5,
+      "weather": "맑음",
+      "rain_yn": false
     },
     {
       "yr": 2026,
@@ -1024,7 +1064,12 @@
       "series": "WE",
       "date": "2026-06-05",
       "dateStr": "6/5",
-      "game_id": "20260605HHHT0"
+      "game_id": "20260605HHHT0",
+      "temp_avg": 21.8,
+      "rain_mm": 0.0,
+      "wind_ms": 4.6,
+      "weather": "흐림",
+      "rain_yn": false
     },
     {
       "yr": 2026,
@@ -1055,7 +1100,12 @@
       "series": "WE",
       "date": "2026-06-05",
       "dateStr": "6/5",
-      "game_id": "20260605NCSK0"
+      "game_id": "20260605NCSK0",
+      "temp_avg": 21.7,
+      "rain_mm": 0.0,
+      "wind_ms": 5.5,
+      "weather": "맑음",
+      "rain_yn": false
     },
     {
       "yr": 2026,
@@ -1086,7 +1136,12 @@
       "series": "WE",
       "date": "2026-06-05",
       "dateStr": "6/5",
-      "game_id": "20260605WOSS0"
+      "game_id": "20260605WOSS0",
+      "temp_avg": 25.8,
+      "rain_mm": 0.0,
+      "wind_ms": 5.4,
+      "weather": "대체로맑음",
+      "rain_yn": false
     },
     {
       "yr": 2026,
@@ -1225,7 +1280,12 @@
       "series": "WE",
       "date": "2026-06-05",
       "dateStr": "6/5",
-      "game_id": "20260605OBHT0"
+      "game_id": "20260605OBHT0",
+      "temp_avg": 21.8,
+      "rain_mm": 0.0,
+      "wind_ms": 4.6,
+      "weather": "흐림",
+      "rain_yn": false
     },
     {
       "yr": 2026,
@@ -1292,7 +1352,12 @@
       "series": "WE",
       "date": "2026-06-05",
       "dateStr": "6/5",
-      "game_id": "20260605HTSS0"
+      "game_id": "20260605HTSS0",
+      "temp_avg": 25.8,
+      "rain_mm": 0.0,
+      "wind_ms": 5.4,
+      "weather": "대체로맑음",
+      "rain_yn": false
     },
     {
       "yr": 2026,
@@ -1305,7 +1370,12 @@
       "series": "WE",
       "date": "2026-06-05",
       "dateStr": "6/5",
-      "game_id": "20260605LGSK0"
+      "game_id": "20260605LGSK0",
+      "temp_avg": 21.7,
+      "rain_mm": 0.0,
+      "wind_ms": 5.5,
+      "weather": "맑음",
+      "rain_yn": false
     },
     {
       "yr": 2026,
@@ -1354,7 +1424,12 @@
       "series": "WE",
       "date": "2026-06-05",
       "dateStr": "6/5",
-      "game_id": "20260605KTSS0"
+      "game_id": "20260605KTSS0",
+      "temp_avg": 25.8,
+      "rain_mm": 0.0,
+      "wind_ms": 5.4,
+      "weather": "대체로맑음",
+      "rain_yn": false
     },
     {
       "yr": 2026,
@@ -1367,7 +1442,12 @@
       "series": "WE",
       "date": "2026-06-05",
       "dateStr": "6/5",
-      "game_id": "20260605LGHT0"
+      "game_id": "20260605LGHT0",
+      "temp_avg": 21.8,
+      "rain_mm": 0.0,
+      "wind_ms": 4.6,
+      "weather": "흐림",
+      "rain_yn": false
     },
     {
       "yr": 2026,
@@ -1470,7 +1550,12 @@
       "series": "WE",
       "date": "2026-06-05",
       "dateStr": "6/5",
-      "game_id": "20260605SKHT0"
+      "game_id": "20260605SKHT0",
+      "temp_avg": 21.8,
+      "rain_mm": 0.0,
+      "wind_ms": 4.6,
+      "weather": "흐림",
+      "rain_yn": false
     },
     {
       "yr": 2026,
@@ -1591,7 +1676,12 @@
       "series": "WE",
       "date": "2026-06-05",
       "dateStr": "6/5",
-      "game_id": "20260605SSSK0"
+      "game_id": "20260605SSSK0",
+      "temp_avg": 21.7,
+      "rain_mm": 0.0,
+      "wind_ms": 5.5,
+      "weather": "맑음",
+      "rain_yn": false
     },
     {
       "yr": 2026,
@@ -1604,7 +1694,12 @@
       "series": "WE",
       "date": "2026-06-05",
       "dateStr": "6/5",
-      "game_id": "20260605OBSS0"
+      "game_id": "20260605OBSS0",
+      "temp_avg": 25.8,
+      "rain_mm": 0.0,
+      "wind_ms": 5.4,
+      "weather": "대체로맑음",
+      "rain_yn": false
     },
     {
       "yr": 2026,
@@ -1635,7 +1730,12 @@
       "series": "WD",
       "date": "2026-06-04",
       "dateStr": "6/4",
-      "game_id": "20260604HTLG0"
+      "game_id": "20260604HTLG0",
+      "temp_avg": 22.3,
+      "rain_mm": 7.0,
+      "wind_ms": 5.7,
+      "weather": "이슬비(약)",
+      "rain_yn": true
     },
     {
       "yr": 2026,
@@ -1687,7 +1787,12 @@
       "series": "WD",
       "date": "2026-06-04",
       "dateStr": "6/4",
-      "game_id": "20260604WOSK0"
+      "game_id": "20260604WOSK0",
+      "temp_avg": 21.7,
+      "rain_mm": 6.5,
+      "wind_ms": 6.1,
+      "weather": "이슬비(약)",
+      "rain_yn": true
     },
     {
       "yr": 2026,
@@ -1790,7 +1895,12 @@
       "series": "WD",
       "date": "2026-06-04",
       "dateStr": "6/4",
-      "game_id": "20260604HHSK0"
+      "game_id": "20260604HHSK0",
+      "temp_avg": 21.7,
+      "rain_mm": 6.5,
+      "wind_ms": 6.1,
+      "weather": "이슬비(약)",
+      "rain_yn": true
     },
     {
       "yr": 2026,
@@ -1932,7 +2042,12 @@
       "series": "WD",
       "date": "2026-06-04",
       "dateStr": "6/4",
-      "game_id": "20260604SKLG0"
+      "game_id": "20260604SKLG0",
+      "temp_avg": 22.3,
+      "rain_mm": 7.0,
+      "wind_ms": 5.7,
+      "weather": "이슬비(약)",
+      "rain_yn": true
     },
     {
       "yr": 2026,
@@ -1958,7 +2073,12 @@
       "series": "WD",
       "date": "2026-06-04",
       "dateStr": "6/4",
-      "game_id": "20260604LTLG0"
+      "game_id": "20260604LTLG0",
+      "temp_avg": 22.3,
+      "rain_mm": 7.0,
+      "wind_ms": 5.7,
+      "weather": "이슬비(약)",
+      "rain_yn": true
     },
     {
       "yr": 2026,
@@ -1971,7 +2091,12 @@
       "series": "WD",
       "date": "2026-06-04",
       "dateStr": "6/4",
-      "game_id": "20260604OBSK0"
+      "game_id": "20260604OBSK0",
+      "temp_avg": 21.7,
+      "rain_mm": 6.5,
+      "wind_ms": 6.1,
+      "weather": "이슬비(약)",
+      "rain_yn": true
     },
     {
       "yr": 2026,
@@ -2095,7 +2220,12 @@
       "series": "WD",
       "date": "2026-06-04",
       "dateStr": "6/4",
-      "game_id": "20260604HHLG0"
+      "game_id": "20260604HHLG0",
+      "temp_avg": 22.3,
+      "rain_mm": 7.0,
+      "wind_ms": 5.7,
+      "weather": "이슬비(약)",
+      "rain_yn": true
     },
     {
       "yr": 2026,
@@ -2175,7 +2305,12 @@
       "series": "WD",
       "date": "2026-06-04",
       "dateStr": "6/4",
-      "game_id": "20260604KTSK0"
+      "game_id": "20260604KTSK0",
+      "temp_avg": 21.7,
+      "rain_mm": 6.5,
+      "wind_ms": 6.1,
+      "weather": "이슬비(약)",
+      "rain_yn": true
     },
     {
       "yr": 2026,
@@ -2345,7 +2480,12 @@
       "series": "WD",
       "date": "2026-06-03",
       "dateStr": "6/3",
-      "game_id": "20260603WOHH0"
+      "game_id": "20260603WOHH0",
+      "temp_avg": 29.1,
+      "rain_mm": 0.0,
+      "wind_ms": 3.0,
+      "weather": "흐림",
+      "rain_yn": false
     },
     {
       "yr": 2026,
@@ -2376,7 +2516,12 @@
       "series": "WD",
       "date": "2026-06-03",
       "dateStr": "6/3",
-      "game_id": "20260603KTHH0"
+      "game_id": "20260603KTHH0",
+      "temp_avg": 29.1,
+      "rain_mm": 0.0,
+      "wind_ms": 3.0,
+      "weather": "흐림",
+      "rain_yn": false
     },
     {
       "yr": 2026,
