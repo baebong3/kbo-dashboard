@@ -552,26 +552,31 @@ const scatterLabels={id:'scatterLabels',afterDatasetsDraw(chart){
   const ds=chart.data.datasets[0];if(!ds)return;const meta=chart.getDatasetMeta(0);
   const ca=chart.chartArea,ctx=chart.ctx;ctx.save();
   ctx.font="700 11px Pretendard,'Apple SD Gothic Neo',sans-serif";ctx.textBaseline='middle';
-  const placed=[],r=7,th=14;
+  const r=7,th=15,dirs=[];
+  [10,20,32,46,60].forEach(d=>{dirs.push([d,0,'l'],[-d,0,'r'],[0,d+5,'c'],
+    [d*0.8,d*0.7,'l'],[-d*0.8,d*0.7,'r'],[0,-(d+5),'c'],[d*0.8,-d*0.7,'l'],[-d*0.8,-d*0.7,'r']);});
+  const pts=meta.data.map(el=>({x:el.x-r,y:el.y-r,w:2*r,h:2*r}));
+  const placed=[];
   meta.data.forEach((el,i)=>{
     const t=ds.data[i]&&ds.data[i].t;if(!t)return;
     const tw=ctx.measureText(t).width,px=el.x,py=el.y;
-    const cand=[[0,-(r+8),'c'],[0,(r+8),'c'],[r+8,0,'l'],[-(r+8),0,'r'],
-      [r+7,-(r+4),'l'],[-(r+7),-(r+4),'r'],[r+7,(r+4),'l'],[-(r+7),(r+4),'r'],
-      [0,-(r+22),'c'],[0,(r+22),'c']];
-    let ch=null;
-    for(const[dx,dy,al]of cand){
-      const lx=px+dx,ly=py+dy,bx=al==='l'?lx:al==='r'?lx-tw:lx-tw/2;
-      const box={x:bx-3,y:ly-th/2,w:tw+6,h:th};
-      if(box.x<ca.left||box.x+box.w>ca.right||box.y<ca.top||box.y+box.h>ca.bottom)continue;
-      if(placed.some(p=>_ovl(p,box)))continue;ch={lx,ly,al,dx,dy,box};break;
+    const mk=(dx,dy,al)=>{const lx=px+dx,ly=py+dy,bx=al==='l'?lx:al==='r'?lx-tw:lx-tw/2;
+      return {lx,ly,al,box:{x:bx-3,y:ly-th/2,w:tw+6,h:th}};};
+    let best=null,bestOv=Infinity;
+    for(const[dx,dy,al]of dirs){
+      const c=mk(dx,dy,al),b=c.box;
+      if(b.x<ca.left||b.x+b.w>ca.right||b.y<ca.top||b.y+b.h>ca.bottom)continue;
+      const ov=placed.filter(p=>_ovl(p,b)).length*100+pts.filter((p,j)=>j!==i&&_ovl(p,b)).length;
+      if(ov===0){best=c;break;}
+      if(ov<bestOv){bestOv=ov;best=c;}
     }
-    if(!ch){const lx=px,ly=py-(r+8),bx=lx-tw/2;ch={lx,ly,al:'c',dx:0,dy:-(r+8),box:{x:bx-3,y:ly-th/2,w:tw+6,h:th}};}
-    placed.push(ch.box);
-    if(ch.al!=='c'||Math.abs(ch.dy)>r+14){ctx.strokeStyle='rgba(150,158,170,.55)';ctx.lineWidth=1;
-      ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(ch.al==='l'?ch.lx-2:ch.al==='r'?ch.lx+2:ch.lx,ch.ly);ctx.stroke();}
-    ctx.textAlign=ch.al==='l'?'left':ch.al==='r'?'right':'center';
-    ctx.fillStyle='#16202C';ctx.fillText(t,ch.lx,ch.ly);
+    if(!best)best=mk(0,-(r+9),'c');
+    placed.push(best.box);
+    const far=Math.hypot(best.lx-px,best.ly-py)>r+11;
+    if(far){ctx.strokeStyle='rgba(150,158,170,.5)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(px,py);
+      ctx.lineTo(best.al==='l'?best.lx-2:best.al==='r'?best.lx+2:best.lx,best.ly);ctx.stroke();}
+    ctx.textAlign=best.al==='l'?'left':best.al==='r'?'right':'center';
+    ctx.fillStyle='#16202C';ctx.fillText(t,best.lx,best.ly);
   });
   ctx.restore();
 }};
