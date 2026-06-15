@@ -231,6 +231,15 @@ select:hover,select:focus{border-color:var(--coral)}
 
   <div class="card" style="margin-bottom:14px">
     <div class="card-hd">
+      <div><div class="eyebrow">순위 영향도</div><div class="ctitle">홈팀 순위권별 평균 관중</div><div class="csub">경기 직전 순위 기준 · 막대 위 = 평균 관중 · 마우스오버 시 점유율·경기 수</div></div>
+      <div class="legbox"><span class="lg"><i style="background:var(--navy)"></i>2025</span><span class="lg"><i style="background:var(--coral)"></i>2026</span></div>
+    </div>
+    <div class="chwrap" style="height:280px"><canvas id="cRank"></canvas></div>
+    <div id="rankNote" style="margin-top:10px;font-size:12px;color:var(--muted);line-height:1.65"></div>
+  </div>
+
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-hd">
       <div><div class="eyebrow">날씨 영향</div><div class="ctitle">강수량·기온대별 평균 관중</div><div class="csub">막대 위 = 평균 관중 · 괄호 = 경기 수 · 5mm+는 우천취소·돔구장 영향으로 표본 적어 해석 주의</div></div>
     </div>
     <div class="g-11" style="display:grid;gap:18px">
@@ -331,7 +340,8 @@ function ingest(raw){
     const yr=+(g.yr||g.year);if(yr<2025)return null;
     return{yr,mo:+(g.mo||g.month),day:+g.day,dow,dowN:DOWNAME[dow],home,away,att,occ:att/cap(home,yr),
       series:g.series||([5,6,0].includes(dow)?'WE':'WD'),
-      temp:g.temp_avg??null,rain:g.rain_mm??null,rainY:g.rain_yn??(g.rain_mm>0)};
+      temp:g.temp_avg??null,rain:g.rain_mm??null,rainY:g.rain_yn??(g.rain_mm>0),
+      homeRank:g.home_rank??null,awayRank:g.away_rank??null,rankGap:g.rank_gap??null};
   }).filter(Boolean);
   buildFilters();
   window.__dupRemoved=dupRemoved+fakeRemoved;
@@ -355,7 +365,7 @@ function yearMatch(g){return yearSel==='2526'?true:g.yr===+yearSel;}
 function refresh(){
   filtered=ALL.filter(g=>yearMatch(g)&&baseMatch(g));
   $('yrTag').textContent=yearSel==='2526'?'2025 · 2026':yearSel;
-  renderKPIs();renderYearSummary();renderInsight();renderImpact();renderSplit();renderTrend();renderScatter();renderScatter2();renderRain();renderTemp();renderMatchup();renderFoot();
+  renderKPIs();renderYearSummary();renderInsight();renderImpact();renderSplit();renderTrend();renderScatter();renderScatter2();renderRankTier();renderRain();renderTemp();renderMatchup();renderFoot();
 }
 
 function metricsFor(yr){
@@ -490,6 +500,37 @@ function renderTrend(){
       scales:{x:{grid:{color:'#F1F3F6'},ticks:{color:'#8A93A0',font:{size:11,weight:600}}},
         y:{min:lo,suggestedMax:hi,grid:{color:'#F1F3F6'},ticks:{callback:v=>(v/1000)+'천',color:'#8A93A0',font:{size:10}}}}},
     plugins:[ChartDataLabels]});
+}
+
+/* ════════ 순위 영향도 ════════ */
+function renderRankTier(){
+  if(CH.rank)CH.rank.destroy();
+  const tiers=[[1,3,'1~3위'],[4,6,'4~6위'],[7,10,'7~10위']];
+  const calc=yr=>tiers.map(([lo,hi])=>{
+    const gs=ALL.filter(g=>g.yr===yr&&g.homeRank!=null&&g.homeRank>=lo&&g.homeRank<=hi&&baseMatch(g));
+    return gs.length?{a:avg(gs.map(g=>g.att)),o:gs.reduce((s,g)=>s+g.occ,0)/gs.length,n:gs.length}:null;
+  });
+  const s25=yearSel!=='2026',s26=yearSel!=='2025';
+  const d25=calc(2025),d26=calc(2026),ds=[];
+  if(s25)ds.push({label:'2025',data:d25.map(x=>x?x.a:null),tierMeta:d25,backgroundColor:'#2B3A55',borderRadius:4,maxBarThickness:56,
+    datalabels:{anchor:'end',align:'top',offset:2,formatter:v=>v?fmt(v):'',color:'#2B3A55',font:{family:"'JetBrains Mono'",size:10,weight:'700'}}});
+  if(s26)ds.push({label:'2026',data:d26.map(x=>x?x.a:null),tierMeta:d26,backgroundColor:'#E85A3C',borderRadius:4,maxBarThickness:56,
+    datalabels:{anchor:'end',align:'top',offset:2,formatter:v=>v?fmt(v):'',color:'#C6452B',font:{family:"'JetBrains Mono'",size:10,weight:'700'}}});
+  const vals=ds.flatMap(d=>d.data).filter(v=>v!=null);
+  const hi=vals.length?Math.ceil((Math.max(...vals)+2800)/1000)*1000:24000;
+  CH.rank=new Chart($('cRank'),{type:'bar',data:{labels:tiers.map(t=>t[2]),datasets:ds},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:18}},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const m=c.dataset.tierMeta[c.dataIndex];return m?`${c.dataset.label}: ${fmt(m.a)}명 · 점유율 ${(m.o*100).toFixed(1)}% (${m.n}경기)`:'';}}}},
+      scales:{x:{grid:{display:false},ticks:{color:'#5A6473',font:{size:12,weight:700}}},
+        y:{min:0,suggestedMax:hi,grid:{color:'#F1F3F6'},ticks:{callback:v=>(v/1000)+'천',color:'#8A93A0',font:{size:10}}}}},
+    plugins:[ChartDataLabels]});
+  const note=$('rankNote');if(note){
+    const mk=d=>(d[0]&&d[2])?{top:d[0].a,bot:d[2].a,diff:d[0].a-d[2].a,pct:Math.round((d[0].a-d[2].a)/d[2].a*100)}:null;
+    const i25=s25?mk(d25):null,i26=s26?mk(d26):null;let h=[];
+    if(i25)h.push(`<b style="color:var(--navy)">2025</b> — 상위권(1~3위) 홈팀이 하위권(7~10위)보다 평균 <b>+${fmt(i25.diff)}명(+${i25.pct}%)</b> 더 동원. 순위가 흥행을 강하게 좌우.`);
+    if(i26)h.push(`<b style="color:var(--coral-d)">2026</b> — 같은 격차가 <b>+${fmt(i26.diff)}명(+${i26.pct}%)</b>로 작아짐. 전체 흥행 호조로 하위권도 잘 들어 순위 민감도가 낮음.`);
+    note.innerHTML=h.join('<br>');
+  }
 }
 
 /* ════════ 구단 산점도 ════════ */
