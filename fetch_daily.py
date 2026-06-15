@@ -77,10 +77,15 @@ def parse_page(html, year, month):
         cells = [td.get_text(' ', strip=True) for td in row.select('td')]
         if len(cells) < 3:
             continue
-        m = re.search(r'(\d{1,2})[./](\d{1,2})', cells[0])
-        if not m:
-            continue
-        day = int(m.group(2))
+        mfull = re.search(r'(20\d{2})[.\-/](\d{1,2})[.\-/](\d{1,2})', cells[0])
+        if mfull:
+            yy, mm, day = int(mfull.group(1)), int(mfull.group(2)), int(mfull.group(3))
+        else:
+            m = re.search(r'(?<!\d)(\d{1,2})[.\-/](\d{1,2})(?!\d)', cells[0])
+            if not m:
+                continue
+            mm, day = int(m.group(1)), int(m.group(2))
+            yy = year
         att = 0
         for c in reversed(cells):
             n = re.sub(r'[^\d]', '', c)
@@ -96,12 +101,12 @@ def parse_page(html, year, month):
         if not found:
             continue
         try:
-            dt = date(year, month, day)
+            dt = date(yy, mm, day)
         except ValueError:
             continue
         dow = (dt.weekday()+1) % 7
         g = {
-            'yr': year, 'mo': month, 'day': day,
+            'yr': yy, 'mo': mm, 'day': day,
             'dow': DAYS_KO[dow],
             'home': found[0],
             'away': found[1] if len(found) > 1 else '',
