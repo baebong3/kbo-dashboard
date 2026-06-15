@@ -521,7 +521,7 @@ function renderRankTier(){
   CH.rank=new Chart($('cRank'),{data:{labels:ranks.map(r=>r+'위'),datasets:ds},
     options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:6}},
       interaction:{mode:'index',intersect:false},
-      plugins:{legend:{display:true,position:'top',align:'end',labels:{boxWidth:12,padding:9,font:{size:10.5},usePointStyle:true}},
+      plugins:{legend:{display:true,position:'top',align:'end',labels:{boxWidth:12,padding:9,font:{size:10.5},usePointStyle:true,sort:(a,b)=>a.datasetIndex-b.datasetIndex}},
         tooltip:{callbacks:{label:c=>{if(c.dataset.type==='line')return `${c.dataset.label}: ${c.parsed.y}%`;const m=(c.dataset.rkMeta||[])[c.dataIndex];return m?`${c.dataset.label}: ${fmt(m.a)}명 (${m.n}경기)`:'';}}}},
       scales:{x:{grid:{display:false},ticks:{color:'#5A6473',font:{size:11,weight:700}}},
         y:{position:'left',min:0,suggestedMax:hiA,grid:{color:'#F1F3F6'},title:{display:true,text:'평균 관중',color:'#8A93A0',font:{size:10,weight:600}},ticks:{callback:v=>(v/1000)+'천',color:'#8A93A0',font:{size:10}}},
