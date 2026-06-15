@@ -1,5 +1,5 @@
 {
-  "generated": "2026-06-15T05:09:57.718822",
+  "generated": "2026-06-15T08:05:12.832387",
   "updated": "2026-06-14",
   "total": 3754,
   "games": [
@@ -1238,7 +1238,12 @@
       "away_rank": 1,
       "away_wpct": 0.618,
       "away_gb": 0.0,
-      "rank_gap": 1
+      "rank_gap": 1,
+      "temp_avg": 22.2,
+      "rain_mm": 4.4,
+      "wind_ms": 6.8,
+      "weather": "이슬비(약)",
+      "rain_yn": true
     },
     {
       "yr": 2026,
@@ -1449,7 +1454,12 @@
       "away_rank": 10,
       "away_wpct": 0.382,
       "away_gb": 13.5,
-      "rank_gap": 2
+      "rank_gap": 2,
+      "temp_avg": 25.5,
+      "rain_mm": 0.0,
+      "wind_ms": 3.5,
+      "weather": "흐림",
+      "rain_yn": false
     },
     {
       "yr": 2026,
