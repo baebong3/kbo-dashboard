@@ -55,6 +55,21 @@ def dedup_clean(games):
         seen_match.add(mk); out.append(g)
     return out
 
+def strip_cartesian(games):
+    from collections import defaultdict
+    byd=defaultdict(list)
+    for g in games: byd[g.get('date')].append(g)
+    bad=set()
+    for d,recs in byd.items():
+        opp=defaultdict(set)
+        for r in recs:
+            h,a=r.get('home',''),r.get('away','')
+            if h and a: opp[h].add(a); opp[a].add(h)
+        if any(len(v)>1 for v in opp.values()): bad.add(d)
+    kept=[g for g in games if g.get('date') not in bad]
+    if bad: print('  strip_cartesian removed', len(games)-len(kept), 'games on', sorted(bad))
+    return kept
+
 def parse_page(html, year, month):
     soup = BeautifulSoup(html, 'html.parser')
     games = []
@@ -161,6 +176,7 @@ def main():
         covered.add(mk); added.append(g)
 
     merged = dedup_clean(existing + added)
+    merged = strip_cartesian(merged)
     merged.sort(key=lambda g: g.get('date', ''), reverse=True)
     removed = len(existing) + len(added) - len(merged)
 
