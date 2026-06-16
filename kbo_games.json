@@ -120902,7 +120902,12 @@
       "away_rank": 2,
       "away_wpct": 0.6,
       "away_gb": 2.0,
-      "rank_gap": 4
+      "rank_gap": 4,
+      "temp_avg": 12.1,
+      "rain_mm": 0.0,
+      "wind_ms": 5.8,
+      "weather": "맑음",
+      "rain_yn": false
     },
     {
       "yr": 2019,
@@ -120924,7 +120929,12 @@
       "away_rank": 5,
       "away_wpct": 0.5,
       "away_gb": 3.0,
-      "rank_gap": 2
+      "rank_gap": 2,
+      "temp_avg": 9.8,
+      "rain_mm": 0.0,
+      "wind_ms": 8.1,
+      "weather": "맑음",
+      "rain_yn": false
     },
     {
       "yr": 2019,
@@ -120947,7 +120957,12 @@
       "away_wpct": 0.4,
       "away_gb": 4.0,
       "rank_gap": 5,
-      "venue": "창원NC파크"
+      "venue": "창원NC파크",
+      "temp_avg": 14.0,
+      "rain_mm": 0.0,
+      "wind_ms": 4.4,
+      "weather": "흐림",
+      "rain_yn": false
     },
     {
       "yr": 2019,
