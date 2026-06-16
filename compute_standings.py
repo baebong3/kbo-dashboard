@@ -72,7 +72,7 @@ def main():
     data = json.loads(p.read_text(encoding='utf-8'))
     games = data['games']
 
-    for yr in (2025, 2026):
+    for yr in sorted({g.get('yr') for g in games if g.get('yr')} - {2020}):
         gy = [g for g in games if g.get('yr')==yr and g.get('att')]
         scored = [g for g in gy if g.get('home_score') is not None]
         print(f"[{yr}] {len(gy)}경기 중 점수 보유 {len(scored)}")
@@ -86,7 +86,7 @@ def main():
 
     # ── 요약: 홈팀 순위대별 평균 관중·점유율 ──
     def occ(g): return g['att']/cap(g['home'], g['yr'])
-    for yr in (2025, 2026):
+    for yr in sorted({g.get('yr') for g in games if g.get('yr')} - {2020}):
         rows = [g for g in games if g.get('yr')==yr and g.get('att') and g.get('home_rank')]
         if not rows: continue
         print(f"=== {yr} 홈팀 순위대별 ===")

@@ -11,7 +11,7 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright, Error as PWError
 
 BASE = "https://visualbaseball.com"
-TARGET_YEARS = {2025, 2026}
+TARGET_YEARS = {2019, 2021, 2022, 2023, 2024, 2025, 2026}
 TEST_LIMIT = 0           # 0 이면 전체 실행, >0 이면 그 개수만 검증 출력
 
 def get_score(page, info):

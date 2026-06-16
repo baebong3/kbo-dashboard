@@ -165,7 +165,7 @@ def main():
     print(f'유지(스킵) 기존: {len(done)}경기 / 재수집 연도는 전부 새로 검증\n')
 
     all_results = list(done.values())
-    years = list(range(yesterday.year, 2020, -1))
+    years = [y for y in range(yesterday.year, 2018, -1) if y != 2020]
 
     with sync_playwright() as pw:
         br, page = make_browser(pw)
