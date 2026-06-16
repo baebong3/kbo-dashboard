@@ -200,7 +200,7 @@ select:hover,select:focus{border-color:var(--coral)}
   <div class="grid g-21">
     <div class="card">
       <div class="card-hd">
-        <div><div class="eyebrow">상황별 영향도 — 무엇이 관중을 움직이나</div><div class="ctitle">전체 평균 대비 평균 관중 편차</div><div class="csub">기준선 = 현재 조건 전체 평균 · 막대 = ±%(괄호 경기 수)</div></div>
+        <div><div class="eyebrow">상황별 영향도</div><div class="ctitle">전체 평균 대비 평균 관중 편차</div><div class="csub">기준선 = 현재 조건 전체 평균 · 막대 = ±%(괄호 경기 수)</div></div>
       </div>
       <div id="impact"></div>
       <div class="split" id="serSplit"></div>
@@ -217,13 +217,13 @@ select:hover,select:focus{border-color:var(--coral)}
   <div class="grid g-11">
     <div class="card">
       <div class="card-hd">
-        <div><div class="eyebrow">구단별 동원력 ①</div><div class="ctitle">평균 관중 × 좌석 점유율</div><div class="csub">오른쪽 = 동원 많음 · 위쪽 = 만석에 가까움 · 점선 = 만석(100%)</div></div>
+        <div><div class="eyebrow">구단별 동원력 ①</div><div class="ctitle">평균 관중 × 좌석 점유율</div><div class="csub">X = 경기당 평균 관중 · Y = 좌석 점유율 · 점선 = 만석(100%)</div></div>
       </div>
       <div class="chwrap" style="height:300px"><canvas id="cScatter"></canvas></div>
     </div>
     <div class="card">
       <div class="card-hd">
-        <div><div class="eyebrow">구단별 동원력 ②</div><div class="ctitle">홈 점유율 × 전체경기 점유율</div><div class="csub">전체 = 홈+원정 · 대각선 위 = 원정에서 더 채움(원정 흥행력) · 아래 = 홈 의존형</div></div>
+        <div><div class="eyebrow">구단별 동원력 ②</div><div class="ctitle">홈 점유율 × 전체경기 점유율</div><div class="csub">X = 홈경기 점유율 · Y = 홈+원정 전체 점유율 · 대각선 = 동일</div></div>
       </div>
       <div class="chwrap" style="height:300px"><canvas id="cScatter2"></canvas></div>
     </div>
@@ -240,7 +240,7 @@ select:hover,select:focus{border-color:var(--coral)}
 
   <div class="card" style="margin-bottom:14px">
     <div class="card-hd">
-      <div><div class="eyebrow">날씨 영향</div><div class="ctitle">강수량·기온대별 평균 관중</div><div class="csub">막대 위 = 평균 관중 · 괄호 = 경기 수 · 5mm+는 우천취소·돔구장 영향으로 표본 적어 해석 주의</div></div>
+      <div><div class="eyebrow">날씨 영향</div><div class="ctitle">강수량·기온대별 평균 관중</div><div class="csub">막대 위 = 평균 관중 · 괄호 = 경기 수 · 5mm+ 표본 적음</div></div>
     </div>
     <div class="g-11" style="display:grid;gap:18px">
       <div class="chwrap" style="height:240px"><canvas id="cRain"></canvas></div>
@@ -689,9 +689,10 @@ function renderMatchup(){
 
 /* ════════ 푸터 ════════ */
 function renderFoot(){
-  $('foot').innerHTML=`<b>분석 단위</b> 경기별 실측 관중(KBO 공식) · <b>점유율</b> = 관중 ÷ 구장 수용인원(한화 2025 신구장 17,000석 반영) · `+
-    `<b>완전 매진</b> = 점유율 100% 이상(입석 포함 초과 가능) · 주말 = 금·토·일, 주중 = 화·수·목 · 영향도는 현재 조건 전체 평균 기준 편차. `+
-    `날씨·대진 일부 구간은 표본이 적어(괄호 경기 수) 해석에 주의가 필요합니다. 제작 (주)서던포스트.`;
+  $('foot').innerHTML=`<b>출처</b> 관중 = KBO 공식 기록 · 경기 결과·순위 = visualbaseball 기반 산출 · `+
+    `<b>점유율</b> = 관중 ÷ 구장 수용인원(한화 2025 신구장 17,000석 반영) · <b>완전 매진</b> = 점유율 100% 이상 · `+
+    `<b>순위</b> = 경기 직전 승률(승÷(승+패)) 기준 · <b>주말</b> 금·토·일 / <b>주중</b> 화·수·목 · `+
+    `<b>영향도</b> = 조회 조건 전체 평균 대비 편차(괄호 = 경기 수). 제작 (주)서던포스트.`;
 }
 
 /* ════════ 이벤트 ════════ */
