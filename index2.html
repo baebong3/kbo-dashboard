@@ -288,7 +288,7 @@ const CAPY={LG:{d:23750},두산:{d:23750},삼성:{d:24000},KIA:{d:20500},SSG:{d:
   롯데:{d:23079},kt:{d:18700},한화:{d:17000,b25:13000},NC:{d:17983},키움:{d:16000}};
 const VENUE_CAP={'포항':12247,'울산':12000,'청주':9500,'사직':23079,'마산':11000};
 function venueCap(v){if(!v)return null;for(const k in VENUE_CAP)if((''+v).includes(k))return VENUE_CAP[k];return null;}
-function cap(t,yr,venue){const vc=venueCap(venue);if(vc)return vc;const c=CAPY[t];if(!c)return 20000;return(c.b25&&yr<2025)?c.b25:c.d;}
+function cap(t,yr,venue){const vc=venueCap(venue);if(vc)return vc;if((venue&&(''+venue).includes('잠실'))||t==='LG'||t==='두산')return yr<=2021?25000:23750;const c=CAPY[t];if(!c)return 20000;return(c.b25&&yr<2025)?c.b25:c.d;}
 const DOWNAME=['일','월','화','수','목','금','토'];
 const NM={'LG':'LG','두산':'두산','삼성':'삼성','KIA':'KIA','SSG':'SSG','롯데':'롯데','kt':'kt','KT':'kt','한화':'한화','NC':'NC','키움':'키움'};
 const NMP={'LG트윈스':'LG','두산베어스':'두산','삼성라이온즈':'삼성','KIA타이거즈':'KIA','SSG랜더스':'SSG',
