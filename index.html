@@ -200,14 +200,14 @@ select:hover,select:focus{border-color:var(--coral)}
   <div class="grid g-21">
     <div class="card">
       <div class="card-hd">
-        <div><div class="eyebrow">상황별 영향도</div><div class="ctitle">전체 평균 대비 평균 관중 편차</div><div class="csub">기준선 = 현재 조건 전체 평균 · 막대 = ±%(괄호 경기 수)</div></div>
+        <div><div class="eyebrow">상황별 영향도 — 무엇이 관중을 움직이나</div><div class="ctitle">전체 평균 대비 평균 관중 편차</div><div class="csub">기준선 = 현재 조건 전체 평균 · 막대 = ±%(괄호 경기 수)</div></div>
       </div>
       <div id="impact"></div>
       <div class="split" id="serSplit"></div>
     </div>
     <div class="card">
       <div class="card-hd">
-        <div><div class="eyebrow">시즌 흐름</div><div class="ctitle">월별 평균 관중</div><div class="csub">2025 vs 2026 · *2026년 6월은 진행 중(잠정)</div></div>
+        <div><div class="eyebrow">시즌 흐름</div><div class="ctitle">월별 평균 관중</div><div class="csub">2025 vs 2026</div></div>
         <div class="legbox"><span class="lg"><i style="background:var(--navy)"></i>2025</span><span class="lg"><i style="background:var(--coral)"></i>2026</span></div>
       </div>
       <div class="chwrap" style="height:300px"><canvas id="cTrend"></canvas></div>
@@ -217,13 +217,13 @@ select:hover,select:focus{border-color:var(--coral)}
   <div class="grid g-11">
     <div class="card">
       <div class="card-hd">
-        <div><div class="eyebrow">구단별 동원력 ①</div><div class="ctitle">평균 관중 × 좌석 점유율</div><div class="csub">X = 경기당 평균 관중 · Y = 좌석 점유율 · 점선 = 만석(100%)</div></div>
+        <div><div class="eyebrow">구단별 동원력 ①</div><div class="ctitle">평균 관중 × 좌석 점유율</div><div class="csub">오른쪽 = 동원 많음 · 위쪽 = 만석에 가까움 · 점선 = 만석(100%)</div></div>
       </div>
       <div class="chwrap" style="height:300px"><canvas id="cScatter"></canvas></div>
     </div>
     <div class="card">
       <div class="card-hd">
-        <div><div class="eyebrow">구단별 동원력 ②</div><div class="ctitle">홈 점유율 × 전체경기 점유율</div><div class="csub">X = 홈경기 점유율 · Y = 홈+원정 전체 점유율 · 대각선 = 동일</div></div>
+        <div><div class="eyebrow">구단별 동원력 ②</div><div class="ctitle">홈 점유율 × 전체경기 점유율</div><div class="csub">전체 = 홈+원정 · 대각선 위 = 원정에서 더 채움(원정 흥행력) · 아래 = 홈 의존형</div></div>
       </div>
       <div class="chwrap" style="height:300px"><canvas id="cScatter2"></canvas></div>
     </div>
@@ -231,16 +231,7 @@ select:hover,select:focus{border-color:var(--coral)}
 
   <div class="card" style="margin-bottom:14px">
     <div class="card-hd">
-      <div><div class="eyebrow">순위 영향도</div><div class="ctitle">홈팀 순위별 평균 관중</div><div class="csub">경기 직전(그날) 순위 기준 · 1~10위 전체 · 막대 = 평균 관중(좌) · 선 = 점유율(우)</div></div>
-      <div class="legbox"><span class="lg"><i style="background:var(--navy)"></i>2025</span><span class="lg"><i style="background:var(--coral)"></i>2026</span></div>
-    </div>
-    <div class="chwrap" style="height:340px"><canvas id="cRank"></canvas></div>
-    <div id="rankNote" style="margin-top:10px;font-size:12px;color:var(--muted);line-height:1.65"></div>
-  </div>
-
-  <div class="card" style="margin-bottom:14px">
-    <div class="card-hd">
-      <div><div class="eyebrow">날씨 영향</div><div class="ctitle">강수량·기온대별 평균 관중</div><div class="csub">막대 위 = 평균 관중 · 괄호 = 경기 수 · 5mm+ 표본 적음</div></div>
+      <div><div class="eyebrow">날씨 영향</div><div class="ctitle">강수량·기온대별 평균 관중</div><div class="csub">막대 위 = 평균 관중 · 괄호 = 경기 수 · 5mm+는 우천취소·돔구장 영향으로 표본 적어 해석 주의</div></div>
     </div>
     <div class="g-11" style="display:grid;gap:18px">
       <div class="chwrap" style="height:240px"><canvas id="cRain"></canvas></div>
@@ -275,9 +266,7 @@ const TC={LG:'#C30452',두산:'#1A1748',삼성:'#0A4DA2',KIA:'#EA0029',SSG:'#CE0
   롯데:'#041E42',kt:'#3A3A3A',한화:'#FC4E00',NC:'#1D467F',키움:'#820024'};
 const CAPY={LG:{d:23750},두산:{d:23750},삼성:{d:24000},KIA:{d:20500},SSG:{d:23000},
   롯데:{d:23079},kt:{d:18700},한화:{d:17000,b25:13000},NC:{d:17983},키움:{d:16000}};
-const VENUE_CAP={'포항':12247,'울산':12000,'청주':9500,'사직':23079,'마산':11000};
-function venueCap(v){if(!v)return null;for(const k in VENUE_CAP)if((''+v).includes(k))return VENUE_CAP[k];return null;}
-function cap(t,yr,venue){const vc=venueCap(venue);if(vc)return vc;const c=CAPY[t];if(!c)return 20000;return(c.b25&&yr<2025)?c.b25:c.d;}
+function cap(t,yr){if(t==='LG'||t==='두산')return yr<=2021?25000:23750;const c=CAPY[t];if(!c)return 20000;return(c.b25&&yr<2025)?c.b25:c.d;}
 const DOWNAME=['일','월','화','수','목','금','토'];
 const NM={'LG':'LG','두산':'두산','삼성':'삼성','KIA':'KIA','SSG':'SSG','롯데':'롯데','kt':'kt','KT':'kt','한화':'한화','NC':'NC','키움':'키움'};
 const NMP={'LG트윈스':'LG','두산베어스':'두산','삼성라이온즈':'삼성','KIA타이거즈':'KIA','SSG랜더스':'SSG',
@@ -340,10 +329,9 @@ function ingest(raw){
     const home=normTeam(g.home),away=normTeam(g.away||'');const att=+g.att;
     if(!home||!att||att<100)return null;
     const yr=+(g.yr||g.year);if(yr<2025)return null;
-    return{yr,mo:+(g.mo||g.month),day:+g.day,dow,dowN:DOWNAME[dow],home,away,att,venue:(g.venue||g.stadium||null),occ:att/cap(home,yr,(g.venue||g.stadium||null)),
+    return{yr,mo:+(g.mo||g.month),day:+g.day,dow,dowN:DOWNAME[dow],home,away,att,occ:att/cap(home,yr),
       series:g.series||([5,6,0].includes(dow)?'WE':'WD'),
-      temp:g.temp_avg??null,rain:g.rain_mm??null,rainY:g.rain_yn??(g.rain_mm>0),
-      homeRank:g.home_rank??null,awayRank:g.away_rank??null,rankGap:g.rank_gap??null};
+      temp:g.temp_avg??null,rain:g.rain_mm??null,rainY:g.rain_yn??(g.rain_mm>0)};
   }).filter(Boolean);
   buildFilters();
   window.__dupRemoved=dupRemoved+fakeRemoved;
@@ -367,7 +355,7 @@ function yearMatch(g){return yearSel==='2526'?true:g.yr===+yearSel;}
 function refresh(){
   filtered=ALL.filter(g=>yearMatch(g)&&baseMatch(g));
   $('yrTag').textContent=yearSel==='2526'?'2025 · 2026':yearSel;
-  renderKPIs();renderYearSummary();renderInsight();renderImpact();renderSplit();renderTrend();renderScatter();renderScatter2();renderRankTier();renderRain();renderTemp();renderMatchup();renderFoot();
+  renderKPIs();renderYearSummary();renderInsight();renderImpact();renderSplit();renderTrend();renderScatter();renderScatter2();renderRain();renderTemp();renderMatchup();renderFoot();
 }
 
 function metricsFor(yr){
@@ -479,20 +467,14 @@ function renderTrend(){
   const monA=yr=>M.map(m=>{const gs=ALL.filter(g=>g.yr===yr&&g.mo===m&&baseMatch(g));return gs.length?avg(gs.map(g=>g.att)):null;});
   const s25=yearSel!=='2026',s26=yearSel!=='2025';
   const ds=[];
-  // 같은 달에서 값이 큰 쪽은 라벨을 위, 작은 쪽은 아래로 자동 배치 → 충돌 방지·정상 표기
-  const tAlign=ctx=>{const i=ctx.dataIndex,me=ctx.dataset.data[i];if(me==null)return 'top';
-    let o=null;ctx.chart.data.datasets.forEach(d=>{if(d!==ctx.dataset&&d.data[i]!=null)o=d.data[i];});
-    if(o==null)return ctx.dataset.label==='2025'?'bottom':'top';return me>=o?'top':'bottom';};
   if(s25)ds.push({label:'2025',data:monA(2025),borderColor:'#2B3A55',backgroundColor:'#2B3A55',tension:.35,borderWidth:2.5,
     pointRadius:3.5,pointBackgroundColor:'#fff',pointBorderColor:'#2B3A55',pointBorderWidth:2,spanGaps:false,
-    datalabels:{display:ctx=>ctx.dataset.data[ctx.dataIndex]!=null,align:tAlign,anchor:'center',offset:7,
+    datalabels:{display:ctx=>ctx.dataset.data[ctx.dataIndex]!=null,align:'bottom',anchor:'start',offset:4,
       formatter:v=>v?(v/1000).toFixed(1):'',color:'#2B3A55',font:{family:"'JetBrains Mono'",size:9.5,weight:'700'}}});
-  if(s26){const d26=monA(2026),last=d26.reduce((a,v,i)=>v!=null?i:a,-1);
-    ds.push({label:'2026',data:d26,borderColor:'#E85A3C',backgroundColor:'#E85A3C',tension:.35,borderWidth:3,
-    pointRadius:d26.map((v,i)=>i===last?6:4.5),pointStyle:d26.map((v,i)=>i===last?'rectRot':'circle'),
-    pointBackgroundColor:d26.map((v,i)=>i===last?'#E85A3C':'#fff'),pointBorderColor:'#E85A3C',pointBorderWidth:2.5,spanGaps:false,
-    datalabels:{display:ctx=>ctx.dataset.data[ctx.dataIndex]!=null,align:tAlign,anchor:'center',offset:7,
-      formatter:(v,c)=>v?(v/1000).toFixed(1)+(c.dataIndex===last?'*':''):'',color:'#C6452B',font:{family:"'JetBrains Mono'",size:10,weight:'700'}}});}
+  if(s26)ds.push({label:'2026',data:monA(2026),borderColor:'#E85A3C',backgroundColor:'#E85A3C',tension:.35,borderWidth:3,
+    pointRadius:4.5,pointBackgroundColor:'#fff',pointBorderColor:'#E85A3C',pointBorderWidth:2.5,spanGaps:false,
+    datalabels:{display:ctx=>ctx.dataset.data[ctx.dataIndex]!=null,align:'top',anchor:'end',offset:4,
+      formatter:v=>v?(v/1000).toFixed(1):'',color:'#C6452B',font:{family:"'JetBrains Mono'",size:10,weight:'700'}}});
   const vals=ds.flatMap(d=>d.data).filter(v=>v!=null);
   const lo=vals.length?Math.max(0,Math.floor((Math.min(...vals)-2500)/1000)*1000):0;
   const hi=vals.length?Math.ceil((Math.max(...vals)+2200)/1000)*1000:24000;
@@ -504,83 +486,14 @@ function renderTrend(){
     plugins:[ChartDataLabels]});
 }
 
-/* ════════ 순위 영향도 ════════ */
-function renderRankTier(){
-  if(CH.rank)CH.rank.destroy();
-  const ranks=[1,2,3,4,5,6,7,8,9,10];
-  const calc=yr=>ranks.map(rk=>{
-    const gs=ALL.filter(g=>g.yr===yr&&g.homeRank===rk&&baseMatch(g));
-    return gs.length?{a:avg(gs.map(g=>g.att)),o:gs.reduce((s,g)=>s+g.occ,0)/gs.length,n:gs.length}:null;
-  });
-  const s25=yearSel!=='2026',s26=yearSel!=='2025';
-  const d25=calc(2025),d26=calc(2026),ds=[];
-  if(s25)ds.push({type:'bar',label:'2025 관중',data:d25.map(x=>x?x.a:null),rkMeta:d25,backgroundColor:'#2B3A55',borderRadius:3,maxBarThickness:30,yAxisID:'y',order:3,datalabels:{display:false}});
-  if(s26)ds.push({type:'bar',label:'2026 관중',data:d26.map(x=>x?x.a:null),rkMeta:d26,backgroundColor:'#E85A3C',borderRadius:3,maxBarThickness:30,yAxisID:'y',order:3,datalabels:{display:false}});
-  if(s25)ds.push({type:'line',label:'2025 점유율',data:d25.map(x=>x?+(x.o*100).toFixed(1):null),borderColor:'#8696B0',backgroundColor:'#8696B0',borderWidth:2,borderDash:[5,3],pointRadius:2.5,pointBackgroundColor:'#fff',pointBorderColor:'#8696B0',tension:.3,yAxisID:'y1',order:1,spanGaps:true,datalabels:{display:false}});
-  if(s26)ds.push({type:'line',label:'2026 점유율',data:d26.map(x=>x?+(x.o*100).toFixed(1):null),borderColor:'#E89A86',backgroundColor:'#E89A86',borderWidth:2.5,pointRadius:3,pointBackgroundColor:'#fff',pointBorderColor:'#E89A86',tension:.3,yAxisID:'y1',order:1,spanGaps:true,datalabels:{display:false}});
-  const av=ds.filter(d=>d.type==='bar').flatMap(d=>d.data).filter(v=>v!=null);
-  const hiA=av.length?Math.ceil((Math.max(...av)+2500)/1000)*1000:24000;
-  CH.rank=new Chart($('cRank'),{data:{labels:ranks.map(r=>r+'위'),datasets:ds},
-    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:6}},
-      interaction:{mode:'index',intersect:false},
-      plugins:{legend:{display:true,position:'top',align:'end',labels:{boxWidth:12,padding:9,font:{size:10.5},usePointStyle:true,sort:(a,b)=>a.datasetIndex-b.datasetIndex}},
-        tooltip:{callbacks:{label:c=>{if(c.dataset.type==='line')return `${c.dataset.label}: ${c.parsed.y}%`;const m=(c.dataset.rkMeta||[])[c.dataIndex];return m?`${c.dataset.label}: ${fmt(m.a)}명 (${m.n}경기)`:'';}}}},
-      scales:{x:{grid:{display:false},ticks:{color:'#5A6473',font:{size:11,weight:700}}},
-        y:{position:'left',min:0,suggestedMax:hiA,grid:{color:'#F1F3F6'},title:{display:true,text:'평균 관중',color:'#8A93A0',font:{size:10,weight:600}},ticks:{callback:v=>(v/1000)+'천',color:'#8A93A0',font:{size:10}}},
-        y1:{position:'right',min:0,suggestedMax:100,grid:{display:false},title:{display:true,text:'점유율(%)',color:'#8A93A0',font:{size:10,weight:600}},ticks:{callback:v=>v+'%',color:'#8A93A0',font:{size:10}}}}},
-    plugins:[ChartDataLabels]});
-  const note=$('rankNote');if(note){
-    const tavg=(d,idx)=>{const xs=idx.map(i=>d[i]).filter(Boolean);return xs.length?xs.reduce((s,x)=>s+x.a,0)/xs.length:null;};
-    const mk=d=>{const t=tavg(d,[0,1,2]),b=tavg(d,[7,8,9]);return(t&&b)?{t,b,diff:t-b,pct:Math.round((t-b)/b*100)}:null;};
-    const i25=s25?mk(d25):null,i26=s26?mk(d26):null,h=[];
-    if(i25)h.push(`<b style="color:var(--navy)">2025</b> — 상위 3개 순위(1~3위) 홈팀이 하위 3개(8~10위)보다 평균 <b>+${fmt(i25.diff)}명(+${i25.pct}%)</b> 더 동원.`);
-    if(i26)h.push(`<b style="color:var(--coral-d)">2026</b> — 같은 격차 <b>+${fmt(i26.diff)}명(+${i26.pct}%)</b>. 막대=평균 관중, 선=점유율로 순위별 추세를 함께 확인.`);
-    note.innerHTML=h.join('<br>');
-  }
-}
-
 /* ════════ 구단 산점도 ════════ */
 const occLine={id:'occLine',afterDraw(chart){
   const{ctx,chartArea:{left,right},scales:{y}}=chart;
   if(!y)return;const yp=y.getPixelForValue(100);if(yp<chart.chartArea.top||yp>chart.chartArea.bottom)return;
   ctx.save();ctx.strokeStyle='rgba(43,58,85,.35)';ctx.lineWidth=1;ctx.setLineDash([5,4]);
   ctx.beginPath();ctx.moveTo(left,yp);ctx.lineTo(right,yp);ctx.stroke();
-  ctx.setLineDash([]);ctx.fillStyle='#8A93A0';ctx.font='600 10px sans-serif';ctx.textAlign='left';
-  ctx.fillText('만석 100%',left+2,yp-4);ctx.restore();
-}};
-/* 산점도 라벨 충돌 회피 엔진 (점 주변 8방향 탐색 + 리더선) */
-function _ovl(a,b){return !(a.x+a.w<b.x||b.x+b.w<a.x||a.y+a.h<b.y||b.y+b.h<a.y);}
-const scatterLabels={id:'scatterLabels',afterDatasetsDraw(chart){
-  const ds=chart.data.datasets[0];if(!ds)return;const meta=chart.getDatasetMeta(0);
-  const ca=chart.chartArea,ctx=chart.ctx;ctx.save();
-  ctx.font="700 11px Pretendard,'Apple SD Gothic Neo',sans-serif";ctx.textBaseline='middle';
-  const r=7,th=15,dirs=[];
-  [10,20,32,46,60].forEach(d=>{dirs.push([d,0,'l'],[-d,0,'r'],[0,d+5,'c'],
-    [d*0.8,d*0.7,'l'],[-d*0.8,d*0.7,'r'],[0,-(d+5),'c'],[d*0.8,-d*0.7,'l'],[-d*0.8,-d*0.7,'r']);});
-  const pts=meta.data.map(el=>({x:el.x-r,y:el.y-r,w:2*r,h:2*r}));
-  const placed=[];
-  meta.data.forEach((el,i)=>{
-    const t=ds.data[i]&&ds.data[i].t;if(!t)return;
-    const tw=ctx.measureText(t).width,px=el.x,py=el.y;
-    const mk=(dx,dy,al)=>{const lx=px+dx,ly=py+dy,bx=al==='l'?lx:al==='r'?lx-tw:lx-tw/2;
-      return {lx,ly,al,box:{x:bx-3,y:ly-th/2,w:tw+6,h:th}};};
-    let best=null,bestOv=Infinity;
-    for(const[dx,dy,al]of dirs){
-      const c=mk(dx,dy,al),b=c.box;
-      if(b.x<ca.left||b.x+b.w>ca.right||b.y<ca.top||b.y+b.h>ca.bottom)continue;
-      const ov=placed.filter(p=>_ovl(p,b)).length*100+pts.filter((p,j)=>j!==i&&_ovl(p,b)).length;
-      if(ov===0){best=c;break;}
-      if(ov<bestOv){bestOv=ov;best=c;}
-    }
-    if(!best)best=mk(0,-(r+9),'c');
-    placed.push(best.box);
-    const far=Math.hypot(best.lx-px,best.ly-py)>r+11;
-    if(far){ctx.strokeStyle='rgba(150,158,170,.5)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(px,py);
-      ctx.lineTo(best.al==='l'?best.lx-2:best.al==='r'?best.lx+2:best.lx,best.ly);ctx.stroke();}
-    ctx.textAlign=best.al==='l'?'left':best.al==='r'?'right':'center';
-    ctx.fillStyle='#16202C';ctx.fillText(t,best.lx,best.ly);
-  });
-  ctx.restore();
+  ctx.setLineDash([]);ctx.fillStyle='#8A93A0';ctx.font='600 10px sans-serif';ctx.textAlign='right';
+  ctx.fillText('만석 100%',right-2,yp-4);ctx.restore();
 }};
 function renderScatter(){
   if(CH.sc)CH.sc.destroy();
@@ -596,14 +509,15 @@ function renderScatter(){
       backgroundColor:pts.map(p=>TC[p.t]||'#888'),borderColor:'#fff',borderWidth:1.5,pointRadius:7,pointHoverRadius:9}]},
     options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:8,right:14,left:2}},
       plugins:{legend:{display:false},
-        datalabels:{display:false},
+        datalabels:{align:'top',anchor:'center',offset:7,formatter:(v,c)=>c.dataset.data[c.dataIndex].t,
+          color:'#16202C',font:{size:11,weight:'700'}},
         tooltip:{callbacks:{label:c=>{const d=c.raw;return `${d.t}: 평균 ${fmt(d.x)}명 · 점유율 ${d.y}% · ${d.n}경기`;}}}},
       scales:{
         x:{min:xmin,max:xmax,title:{display:true,text:'경기당 평균 관중',color:'#8A93A0',font:{size:10,weight:600}},
           grid:{color:'#F1F3F6'},ticks:{callback:v=>(v/1000)+'천',color:'#8A93A0',font:{size:10}}},
         y:{min:ymin,max:ymax,title:{display:true,text:'평균 좌석 점유율(%)',color:'#8A93A0',font:{size:10,weight:600}},
           grid:{color:'#F1F3F6'},ticks:{callback:v=>v+'%',color:'#8A93A0',font:{size:10}}}}},
-    plugins:[occLine,scatterLabels]});
+    plugins:[ChartDataLabels,occLine]});
 }
 
 /* ════════ 구단 산점도② 홈 점유율 × 전체경기 점유율 ════════ */
@@ -613,7 +527,7 @@ const diagLine={id:'diagLine',afterDraw(chart){
   ctx.save();ctx.strokeStyle='rgba(138,147,160,.55)';ctx.lineWidth=1;ctx.setLineDash([5,4]);
   ctx.beginPath();ctx.moveTo(x.getPixelForValue(lo),y.getPixelForValue(lo));ctx.lineTo(x.getPixelForValue(hi),y.getPixelForValue(hi));ctx.stroke();
   ctx.setLineDash([]);ctx.fillStyle='#8A93A0';ctx.font='600 9px sans-serif';ctx.textAlign='left';
-  ctx.fillText('대각선 = 홈·전체 동일',x.getPixelForValue(lo)+6,y.getPixelForValue(lo)-7);ctx.restore();
+  ctx.fillText('홈 = 전체',x.getPixelForValue(hi)-46,y.getPixelForValue(hi)-5);ctx.restore();
 }};
 function renderScatter2(){
   if(CH.sc2)CH.sc2.destroy();
@@ -631,12 +545,12 @@ function renderScatter2(){
       backgroundColor:pts.map(p=>TC[p.t]||'#888'),borderColor:'#fff',borderWidth:1.5,pointRadius:7,pointHoverRadius:9}]},
     options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:8,right:14,left:2}},
       plugins:{legend:{display:false},
-        datalabels:{display:false},
+        datalabels:{align:'top',anchor:'center',offset:7,formatter:(v,c)=>c.dataset.data[c.dataIndex].t,color:'#16202C',font:{size:11,weight:'700'}},
         tooltip:{callbacks:{label:c=>{const d=c.raw;return `${d.t}: 홈 ${d.x}% · 전체 ${d.y}% (홈 ${d.nh}·원정 ${d.na-d.nh})`;}}}},
       scales:{
         x:{min:lo,max:hi,title:{display:true,text:'홈경기 점유율(%)',color:'#8A93A0',font:{size:10,weight:600}},grid:{color:'#F1F3F6'},ticks:{callback:v=>v+'%',color:'#8A93A0',font:{size:10}}},
         y:{min:lo,max:hi,title:{display:true,text:'전체경기 점유율(%)',color:'#8A93A0',font:{size:10,weight:600}},grid:{color:'#F1F3F6'},ticks:{callback:v=>v+'%',color:'#8A93A0',font:{size:10}}}}},
-    plugins:[diagLine,scatterLabels]});
+    plugins:[ChartDataLabels,diagLine]});
 }
 
 /* ════════ 날씨 (강수량·기온) ════════ */
@@ -691,10 +605,9 @@ function renderMatchup(){
 
 /* ════════ 푸터 ════════ */
 function renderFoot(){
-  $('foot').innerHTML=`<b>출처</b> 관중 = KBO 공식 기록 · 경기 결과·순위 = visualbaseball 기반 산출 · `+
-    `<b>점유율</b> = 관중 ÷ 구장 수용인원(한화 2025 신구장 17,000석 반영) · <b>완전 매진</b> = 점유율 100% 이상 · `+
-    `<b>순위</b> = 경기 직전 승률(승÷(승+패)) 기준 · <b>주말</b> 금·토·일 / <b>주중</b> 화·수·목 · `+
-    `<b>영향도</b> = 조회 조건 전체 평균 대비 편차(괄호 = 경기 수) · <b>제2구장</b>(포항·울산·청주·사직 등)은 해당 구장 수용인원으로 점유율 계산. 제작 (주)서던포스트.`;
+  $('foot').innerHTML=`<b>분석 단위</b> 경기별 실측 관중(KBO 공식) · <b>점유율</b> = 관중 ÷ 구장 수용인원(한화 2025 신구장 17,000석 반영) · `+
+    `<b>완전 매진</b> = 점유율 100% 이상(입석 포함 초과 가능) · 주말 = 금·토·일, 주중 = 화·수·목 · 영향도는 현재 조건 전체 평균 기준 편차. `+
+    `날씨·대진 일부 구간은 표본이 적어(괄호 경기 수) 해석에 주의가 필요합니다. 제작 (주)서던포스트.`;
 }
 
 /* ════════ 이벤트 ════════ */
