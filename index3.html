@@ -114,7 +114,7 @@ const SC=Object.fromEntries(SERIES.map(s=>[s[0],s[3]]));
 const SLAB=Object.fromEntries(SERIES.map(s=>[s[0],s[1]]));
 const CAPY={LG:{d:23750},'두산':{d:23750},'삼성':{d:24000},KIA:{d:20500},SSG:{d:23000},
   '롯데':{d:23079},kt:{d:18700},'한화':{d:17000,b25:13000},NC:{d:17983},'키움':{d:16000}};
-const VENUE_CAP={'포항':12247,'울산':12000,'청주':9500,'사직':23079,'마산':11000};
+const VENUE_CAP={'포항':12247,'울산':12000,'청주':9500,'사직':23079,'마산':11000,'고척':16300};
 function venueCap(v){if(!v)return null;for(const k in VENUE_CAP)if((''+v).includes(k))return VENUE_CAP[k];return null;}
 function cap(t,yr,venue){const vc=venueCap(venue);if(vc)return vc;if((venue&&(''+venue).includes('잠실'))||t==='LG'||t==='두산')return yr<=2021?25000:23750;const c=CAPY[t];if(!c)return 20000;return(c.b25&&yr<2025)?c.b25:c.d;}
 
@@ -264,7 +264,7 @@ function renderHeatmap(f){
 }
 
 function renderFoot(){
-  $('foot').innerHTML=`<b>출처</b> KBO 공식 기록 · <b>점유율</b> = 관중 ÷ 구장 수용인원(제2구장·중립구장은 해당 구장 기준, 한화 2025 신구장 17,000, 잠실 2021년까지 25,000·2022년부터 23,750) · `+
+  $('foot').innerHTML=`<b>출처</b> KBO 공식 기록 · <b>점유율</b> = 관중 ÷ 구장 수용인원(제2구장·중립구장은 해당 구장 기준, 한화 2025 신구장 17,000, 잠실 2021년까지 25,000·2022년부터 23,750, 고척 포스트시즌 16,300) · `+
     `<b>시리즈</b> WC=와일드카드 · 준PO=준플레이오프 · PO=플레이오프 · KS=한국시리즈 · `+
     `포스트시즌은 매 경기 단판 흥행이라 정규시즌보다 점유율이 높습니다. 제작 (주)서던포스트.`;
 }
