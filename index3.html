@@ -101,7 +101,7 @@ td.matchup{font-weight:600}
 <script>
 const $=id=>document.getElementById(id);
 const EMBED=new URLSearchParams(location.search).has('embed');
-function postH(){ if(EMBED){ try{ parent.postMessage({psH:document.documentElement.scrollHeight},'*'); }catch(e){} } }
+function postH(){ if(EMBED){ try{ parent.postMessage({psH:document.body.scrollHeight},'*'); }catch(e){} } }
 if(EMBED){ const t=document.querySelector('.top'), su=document.querySelector('.sub');
   if(t)t.style.display='none'; if(su)su.style.display='none'; document.body.style.padding='10px';
   addEventListener('resize',postH); }
