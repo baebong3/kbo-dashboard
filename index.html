@@ -497,6 +497,40 @@ const occLine={id:'occLine',afterDraw(chart){
   ctx.setLineDash([]);ctx.fillStyle='#8A93A0';ctx.font='600 10px sans-serif';ctx.textAlign='right';
   ctx.fillText('만석 100%',right-2,yp-4);ctx.restore();
 }};
+/* 산점도 라벨 충돌 회피 엔진 (점 주변 8방향 탐색 + 리더선) */
+function _ovl(a,b){return !(a.x+a.w<b.x||b.x+b.w<a.x||a.y+a.h<b.y||b.y+b.h<a.y);}
+const scatterLabels={id:'scatterLabels',afterDatasetsDraw(chart){
+  const ds=chart.data.datasets[0];if(!ds)return;const meta=chart.getDatasetMeta(0);
+  const ca=chart.chartArea,ctx=chart.ctx;ctx.save();
+  ctx.font="700 11px Pretendard,'Apple SD Gothic Neo',sans-serif";ctx.textBaseline='middle';
+  const r=7,th=15,dirs=[];
+  [10,20,32,46,60].forEach(d=>{dirs.push([d,0,'l'],[-d,0,'r'],[0,d+5,'c'],
+    [d*0.8,d*0.7,'l'],[-d*0.8,d*0.7,'r'],[0,-(d+5),'c'],[d*0.8,-d*0.7,'l'],[-d*0.8,-d*0.7,'r']);});
+  const pts=meta.data.map(el=>({x:el.x-r,y:el.y-r,w:2*r,h:2*r}));
+  const placed=[];
+  meta.data.forEach((el,i)=>{
+    const t=ds.data[i]&&ds.data[i].t;if(!t)return;
+    const tw=ctx.measureText(t).width,px=el.x,py=el.y;
+    const mk=(dx,dy,al)=>{const lx=px+dx,ly=py+dy,bx=al==='l'?lx:al==='r'?lx-tw:lx-tw/2;
+      return {lx,ly,al,box:{x:bx-3,y:ly-th/2,w:tw+6,h:th}};};
+    let best=null,bestOv=Infinity;
+    for(const[dx,dy,al]of dirs){
+      const c=mk(dx,dy,al),b=c.box;
+      if(b.x<ca.left||b.x+b.w>ca.right||b.y<ca.top||b.y+b.h>ca.bottom)continue;
+      const ov=placed.filter(p=>_ovl(p,b)).length*100+pts.filter((p,j)=>j!==i&&_ovl(p,b)).length;
+      if(ov===0){best=c;break;}
+      if(ov<bestOv){bestOv=ov;best=c;}
+    }
+    if(!best)best=mk(0,-(r+9),'c');
+    placed.push(best.box);
+    const far=Math.hypot(best.lx-px,best.ly-py)>r+11;
+    if(far){ctx.strokeStyle='rgba(150,158,170,.5)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(px,py);
+      ctx.lineTo(best.al==='l'?best.lx-2:best.al==='r'?best.lx+2:best.lx,best.ly);ctx.stroke();}
+    ctx.textAlign=best.al==='l'?'left':best.al==='r'?'right':'center';
+    ctx.fillStyle='#16202C';ctx.fillText(t,best.lx,best.ly);
+  });
+  ctx.restore();
+}};
 function renderScatter(){
   if(CH.sc)CH.sc.destroy();
   const pts=TEAMS.map(t=>{const gs=filtered.filter(g=>g.home===t);if(!gs.length)return null;
@@ -511,15 +545,14 @@ function renderScatter(){
       backgroundColor:pts.map(p=>TC[p.t]||'#888'),borderColor:'#fff',borderWidth:1.5,pointRadius:7,pointHoverRadius:9}]},
     options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:8,right:14,left:2}},
       plugins:{legend:{display:false},
-        datalabels:{align:'top',anchor:'center',offset:7,formatter:(v,c)=>c.dataset.data[c.dataIndex].t,
-          color:'#16202C',font:{size:11,weight:'700'}},
+        datalabels:{display:false},
         tooltip:{callbacks:{label:c=>{const d=c.raw;return `${d.t}: 평균 ${fmt(d.x)}명 · 점유율 ${d.y}% · ${d.n}경기`;}}}},
       scales:{
         x:{min:xmin,max:xmax,title:{display:true,text:'경기당 평균 관중',color:'#8A93A0',font:{size:10,weight:600}},
           grid:{color:'#F1F3F6'},ticks:{callback:v=>(v/1000)+'천',color:'#8A93A0',font:{size:10}}},
         y:{min:ymin,max:ymax,title:{display:true,text:'평균 좌석 점유율(%)',color:'#8A93A0',font:{size:10,weight:600}},
           grid:{color:'#F1F3F6'},ticks:{callback:v=>v+'%',color:'#8A93A0',font:{size:10}}}}},
-    plugins:[ChartDataLabels,occLine]});
+    plugins:[occLine,scatterLabels]});
 }
 
 /* ════════ 구단 산점도② 홈 점유율 × 전체경기 점유율 ════════ */
@@ -547,12 +580,12 @@ function renderScatter2(){
       backgroundColor:pts.map(p=>TC[p.t]||'#888'),borderColor:'#fff',borderWidth:1.5,pointRadius:7,pointHoverRadius:9}]},
     options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:8,right:14,left:2}},
       plugins:{legend:{display:false},
-        datalabels:{align:'top',anchor:'center',offset:7,formatter:(v,c)=>c.dataset.data[c.dataIndex].t,color:'#16202C',font:{size:11,weight:'700'}},
+        datalabels:{display:false},
         tooltip:{callbacks:{label:c=>{const d=c.raw;return `${d.t}: 홈 ${d.x}% · 전체 ${d.y}% (홈 ${d.nh}·원정 ${d.na-d.nh})`;}}}},
       scales:{
         x:{min:lo,max:hi,title:{display:true,text:'홈경기 점유율(%)',color:'#8A93A0',font:{size:10,weight:600}},grid:{color:'#F1F3F6'},ticks:{callback:v=>v+'%',color:'#8A93A0',font:{size:10}}},
         y:{min:lo,max:hi,title:{display:true,text:'전체경기 점유율(%)',color:'#8A93A0',font:{size:10,weight:600}},grid:{color:'#F1F3F6'},ticks:{callback:v=>v+'%',color:'#8A93A0',font:{size:10}}}}},
-    plugins:[ChartDataLabels,diagLine]});
+    plugins:[diagLine,scatterLabels]});
 }
 
 /* ════════ 날씨 (강수량·기온) ════════ */

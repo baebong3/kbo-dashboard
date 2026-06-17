@@ -183,15 +183,17 @@ function renderSeries(){
   const base=PS.filter(g=>selYears.includes(g.yr));
   const rows=present.map(k=>{const gs=base.filter(g=>g.series===k);
     return gs.length?{k,a:avg(gs.map(g=>g.att)),o:avg(gs.map(g=>g.occ)),n:gs.length}:{k,a:null,o:null,n:0};});
+  const _mxA=Math.max(0,...rows.map(r=>r.a||0));
+  const ymax=_mxA?Math.ceil(_mxA*1.42/2000)*2000:5000;
   CH.s=new Chart($('cSeries'),{data:{labels:rows.map(r=>SLAB[r.k]),datasets:[
     {type:'bar',label:'평균 관중',data:rows.map(r=>r.a),meta:rows,backgroundColor:rows.map(r=>SC[r.k]),borderRadius:4,maxBarThickness:46,yAxisID:'y',datalabels:{display:true,anchor:'end',align:'start',offset:6,formatter:v=>v?(v/1000).toFixed(1)+'천':'',font:{family:"'JetBrains Mono'",size:10,weight:'800'},color:'#fff'}},
-    {type:'line',label:'점유율',data:rows.map(r=>r.o!=null?+(r.o*100).toFixed(1):null),borderColor:'#2B3A55',backgroundColor:'#2B3A55',borderWidth:2,pointRadius:4,pointBackgroundColor:'#fff',pointBorderColor:'#2B3A55',tension:.3,yAxisID:'y1',datalabels:{display:false}}
-  ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},layout:{padding:{top:16}},
+    {type:'line',label:'점유율',data:rows.map(r=>r.o!=null?+(r.o*100).toFixed(1):null),borderColor:'#2B3A55',backgroundColor:'#2B3A55',borderWidth:2,pointRadius:4,pointBackgroundColor:'#fff',pointBorderColor:'#2B3A55',tension:.3,yAxisID:'y1',datalabels:{display:true,anchor:'end',align:'top',offset:5,formatter:v=>v!=null?v+'%':'',color:'#2B3A55',font:{size:10,weight:'800'},textStrokeColor:'#fff',textStrokeWidth:3}}
+  ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},layout:{padding:{top:26}},
     plugins:{legend:{display:true,position:'top',align:'end',labels:{boxWidth:11,usePointStyle:true,font:{size:10.5}}},
       tooltip:{callbacks:{label:c=>{if(c.dataset.type==='line')return `점유율 ${c.parsed.y}%`;const m=c.dataset.meta[c.dataIndex];return m?`평균 ${fmt(m.a)}명 (${m.n}경기)`:'';}}}},
     scales:{x:{grid:{display:false},ticks:{font:{size:12,weight:700},color:'#5A6473'}},
-      y:{position:'left',min:0,grid:{color:'#F1F3F6'},ticks:{callback:v=>(v/1000)+'천',color:'#8A93A0',font:{size:10}}},
-      y1:{position:'right',min:0,max:110,grid:{display:false},ticks:{callback:v=>v+'%',color:'#8A93A0',font:{size:10}}}}},
+      y:{position:'left',min:0,max:ymax,grid:{color:'#F1F3F6'},ticks:{callback:v=>(v/1000)+'천',color:'#8A93A0',font:{size:10}}},
+      y1:{position:'right',min:0,max:118,grid:{display:false},ticks:{callback:v=>v+'%',color:'#8A93A0',font:{size:10}}}}},
     plugins:[ChartDataLabels]});
 }
 
