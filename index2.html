@@ -728,7 +728,7 @@ document.getElementById('modeToggle').addEventListener('click',function(e){
   if(m==='ps'){ var f=document.getElementById('psFrame'); if(!f.getAttribute('src')) f.setAttribute('src','index3.html?embed=1'); }
 });
 window.addEventListener('message',function(e){
-  if(e.data&&e.data.psH){ var f=document.getElementById('psFrame'); if(f) f.style.height=(e.data.psH+24)+'px'; }
+  if(e.data&&e.data.psH){ var f=document.getElementById('psFrame'); if(!f) return; var h=e.data.psH+4, cur=parseInt(f.style.height)||0; if(Math.abs(h-cur)>3) f.style.height=h+'px'; }
 });
 </script>
 </body>
