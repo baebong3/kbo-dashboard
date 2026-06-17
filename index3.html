@@ -169,12 +169,12 @@ function renderKPIs(f){
   const box=$('kpis');
   if(!f.length){box.innerHTML='<div class="kpi" style="grid-column:1/-1"><div class="k">데이터</div><div class="v" style="font-size:16px">선택 조건에 경기가 없습니다</div></div>';return;}
   const a=f.map(g=>g.att), o=f.map(g=>g.occ);
-  const top=f.reduce((m,g)=>g.att>m.att?g:m,f[0]);
+  const maxAtt=Math.max(...a),tops=f.filter(g=>g.att===maxAtt),top=tops[0];
   box.innerHTML=`
    <div class="kpi"><div class="k">경기 수</div><div class="v">${f.length}<small>경기</small></div><div class="x">${selYears.length}개 시즌 · ${selSeries}</div></div>
    <div class="kpi"><div class="k">경기당 평균 관중</div><div class="v">${fmt(avg(a))}<small>명</small></div><div class="x">누적 ${man(a.reduce((s,x)=>s+x,0))}만</div></div>
-   <div class="kpi"><div class="k">평균 좌석 점유율</div><div class="v">${(avg(o)*100).toFixed(1)}<small>%</small></div><div class="x">만석(100%↑) ${o.filter(x=>x>=1).length}경기</div></div>
-   <div class="kpi"><div class="k">최다 관중 경기</div><div class="v">${fmt(top.att)}<small>명</small></div><div class="x">${top.yr} ${SLAB[top.series]} · ${top.away}@${top.home}</div></div>`;
+   <div class="kpi"><div class="k">평균 좌석 점유율</div><div class="v">${(avg(o)*100).toFixed(1)}<small>%</small></div><div class="x">매진(100%) ${o.filter(x=>x>=1).length}경기</div></div>
+   <div class="kpi"><div class="k">최다 관중 경기</div><div class="v">${fmt(top.att)}<small>명</small></div><div class="x">${top.yr} ${SLAB[top.series]} · ${top.away}@${top.home}${tops.length>1?` 외 ${tops.length-1}경기`:''}</div></div>`;
 }
 
 function renderSeries(){
