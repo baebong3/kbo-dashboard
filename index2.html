@@ -147,6 +147,10 @@ select:hover,select:focus{border-color:var(--coral)}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 .seg-yr{flex-wrap:wrap;gap:4px}
 .seg-yr button{min-width:52px}
+#modeToggle{display:inline-flex;gap:3px;background:#EEF1F5;border:1px solid #E1E6EC;border-radius:9px;padding:3px;margin-left:auto;margin-right:14px}
+#modeToggle button{border:0;background:transparent;color:#5A6473;font-family:inherit;font-weight:700;font-size:12.5px;padding:5px 13px;border-radius:7px;cursor:pointer}
+#modeToggle button.on{background:#2B3A55;color:#fff}
+#viewPs iframe{width:100%;border:0;display:block;min-height:640px}
 </style>
 </head>
 <body>
@@ -157,6 +161,7 @@ select:hover,select:focus{border-color:var(--coral)}
       <h1><span class="mk"></span>KBO 관중 분석 콘솔</h1>
       <span class="yr" id="yrTag">2025 · 2026</span>
     </div>
+    <div id="modeToggle"><button class="on" data-m="reg">정규시즌</button><button data-m="ps">포스트시즌</button></div>
     <div class="hd-meta">
       <span class="dot"></span>
       <span id="updTime">데이터 로딩 중…</span>
@@ -164,6 +169,8 @@ select:hover,select:focus{border-color:var(--coral)}
     </div>
   </div>
 </header>
+
+<div id="viewReg">
 
 <nav class="fb">
   <div class="fb-in">
@@ -266,6 +273,11 @@ select:hover,select:focus{border-color:var(--coral)}
 
   <div class="foot" id="foot"></div>
 </main>
+</div>
+
+<div id="viewPs" style="display:none">
+  <iframe id="psFrame" title="KBO 포스트시즌"></iframe>
+</div>
 
 <script>
 /* ════════ 상수 ════════ */
@@ -705,6 +717,19 @@ $('resetBtn').addEventListener('click',()=>{['fH','fA','fS','fM','fW'].forEach(i
 
 /* ════════ 시작 ════════ */
 window.addEventListener('load',async()=>{const ok=await loadData();if(ok)refresh();});
+
+/* ════════ 정규/포스트시즌 모드 토글 ════════ */
+document.getElementById('modeToggle').addEventListener('click',function(e){
+  var b=e.target.closest('button'); if(!b) return;
+  var m=b.dataset.m;
+  [].forEach.call(this.children,function(c){c.classList.toggle('on',c===b);});
+  document.getElementById('viewReg').style.display = m==='ps'?'none':'';
+  document.getElementById('viewPs').style.display  = m==='ps'?'':'none';
+  if(m==='ps'){ var f=document.getElementById('psFrame'); if(!f.getAttribute('src')) f.setAttribute('src','index3.html?embed=1'); }
+});
+window.addEventListener('message',function(e){
+  if(e.data&&e.data.psH){ var f=document.getElementById('psFrame'); if(f) f.style.height=(e.data.psH+24)+'px'; }
+});
 </script>
 </body>
 </html>
