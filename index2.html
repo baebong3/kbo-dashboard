@@ -494,6 +494,7 @@ function renderSplit(){
 }
 
 /* ════════ 월별 추이 ════════ */
+function lblAlign(ctx){var di=ctx.dataIndex,ds=ctx.chart.data.datasets,mine=ds[ctx.datasetIndex].data[di];if(mine==null)return 'top';var others=[];for(var i=0;i<ds.length;i++){var v=ds[i].data[di];if(v!=null)others.push({i:i,v:v});}if(others.length<2)return 'top';if(others.length===2){var o=others[0].i===ctx.datasetIndex?others[1]:others[0];if(mine>o.v)return 'top';if(mine<o.v)return 'bottom';return ctx.datasetIndex<o.i?'top':'bottom';}others.sort(function(a,b){return b.v-a.v;});var rank=0;for(var j=0;j<others.length;j++){if(others[j].i===ctx.datasetIndex){rank=j;break;}}return rank<others.length/2?'top':'bottom';}
 function renderTrend(){
   if(CH.trend)CH.trend.destroy();
   const M=[3,4,5,6,7,8,9,10];
@@ -505,9 +506,9 @@ function renderTrend(){
     return{label:''+yr,data,borderColor:col,backgroundColor:col,tension:.35,borderWidth:isRec?3:2.3,
       pointRadius:data.map((v,i)=>i===last?6:3.6),pointStyle:data.map((v,i)=>i===last?'rectRot':'circle'),
       pointBackgroundColor:data.map((v,i)=>i===last?col:'#fff'),pointBorderColor:col,pointBorderWidth:2,spanGaps:false,
-      datalabels:{display:showLab?(ctx=>ctx.dataset.data[ctx.dataIndex]!=null):false,align:'top',anchor:'center',offset:7,
+      datalabels:{display:showLab?(ctx=>ctx.dataset.data[ctx.dataIndex]!=null):false,align:lblAlign,anchor:'center',offset:9,
         formatter:(v,c)=>v?(v/1000).toFixed(1)+(isRec&&c.dataIndex===last?'*':''):'',
-        color:col,font:{family:"'JetBrains Mono'",size:9.5,weight:'700'}}};});
+        color:col,textStrokeColor:'#fff',textStrokeWidth:3,font:{family:"'JetBrains Mono'",size:9.5,weight:'700'}}};});
   const vals=ds.flatMap(d=>d.data).filter(v=>v!=null);
   const lo=vals.length?Math.max(0,Math.floor((Math.min(...vals)-2500)/1000)*1000):0;
   const hi=vals.length?Math.ceil((Math.max(...vals)+2200)/1000)*1000:24000;
@@ -530,8 +531,8 @@ function renderRankTier(){
   const ds=yrs.map(yr=>{const data=rankA(yr),col=yColor(yr);
     return{label:''+yr,data,borderColor:col,backgroundColor:col,tension:.3,borderWidth:yr===recent?3:2.3,
       pointRadius:3.6,pointBackgroundColor:'#fff',pointBorderColor:col,pointBorderWidth:2,spanGaps:true,
-      datalabels:{display:showLab?(ctx=>ctx.dataset.data[ctx.dataIndex]!=null):false,align:'top',anchor:'center',offset:6,
-        formatter:v=>v?(v/1000).toFixed(1):'',color:col,font:{family:"'JetBrains Mono'",size:9,weight:'700'}}};});
+      datalabels:{display:showLab?(ctx=>ctx.dataset.data[ctx.dataIndex]!=null):false,align:lblAlign,anchor:'center',offset:9,
+        formatter:v=>v?(v/1000).toFixed(1):'',color:col,textStrokeColor:'#fff',textStrokeWidth:3,font:{family:"'JetBrains Mono'",size:9,weight:'700'}}};});
   const vals=ds.flatMap(d=>d.data).filter(v=>v!=null);
   const hiA=vals.length?Math.ceil((Math.max(...vals)+2500)/1000)*1000:24000;
   const loA=vals.length?Math.max(0,Math.floor((Math.min(...vals)-2500)/1000)*1000):0;
