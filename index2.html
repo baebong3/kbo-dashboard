@@ -229,9 +229,9 @@ select:hover,select:focus{border-color:var(--coral)}
   <div class="grid g-11">
     <div class="card">
       <div class="card-hd">
-        <div><div class="eyebrow">월별 리포트</div><div class="ctitle">구단별 월별 평균 관중</div><div class="csub">홈경기 기준 · 진할수록 많음 · 오른쪽=시즌 평균</div></div>
+        <div><div class="eyebrow">월별 리포트</div><div class="ctitle">구단별 월별 평균 관중</div><div class="csub">홈경기 기준 · 구단별 월별 추이 (선형)</div></div>
       </div>
-      <div id="mHeatAtt" style="overflow:auto"></div>
+      <div class="chwrap" style="height:340px"><canvas id="cMonthTeam"></canvas></div>
     </div>
     <div class="card">
       <div class="card-hd">
@@ -521,30 +521,43 @@ function _mhCell(v,mn,mx,rgb,fmt){
   const r=mx>mn?(v-mn)/(mx-mn):0.6, a=(0.12+r*0.82).toFixed(2), fg=r>0.55?'#fff':'#1F2733';
   return `<td style="background:rgba(${rgb},${a});color:${fg}">${fmt(v)}</td>`;
 }
+const TCOL={'LG':'#C30452','두산':'#16193F','삼성':'#1167B1','KIA':'#EA0029','SSG':'#F03C2E','롯데':'#0A2E5C','kt':'#5A5A5A','한화':'#FF6600','NC':'#2E8FA6','키움':'#820024'};
 function renderMonthlyHeat(){
-  const f=filtered, eA=$('mHeatAtt'), eO=$('mHeatOcc'); if(!eA||!eO) return;
-  if(!f||!f.length){ eA.innerHTML=''; eO.innerHTML=''; return; }
+  const f=filtered, eO=$('mHeatOcc'), cv=$('cMonthTeam'); if(!eO||!cv) return;
+  if(!f||!f.length){ eO.innerHTML=''; if(CH.monthTeam){CH.monthTeam.destroy();CH.monthTeam=null;} return; }
   const months=[...new Set(f.map(g=>g.mo))].filter(m=>m).sort((a,b)=>a-b);
   const tmap={}; f.forEach(g=>{ if(g.home){ (tmap[g.home]=tmap[g.home]||[]).push(g); } });
   const teams=Object.keys(tmap).sort((a,b)=>tmap[b].reduce((s,g)=>s+g.att,0)-tmap[a].reduce((s,g)=>s+g.att,0));
-  function table(metric,rgb,fmt){
-    const rows=teams.map(t=>({t,cells:months.map(m=>{
-      const gs=tmap[t].filter(g=>g.mo===m); if(!gs.length) return null;
-      return metric==='att'? gs.reduce((s,g)=>s+g.att,0)/gs.length : gs.reduce((s,g)=>s+g.occ,0)/gs.length;
-    })}));
+  // 관중: 구단별 라인
+  const ds=teams.map(t=>{
+    const data=months.map(m=>{const gs=tmap[t].filter(g=>g.mo===m);return gs.length?Math.round(gs.reduce((s,g)=>s+g.att,0)/gs.length):null;});
+    const c=TCOL[t]||'#888';
+    return {label:t,data,borderColor:c,backgroundColor:c,tension:.3,borderWidth:2,pointRadius:2.6,pointHoverRadius:5,spanGaps:true,datalabels:{display:false}};
+  });
+  if(CH.monthTeam)CH.monthTeam.destroy();
+  CH.monthTeam=new Chart(cv,{type:'line',data:{labels:months.map(m=>m+'월'),datasets:ds},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:6,right:8,bottom:4}},
+      interaction:{mode:'nearest',intersect:false},
+      plugins:{legend:{display:true,position:'top',labels:{boxWidth:8,boxHeight:8,usePointStyle:true,pointStyle:'circle',font:{size:10.5,weight:'700'},padding:7,color:'#3A4350'}},
+        tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y!=null?c.parsed.y.toLocaleString('ko-KR'):'-'}명`}}},
+      scales:{x:{grid:{display:false},ticks:{color:'#5A6473',font:{size:11,weight:'700'}}},
+        y:{grid:{color:'#F1F3F6'},ticks:{callback:v=>(v/1000)+'천',color:'#8A93A0',font:{size:10}}}}},
+    plugins:[ChartDataLabels]});
+  // 점유율: 히트맵 유지
+  function table(rgb,fmt){
+    const rows=teams.map(t=>({t,cells:months.map(m=>{const gs=tmap[t].filter(g=>g.mo===m);if(!gs.length)return null;return gs.reduce((s,g)=>s+g.occ,0)/gs.length;})}));
     const all=rows.flatMap(r=>r.cells).filter(v=>v!=null);
     if(!all.length) return '<div style="padding:20px;color:var(--muted);font-size:13px">표시할 데이터가 없습니다.</div>';
     const mn=Math.min(...all), mx=Math.max(...all);
     const head=`<tr><th>구단</th>${months.map(m=>`<th>${m}월</th>`).join('')}<th>평균</th></tr>`;
     const body=rows.map(r=>{
       const tg=tmap[r.t].filter(g=>months.indexOf(g.mo)>=0);
-      const rav=tg.length?(metric==='att'?tg.reduce((s,g)=>s+g.att,0)/tg.length:tg.reduce((s,g)=>s+g.occ,0)/tg.length):null;
+      const rav=tg.length?tg.reduce((s,g)=>s+g.occ,0)/tg.length:null;
       return `<tr><td class="mh-team">${r.t}</td>${r.cells.map(v=>_mhCell(v,mn,mx,rgb,fmt)).join('')}${_mhCell(rav,mn,mx,rgb,fmt)}</tr>`;
     }).join('');
     return `<table class="mheat"><thead>${head}</thead><tbody>${body}</tbody></table>`;
   }
-  eA.innerHTML=table('att','232,90,60',v=>Math.round(v).toLocaleString('ko-KR'));
-  eO.innerHTML=table('occ','43,58,85',v=>(v*100).toFixed(0)+'%');
+  eO.innerHTML=table('43,58,85',v=>(v*100).toFixed(0)+'%');
 }
 function renderTrend(){
   if(CH.trend)CH.trend.destroy();
