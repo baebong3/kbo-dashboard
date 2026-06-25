@@ -151,10 +151,10 @@ select:hover,select:focus{border-color:var(--coral)}
 #modeToggle button{border:0;background:transparent;color:#5A6473;font-family:inherit;font-weight:700;font-size:12.5px;padding:5px 13px;border-radius:7px;cursor:pointer}
 #modeToggle button.on{background:#2B3A55;color:#fff}
 #viewPs iframe{width:100%;border:0;display:block;min-height:640px}
-.mheat{width:100%;border-collapse:separate;border-spacing:3px;font-size:12px}
+.mheat{width:100%;border-collapse:separate;border-spacing:2px;font-size:11px}
 .mheat th{color:var(--muted);font-weight:700;font-size:11px;text-align:center;padding:4px 6px;white-space:nowrap}
-.mheat td{text-align:center;padding:6px 7px;border-radius:6px;font-variant-numeric:tabular-nums;white-space:nowrap;min-width:46px}
-.mheat td.mh-team{text-align:left;font-weight:800;background:#F4F6F9;color:var(--ink);position:sticky;left:0;min-width:52px}
+.mheat td{text-align:center;padding:5px 4px;border-radius:5px;font-variant-numeric:tabular-nums;white-space:nowrap;min-width:38px}
+.mheat td.mh-team{text-align:left;font-weight:800;background:#F4F6F9;color:var(--ink);position:sticky;left:0;min-width:42px}
 .mheat td.mh-empty{background:#F8FAFC;color:#CBD2DA}
 .mheat th:last-child,.mheat td:last-child{border-left:2px solid #E9ECF1}
 </style>
@@ -226,18 +226,19 @@ select:hover,select:focus{border-color:var(--coral)}
     </div>
   </div>
 
-  <div class="card" style="margin-bottom:14px">
-    <div class="card-hd">
-      <div><div class="eyebrow">월별 리포트</div><div class="ctitle">구단별 월별 평균 관중</div><div class="csub">선택 시즌 홈경기 기준 · 셀 색이 진할수록 관중 많음 · 맨 오른쪽=시즌 평균</div></div>
+  <div class="grid g-11">
+    <div class="card">
+      <div class="card-hd">
+        <div><div class="eyebrow">월별 리포트</div><div class="ctitle">구단별 월별 평균 관중</div><div class="csub">홈경기 기준 · 진할수록 많음 · 오른쪽=시즌 평균</div></div>
+      </div>
+      <div id="mHeatAtt" style="overflow:auto"></div>
     </div>
-    <div id="mHeatAtt" style="overflow:auto"></div>
-  </div>
-
-  <div class="card" style="margin-bottom:14px">
-    <div class="card-hd">
-      <div><div class="eyebrow">월별 리포트</div><div class="ctitle">구단별 월별 좌석 점유율</div><div class="csub">선택 시즌 홈경기 기준 · 셀 색이 진할수록 만석에 가까움 · 맨 오른쪽=시즌 평균</div></div>
+    <div class="card">
+      <div class="card-hd">
+        <div><div class="eyebrow">월별 리포트</div><div class="ctitle">구단별 월별 좌석 점유율</div><div class="csub">홈경기 기준 · 진할수록 만석 · 오른쪽=시즌 평균</div></div>
+      </div>
+      <div id="mHeatOcc" style="overflow:auto"></div>
     </div>
-    <div id="mHeatOcc" style="overflow:auto"></div>
   </div>
 
   <div class="grid g-11">
