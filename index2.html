@@ -164,6 +164,17 @@ select:hover,select:focus{border-color:var(--coral)}
 .fb-note:empty{display:none}
 .today.wk{border-left-color:#2B3A55}
 .today.wk .t-date{color:#2B3A55;background:#ECEFF4}
+.mtab{display:flex;gap:6px;flex-wrap:wrap;margin:2px 0 14px}
+.mtab button{border:1px solid var(--line);background:#fff;color:#5A6473;font-family:inherit;font-weight:700;font-size:12.5px;padding:5px 15px;border-radius:8px;cursor:pointer}
+.mtab button.on{background:#2B3A55;color:#fff;border-color:#2B3A55}
+.mrep .t-lead{font-size:13px;line-height:1.7;color:#39414E}
+.mrep .t-lead b{font-weight:800} .mrep .t-lead b.up{color:#1F7A4D} .mrep .t-lead b.dn{color:#C8413B}
+.mrep .mbadge{display:inline-block;font-family:var(--mono);font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;margin-left:8px}
+.mrep .mbadge.fix{color:#1F7A4D;background:#E6F4EC} .mrep .mbadge.prov{color:#C0791B;background:#FBF0DC}
+.mrep .t-list{margin:11px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+.mrep .t-list li{font-size:12.5px;line-height:1.55;color:#46505E;padding-left:15px;position:relative}
+.mrep .t-list li:before{content:'';position:absolute;left:2px;top:7px;width:5px;height:5px;border-radius:50%;background:#2B3A55}
+.mrep .t-list b{font-weight:800;color:var(--ink)}
 .today{background:linear-gradient(180deg,#fff,#FBFCFD);border:1px solid var(--line);border-left:4px solid var(--coral);border-radius:14px;padding:16px 18px;margin-bottom:16px}
 .today .t-hd{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:9px}
 .today .t-ttl{font-size:14.5px;font-weight:800;color:var(--ink)}
@@ -246,6 +257,12 @@ select:hover,select:focus{border-color:var(--coral)}
       <div class="t-hd"><span class="t-ttl">🗓️ 지난주 리포트</span><span class="t-date" id="weekDate">—</span></div>
       <div id="weekBody"><div class="t-lead">불러오는 중…</div></div>
     </div>
+  </div>
+
+  <div class="card mrep" id="monthRepCard">
+    <div class="card-hd"><div><div class="eyebrow">월별 리포트</div><div class="ctitle">월간 요약 리포트</div><div class="csub">전년 동월·전월 대비 + 구단(구장)별 최다·최소 관중·점유율 · 진행 중인 달은 잠정, 종료 후 1일에 확정</div></div></div>
+    <div class="mtab" id="monthTabs"></div>
+    <div id="monthRepBody"></div>
   </div>
 
   <div class="card yrcard"><table class="yrtab" id="yrTab"></table></div>
@@ -880,7 +897,7 @@ $('resetBtn').addEventListener('click',()=>{['fH','fA','fS','fM','fW'].forEach(i
   selYears=YEARS.slice(-2);buildYearToggle();refresh();});
 
 /* ════════ 시작 ════════ */
-window.addEventListener('load',async()=>{const ok=await loadData();if(ok){refresh();renderTodayReport();renderWeekReport();}});
+window.addEventListener('load',async()=>{const ok=await loadData();if(ok){refresh();renderTodayReport();renderWeekReport();buildMonthTabs();}});
 
 /* ════════ 정규/포스트시즌 모드 토글 ════════ */
 document.getElementById('modeToggle').addEventListener('click',function(e){
@@ -995,6 +1012,60 @@ function renderWeekReport(){
   if(rainN) items.push(`<b>날씨</b>: ${n}경기 중 ${rainN}경기에서 비가 관측됐습니다.`);
   body.innerHTML=`<div class="t-lead">${lead}</div><ul class="t-list">${items.map(t=>`<li>${t}</li>`).join('')}</ul>`;
 }
+
+/* ════════ 월별 리포트 ════════ */
+let curMonthRep=null;
+function _mMetrics(yr,mo,dayCut){
+  let gs=ALL.filter(g=>g.yr===yr&&g.mo===mo&&g.att);
+  if(dayCut) gs=gs.filter(g=>g.day<=dayCut);
+  if(!gs.length) return null;
+  const n=gs.length, tot=gs.reduce((s,g)=>s+g.att,0);
+  return {n,tot,a:tot/n,o:gs.reduce((s,g)=>s+g.occ,0)/n,sell:gs.filter(g=>g.occ>=1).length,gs};
+}
+function _cmpTxt(curA,prevA,lab){
+  if(prevA==null) return '';
+  const d=curA-prevA, p=prevA?d/prevA*100:0, up=d>=0;
+  return `${lab} 평균 ${fmt(Math.round(prevA))}명 대비 <b class="${up?'up':'dn'}">${fmt(Math.round(Math.abs(d)))}명 ${up?'증가':'감소'}</b>(${p>=0?'+':''}${p.toFixed(0)}%)`;
+}
+function buildMonthTabs(){
+  const box=$('monthTabs'); if(!box) return;
+  const yr=Math.max.apply(null,YEARS);
+  const all26=ALL.filter(g=>g.yr===yr&&g.att);
+  const mos=[...new Set(all26.map(g=>g.mo))].filter(mo=>all26.filter(g=>g.mo===mo).length>=20).sort((a,b)=>a-b);
+  if(!mos.length){ box.innerHTML=''; $('monthRepBody').innerHTML='<div class="t-lead">표시할 월이 없습니다.</div>'; return; }
+  const latest=Math.max.apply(null,mos);
+  if(curMonthRep==null||!mos.includes(curMonthRep)) curMonthRep=latest;
+  box.innerHTML=mos.map(mo=>`<button data-mo="${mo}" class="${mo===curMonthRep?'on':''}">${mo}월</button>`).join('');
+  renderMonthReport(curMonthRep);
+}
+function renderMonthReport(mo){
+  const el=$('monthRepBody'); if(!el) return;
+  const yr=Math.max.apply(null,YEARS);
+  const latestMo=Math.max.apply(null,ALL.filter(g=>g.yr===yr&&g.att).map(g=>g.mo));
+  const isCur=(mo===latestMo);
+  const cutDay=isCur?Math.max.apply(null,ALL.filter(g=>g.yr===yr&&g.mo===mo&&g.att).map(g=>g.day)):null;
+  const cur=_mMetrics(yr,mo,null); if(!cur){ el.innerHTML='<div class="t-lead">해당 월 데이터가 없습니다.</div>'; return; }
+  const prevY=_mMetrics(yr-1,mo,isCur?cutDay:null);
+  const prevM=(mo>=5)?_mMetrics(yr,mo-1,null):null;
+  const nm=t=>`${STAD[t]||'?'}(${t})`;
+  // 구단(구장)별
+  const by={}; cur.gs.forEach(g=>{(by[g.home]=by[g.home]||[]).push(g);});
+  const tagg=Object.keys(by).map(t=>{const a=by[t];return{t,n:a.length,avg:a.reduce((s,g)=>s+g.att,0)/a.length,occ:a.reduce((s,g)=>s+g.occ,0)/a.length};});
+  const byAvg=tagg.slice().sort((a,b)=>b.avg-a.avg), byOcc=tagg.slice().sort((a,b)=>b.occ-a.occ);
+  const hiAvg=byAvg[0], loAvg=byAvg[byAvg.length-1], hiOcc=byOcc[0], loOcc=byOcc[byOcc.length-1];
+  // 경기 단위
+  const byAtt=cur.gs.slice().sort((a,b)=>b.att-a.att), topG=byAtt[0], lowG=byAtt[byAtt.length-1];
+  const badge=isCur?'<span class="mbadge prov">진행 중·잠정</span>':'<span class="mbadge fix">확정</span>';
+  let lead=`<b>${yr}년 ${mo}월</b>${badge}<br>${cur.n}경기가 열려 총 <b>${man(cur.tot)}만 명</b>${isCur?'(잠정)':''}, 경기당 평균 <b>${fmt(Math.round(cur.a))}명</b>이 입장했습니다. 평균 좌석 점유율 <b>${(cur.o*100).toFixed(0)}%</b>, 매진 ${cur.sell}경기.`;
+  const items=[];
+  if(prevY) items.push(`<b>전년 동월</b>(${yr-1}년 ${mo}월${isCur?' 같은 기간':''}) ${_cmpTxt(cur.a,prevY.a,'경기당')}.`);
+  if(prevM) items.push(`<b>전월 대비</b>(${mo-1}월) ${_cmpTxt(cur.a,prevM.a,'경기당')}.`);
+  items.push(`<b>구단별 평균관중</b> 최다 ${nm(hiAvg.t)} ${fmt(Math.round(hiAvg.avg))}명 · 최소 ${nm(loAvg.t)} ${fmt(Math.round(loAvg.avg))}명.`);
+  items.push(`<b>구단별 점유율</b> 최고 ${nm(hiOcc.t)} ${(hiOcc.occ*100).toFixed(0)}% · 최저 ${nm(loOcc.t)} ${(loOcc.occ*100).toFixed(0)}%.`);
+  items.push(`<b>최다 관중 경기</b> ${topG.mo}/${topG.day} ${topG.away}@${nm(topG.home)} ${fmt(topG.att)}명(${(topG.occ*100).toFixed(0)}%) · <b>최소</b> ${lowG.mo}/${lowG.day} ${lowG.away}@${nm(lowG.home)} ${fmt(lowG.att)}명(${(lowG.occ*100).toFixed(0)}%).`);
+  el.innerHTML=`<div class="t-lead">${lead}</div><ul class="t-list">${items.map(t=>`<li>${t}</li>`).join('')}</ul>`;
+}
+const _mt=$('monthTabs'); if(_mt) _mt.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;curMonthRep=+b.dataset.mo;[...e.currentTarget.children].forEach(c=>c.classList.toggle('on',+c.dataset.mo===curMonthRep));renderMonthReport(curMonthRep);});
 </script>
 </body>
 </html>
