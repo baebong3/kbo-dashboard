@@ -34,6 +34,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);font-size:13p
 .brand .yr{font-family:var(--mono);font-size:11.5px;font-weight:600;color:var(--coral-d);background:var(--coral-s);padding:2px 8px;border-radius:6px}
 .hd-meta{display:flex;align-items:center;gap:10px;font-size:11px;color:var(--muted)}
 .hd-meta .dot{width:6px;height:6px;border-radius:50%;background:var(--coral);box-shadow:0 0 0 3px var(--coral-s)}
+.hd-meta .hd-sep{width:1px;height:14px;background:var(--line);margin:0 3px}
 .src{font-family:var(--mono);font-size:10px;font-weight:600;padding:3px 9px;border-radius:6px;background:var(--navy-s);color:var(--navy)}
 
 .fb{position:sticky;top:53px;z-index:40;background:var(--card);border-bottom:1px solid var(--line)}
@@ -160,9 +161,10 @@ select:hover,select:focus{border-color:var(--coral)}
 .fb .sp-tog{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#3A4350;cursor:pointer;user-select:none}
 .fb .sp-tog input{accent-color:#2B3A55;width:14px;height:14px;cursor:pointer}
 .sp-note{font-size:10.5px;color:var(--muted);font-weight:500}
-.fb-note{font-size:10.5px;color:var(--muted);font-weight:500;padding:1px 0 0 20px;white-space:nowrap;line-height:1.3}
+.fb .sp-wrap{position:relative;display:inline-flex;align-items:center}
+.fb-note{position:absolute;top:calc(100% + 3px);right:0;font-size:10.5px;color:var(--muted);font-weight:500;white-space:nowrap;line-height:1.3}
 .fb-note:empty{display:none}
-.fb .sp-wrap{display:inline-flex;flex-direction:column;align-items:flex-start;gap:1px;align-self:center}
+.fb-in.has-note{padding-bottom:22px}
 .today.wk{border-left-color:#2B3A55}
 .today.wk .t-date{color:#2B3A55;background:#ECEFF4}
 .mtab{display:flex;gap:6px;flex-wrap:wrap;margin:2px 0 14px}
@@ -186,6 +188,7 @@ select:hover,select:focus{border-color:var(--coral)}
 .today .t-list li{font-size:12.5px;line-height:1.55;color:#46505E;padding-left:15px;position:relative}
 .today .t-list li:before{content:'';position:absolute;left:2px;top:7px;width:5px;height:5px;border-radius:50%;background:var(--coral)}
 .today .t-list b{font-weight:800;color:var(--ink)}
+.today .t-lead b,.today .t-list b,.mrep .t-lead b,.mrep .t-list b{font-family:'JetBrains Mono',var(--sans);letter-spacing:-.02em;font-feature-settings:'tnum' 1}
 #dataModal{position:fixed;inset:0;background:rgba(20,26,38,.55);display:none;align-items:flex-start;justify-content:center;z-index:9999;padding:40px 16px;overflow:auto}
 #dataModal.on{display:flex}
 #dataModal .m-card{background:#fff;border-radius:16px;max-width:720px;width:100%;padding:24px 30px 28px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
@@ -213,6 +216,9 @@ select:hover,select:focus{border-color:var(--coral)}
       <span class="dot"></span>
       <span id="updTime">데이터 로딩 중…</span>
       <span class="src" id="srcBadge">—</span>
+      <span class="hd-sep"></span>
+      <button class="lnk" id="dataBtn">ⓘ 데이터 설명</button>
+      <button class="lnk" id="resetBtn">초기화</button>
     </div>
   </div>
 </header>
@@ -235,8 +241,6 @@ select:hover,select:focus{border-color:var(--coral)}
       <label class="sp-tog"><input type="checkbox" id="spChk" checked> 동일 기간 비교</label>
       <div class="fb-note" id="spNote"></div>
     </div>
-    <button class="lnk" id="dataBtn">ⓘ 데이터 설명</button>
-    <button class="lnk" id="resetBtn">초기화</button>
   </div>
 </nav>
 
@@ -520,7 +524,7 @@ function refresh(){
   filtered=ALL.filter(g=>yearMatch(g)&&baseMatch(g));
   const lab=selYears.slice().sort((a,b)=>a-b).join(' · ');
   if($('yrTag'))$('yrTag').textContent=lab||'—';
-  if($('spNote'))$('spNote').textContent=spNoteText();
+  if($('spNote')){const _t=spNoteText();$('spNote').textContent=_t;const _fi=document.querySelector('.fb-in');if(_fi)_fi.classList.toggle('has-note',!!_t);}
   renderKPIs();renderYearSummary();renderInsight();renderImpact();renderSplit();renderTrend();renderMonthlyHeat();renderScatter();renderScatter2();renderRankTier();renderRain();renderTemp();renderMatchup();renderFoot();
 }
 
@@ -950,7 +954,7 @@ function renderTodayReport(){
   const rainG=day.filter(g=>g.rainY);
   const nm=t=>`${STAD[t]||'?'}(${t})`;
   let lead=`어제 <b>${mo}/${dd}(${dowN})</b> ${n}경기에 총 <b>${fmt(tot)}명</b>이 입장해 경기당 평균 <b>${fmt(Math.round(dAvg))}명</b>을 기록했습니다. `+
-    `올해 평균(${fmt(Math.round(sAvg))}명)보다 <b class="${updn?'up':'dn'}">${fmt(Math.round(Math.abs(diff)))}명</b> ${updn?'많':'적'}았습니다(${diffP>=0?'+':''}${diffP.toFixed(0)}%).`;
+    `올해 평균(${fmt(Math.round(sAvg))}명)보다 <b class="${updn?'up':'dn'}">${fmt(Math.round(Math.abs(diff)))}명</b> ${updn?'많았':'적었'}습니다(${diffP>=0?'+':''}${diffP.toFixed(0)}%).`;
   const items=[];
   let occLine=`평균 <b>좌석 점유율 ${(dOcc*100).toFixed(0)}%</b> (시즌 평균 ${(sOcc*100).toFixed(0)}%) — `;
   if(dAvg<sAvg && dOcc>=sOcc-0.005){
@@ -1004,7 +1008,7 @@ function renderWeekReport(){
   const byOcc=stats.slice().sort((a,b)=>b.occ-a.occ), hi=byOcc[0], lo=byOcc[byOcc.length-1];
   const sellN=wk.filter(g=>g.occ>=1).length, rainN=wk.filter(g=>g.rainY).length;
   let lead=`지난주(<b>${md(lastTue)}~${md(lastSun)}</b>) <b>${n}경기</b>가 열려 총 <b>${man(tot)}만 명</b>(경기당 평균 <b>${fmt(Math.round(avgA))}명</b>)이 입장했습니다. `+
-    `올해 평균(${fmt(Math.round(sAvg))}명)보다 <b class="${updn?'up':'dn'}">${fmt(Math.round(Math.abs(diff)))}명</b> ${updn?'많':'적'}았습니다(${diffP>=0?'+':''}${diffP.toFixed(0)}%).`;
+    `올해 평균(${fmt(Math.round(sAvg))}명)보다 <b class="${updn?'up':'dn'}">${fmt(Math.round(Math.abs(diff)))}명</b> ${updn?'많았':'적었'}습니다(${diffP>=0?'+':''}${diffP.toFixed(0)}%).`;
   const items=[];
   items.push(`주간 평균 <b>좌석 점유율 ${(occW*100).toFixed(0)}%</b> (시즌 ${(sOcc*100).toFixed(0)}%) · <b>매진 ${sellN}경기</b>(전체 ${n}경기 중).`);
   if(allSold.length) items.push(`<b>홈경기 전 경기 매진</b>: ${allSold.map(x=>`${nm(x.t)} ${x.n}경기`).join(', ')} — 한 경기도 빈자리 없이 채웠습니다.`);
@@ -1056,8 +1060,6 @@ function renderMonthReport(mo){
   const tagg=Object.keys(by).map(t=>{const a=by[t];return{t,n:a.length,avg:a.reduce((s,g)=>s+g.att,0)/a.length,occ:a.reduce((s,g)=>s+g.occ,0)/a.length};});
   const byAvg=tagg.slice().sort((a,b)=>b.avg-a.avg), byOcc=tagg.slice().sort((a,b)=>b.occ-a.occ);
   const hiAvg=byAvg[0], loAvg=byAvg[byAvg.length-1], hiOcc=byOcc[0], loOcc=byOcc[byOcc.length-1];
-  // 경기 단위
-  const byAtt=cur.gs.slice().sort((a,b)=>b.att-a.att), topG=byAtt[0], lowG=byAtt[byAtt.length-1];
   const badge=isCur?'<span class="mbadge prov">진행 중·잠정</span>':'<span class="mbadge fix">확정</span>';
   let lead=`<b>${yr}년 ${mo}월</b>${badge}<br>${cur.n}경기가 열려 총 <b>${man(cur.tot)}만 명</b>${isCur?'(잠정)':''}, 경기당 평균 <b>${fmt(Math.round(cur.a))}명</b>이 입장했습니다. 평균 좌석 점유율 <b>${(cur.o*100).toFixed(0)}%</b>, 매진 ${cur.sell}경기.`;
   const items=[];
@@ -1065,7 +1067,6 @@ function renderMonthReport(mo){
   if(prevM) items.push(`<b>전월 대비</b>(${mo-1}월) ${_cmpTxt(cur.a,prevM.a,'경기당')}.`);
   items.push(`<b>구단별 평균관중</b> 최다 ${nm(hiAvg.t)} ${fmt(Math.round(hiAvg.avg))}명 · 최소 ${nm(loAvg.t)} ${fmt(Math.round(loAvg.avg))}명.`);
   items.push(`<b>구단별 점유율</b> 최고 ${nm(hiOcc.t)} ${(hiOcc.occ*100).toFixed(0)}% · 최저 ${nm(loOcc.t)} ${(loOcc.occ*100).toFixed(0)}%.`);
-  items.push(`<b>최다 관중 경기</b> ${topG.mo}/${topG.day} ${topG.away}@${nm(topG.home)} ${fmt(topG.att)}명(${(topG.occ*100).toFixed(0)}%) · <b>최소</b> ${lowG.mo}/${lowG.day} ${lowG.away}@${nm(lowG.home)} ${fmt(lowG.att)}명(${(lowG.occ*100).toFixed(0)}%).`);
   el.innerHTML=`<div class="t-lead">${lead}</div><ul class="t-list">${items.map(t=>`<li>${t}</li>`).join('')}</ul>`;
 }
 const _mt=$('monthTabs'); if(_mt) _mt.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;curMonthRep=+b.dataset.mo;[...e.currentTarget.children].forEach(c=>c.classList.toggle('on',+c.dataset.mo===curMonthRep));renderMonthReport(curMonthRep);});
