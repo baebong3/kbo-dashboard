@@ -112,7 +112,49 @@ def pearson(xs,ys):
     return num/(dx*dy)
 
 # ── SVG: 산점도(순위변화 × 관중변화) ────────────────────
-def svg_scatter(points):
+def svg_month_lines(months, order, att):
+    """월별 구단 평균관중 라인차트(인라인 SVG). months=[3,4,5], att={team:{mo:avg}}"""
+    W,H=320,232; pl,pr,pt,pb=42,8,12,24; iw,ih=W-pl-pr,H-pt-pb
+    vals=[att[t][mo] for t in order for mo in months if att.get(t,{}).get(mo) is not None]
+    if not vals: return '<div class="note">데이터 없음</div>'
+    ymax=math.ceil(max(vals)/2000)*2000 or 2000; n=len(months)
+    def X(i): return pl+(i/(n-1) if n>1 else 0.5)*iw
+    def Y(v): return pt+(1-v/ymax)*ih
+    s=[f'<svg viewBox="0 0 {W} {H}" xmlns="http://www.w3.org/2000/svg" font-family="Pretendard,sans-serif">']
+    for k in range(5):
+        v=ymax*k/4; yy=Y(v)
+        s.append(f'<line x1="{pl}" y1="{yy:.1f}" x2="{pl+iw}" y2="{yy:.1f}" stroke="#F1F3F6"/>')
+        s.append(f'<text x="{pl-4}" y="{yy+3:.1f}" text-anchor="end" font-size="8" fill="{MUTED}">{int(v/1000)}천</text>')
+    for i,mo in enumerate(months):
+        s.append(f'<text x="{X(i):.1f}" y="{pt+ih+15}" text-anchor="middle" font-size="9" font-weight="700" fill="{MUTED}">{mo}월</text>')
+    for t in order:
+        pts=[(X(i),Y(att[t][mo])) for i,mo in enumerate(months) if att.get(t,{}).get(mo) is not None]
+        if not pts: continue
+        c=TCOL.get(t,'#888')
+        s.append(f'<polyline points="{" ".join(f"{x:.1f},{y:.1f}" for x,y in pts)}" fill="none" stroke="{c}" stroke-width="1.8"/>')
+        for x,y in pts: s.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="2.2" fill="{c}"/>')
+    s.append('</svg>'); return ''.join(s)
+
+def html_month_heat(months, order, occ):
+    """월별 구단 점유율 히트맵(CSS 표) + 시즌 평균 열."""
+    cells=[occ[t][mo] for t in order for mo in months if occ.get(t,{}).get(mo) is not None]
+    if not cells: return '<div class="note">데이터 없음</div>'
+    mn,mx=min(cells),max(cells)
+    def cell(v):
+        if v is None: return '<td class="hm-e">·</td>'
+        r=(v-mn)/(mx-mn) if mx>mn else 0.6
+        return f'<td style="background:rgba(43,58,85,{0.12+r*0.82:.2f});color:{"#fff" if r>0.55 else "#1F2733"}">{v*100:.0f}</td>'
+    head='<tr><th>구단</th>'+''.join(f'<th>{mo}월</th>' for mo in months)+'<th>평균</th></tr>'
+    rows=[]
+    for t in order:
+        vs=[occ[t][mo] for mo in months if occ.get(t,{}).get(mo) is not None]
+        avgv=sum(vs)/len(vs) if vs else None
+        rows.append(f'<tr><td class="hm-t">{t}</td>'+''.join(cell(occ.get(t,{}).get(mo)) for mo in months)+cell(avgv)+'</tr>')
+    return f'<table class="hm">{head}{"".join(rows)}</table>'
+
+def team_legend(order):
+    return '<div class="legend">'+''.join(
+        f'<span class="lg"><i style="background:{TCOL.get(t,"#888")}"></i>{t}</span>' for t in order)+'</div>'
     """points: [{t, dx(순위 계단변화: +면 하락), dy(관중 %변화)}]"""
     W,H=560,300; pl,pr,pt,pb=46,18,16,40
     iw,ih=W-pl-pr,H-pt-pb
@@ -206,13 +248,25 @@ td .dot{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right
 .wx{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:4px}
 .wxcard{border:1px solid #E6E9EE;border-radius:10px;padding:12px 14px}
 .wxcard .t{font-size:10px;color:#8A93A0;font-weight:600;margin-bottom:7px}
+.mwrap{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px}
+.mcard{border:1px solid #E6E9EE;border-radius:11px;padding:12px 13px}
+.mcard .mt{font-size:11.5px;font-weight:800;margin-bottom:2px}
+.mcard .ms{font-size:9px;color:#8A93A0;margin-bottom:7px}
+.hm{width:100%;border-collapse:separate;border-spacing:2px;font-size:9px;font-family:'JetBrains Mono',monospace}
+.hm th{font-size:8px;color:#8A93A0;font-weight:700;padding:2px 1px;text-align:center;border:0}
+.hm td{text-align:center;padding:3px 1px;border-radius:3px;border:0;font-weight:700}
+.hm td.hm-t{background:#F4F6F9;color:#16202C;font-family:'Pretendard',sans-serif;text-align:left;padding-left:4px;font-weight:800}
+.hm td.hm-e{background:#F8FAFC;color:#CBD2DA}
+.legend{display:flex;flex-wrap:wrap;gap:6px 12px;justify-content:center;margin-top:11px}
+.legend .lg{display:flex;align-items:center;gap:4px;font-size:9.5px;color:#3A4759;font-weight:600}
+.legend .lg i{width:9px;height:9px;border-radius:2px}
 .foot{margin-top:18px;padding-top:9px;border-top:1px solid #E6E9EE;font-size:9px;color:#8A93A0;line-height:1.6}
 .foot b{color:#3A4759}
 .note{font-size:9.5px;color:#8A93A0;margin-top:5px}
 </style>
 """
 
-def build_html(y,m,cur,prevM,prevY,tcur,tprev,rank_cur,rankrows,r,
+def build_html(y,m,cur,prevM,prevY,tcur,tprev,rank_cur,rankrows,r,season,
                temp_cur,temp_prev,rain_gs,clear_gs):
     head=('<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8">'
           '<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">'
@@ -266,11 +320,9 @@ def build_html(y,m,cur,prevM,prevY,tcur,tprev,rank_cur,rankrows,r,
           '<div class="cmp">'+cmpbox(f'전월 대비 ({m-1}월)',cur,prevM,f'{m-1}월')
           +cmpbox(f'전년 동월 대비 ({y-1}년 {m}월)',cur,prevY,f'{y-1}.{m}')+'</div></div>')
 
-    # ── 팀별 현황 + 전월대비 ──
+    # ── 팀별 현황 (표) ──
     rows=[]
     order=sorted(tcur.keys(),key=lambda t:-tcur[t]['avg'])
-    vmax=max(tcur[t]['avg'] for t in order)
-    bars=[]
     for t in order:
         c=tcur[t]; p=tprev.get(t)
         d=((c['avg']-p['avg'])/p['avg']*100) if p else None
@@ -279,12 +331,23 @@ def build_html(y,m,cur,prevM,prevY,tcur,tprev,rank_cur,rankrows,r,
         rk=f'{round(rkv)}위' if rkv is not None else '—'
         rows.append(f'<tr><td><span class="dot" style="background:{TCOL.get(t,"#888")}"></span>{STAD.get(t,"")}({t})</td>'
                     f'<td>{c["n"]}</td><td>{f(c["avg"])}</td><td>{c["occ"]*100:.0f}%</td><td>{rk}</td><td>{dtd}</td></tr>')
-        bars.append(bar_row(t,c['avg'],vmax,f'{f(c["avg"])}명',d))
     sec2=('<div class="sec"><div class="sec-h"><span class="no">02</span><h2>구단별 현황 · 전월 대비</h2>'
-          f'<span class="sub">홈경기 기준 · 평균 관중 내림차순</span></div>'
+          '<span class="sub">홈경기 기준 · 평균 관중 내림차순</span></div>'
           '<table><thead><tr><th>구단(구장)</th><th>경기</th><th>평균관중</th><th>점유율</th><th>평균순위</th><th>전월비</th></tr></thead>'
-          f'<tbody>{"".join(rows)}</tbody></table>'
-          f'<div style="margin-top:10px">{"".join(bars)}</div></div>')
+          f'<tbody>{"".join(rows)}</tbody></table></div>')
+
+    # ── 월별 추이 (관중 라인 + 점유율 히트맵, 좌우) ──
+    if season and season.get('months'):
+        mh=('<div class="mwrap">'
+            '<div class="mcard"><div class="mt">월별 홈구장 평균 관중</div><div class="ms">구단별 · 월별 추이(선형)</div>'
+            f'{svg_month_lines(season["months"],season["order"],season["att"])}</div>'
+            '<div class="mcard"><div class="mt">월별 좌석 점유율</div><div class="ms">진할수록 만석 · 오른쪽=시즌 평균(%)</div>'
+            f'{html_month_heat(season["months"],season["order"],season["occ"])}</div>'
+            '</div>'+team_legend(season["order"]))
+    else:
+        mh='<div class="lead">월별 추이를 그릴 데이터가 부족합니다.</div>'
+    sec_month=('<div class="sec"><div class="sec-h"><span class="no">03</span><h2>월별 추이 (관중 · 점유율)</h2>'
+               f'<span class="sub">{y}시즌 누적 · 홈경기 기준</span></div>'+mh+'</div>')
 
     # ── 순위 영향 (표) ──
     if rankrows:
@@ -314,38 +377,55 @@ def build_html(y,m,cur,prevM,prevY,tcur,tprev,rank_cur,rankrows,r,
                    '<div class="note">※ 순위 = 해당 구단의 경기일 기준 순위를 그 달 전체로 평균(정수 반올림) · 순위변화 ▲상승 / ▼하락 · 관중 변화 = 전월 평균 대비.</div>')
     else:
         rank_html='<div class="lead">전월 비교가 가능한 구단·순위 데이터가 부족해 순위-관중 분석을 생략했습니다.</div>'
-    sec3=('<div class="sec"><div class="sec-h"><span class="no">03</span><h2>순위가 관중에 미친 영향</h2>'
+    sec3=('<div class="sec"><div class="sec-h"><span class="no">04</span><h2>순위가 관중에 미친 영향</h2>'
           '<span class="sub">경기일 기준 평균 순위 · 전월 대비</span></div>'+rank_html+'</div>')
 
     # ── 날씨 영향 ──
     rn=len(rain_gs); cn=len(clear_gs)
-    ravg=sum(g['att'] for g in rain_gs)/rn if rn else 0
-    cavg=sum(g['att'] for g in clear_gs)/cn if cn else 0
-    raind=((ravg-cavg)/cavg*100) if cavg else 0
-    tempd=(temp_cur-temp_prev) if (temp_cur is not None and temp_prev is not None) else None
-    tline=''
-    if temp_cur is not None:
-        tline=f'이번달 경기 시간대 평균 기온은 <b>{temp_cur:.1f}℃</b>'
+    has_wx=(temp_cur is not None) or (rn+cn>0)
+    if not has_wx:
+        sec4=('<div class="sec"><div class="sec-h"><span class="no">05</span><h2>날씨 영향 (기온 · 강수)</h2>'
+              '<span class="sub">경기 시간대(14~21시) 기준</span></div>'
+              '<div class="lead">이 달의 날씨 데이터가 아직 수집되지 않았습니다. '
+              '<b>fetch_weather.py</b> 를 실행해 기온·강수를 채운 뒤 리포트를 다시 생성하면 표시됩니다.</div></div>')
+    else:
+        ravg=sum(g['att'] for g in rain_gs)/rn if rn else 0
+        cavg=sum(g['att'] for g in clear_gs)/cn if cn else 0
+        raind=((ravg-cavg)/cavg*100) if cavg else 0
+        tempd=(temp_cur-temp_prev) if (temp_cur is not None and temp_prev is not None) else None
+        tline=''
+        if temp_cur is not None:
+            tline=f'이번달 경기 시간대 평균 기온은 <b>{temp_cur:.1f}℃</b>'
+            if tempd is not None:
+                tline+=f', 전월 대비 <b class="{"up" if tempd>=0 else "dn"}">{tempd:+.1f}℃</b>'
+            tline+='입니다. '
+        if rn:
+            wline=(f'{rn+cn}경기 중 <b>우천(강수) {rn}경기</b>, 맑은 날 {cn}경기였고, '
+                   f'우천 경기 평균 관중은 <b>{f(ravg)}명</b>으로 맑은 날({f(cavg)}명) 대비 '
+                   f'<b class="{"up" if raind>=0 else "dn"}">{abs(raind):.0f}% {"높" if raind>=0 else "낮"}았</b>습니다.')
+        else:
+            wline=f'{cn}경기 모두 강수 없이 진행됐습니다(맑은 날 평균 {f(cavg)}명).'
+        bmax=max(ravg,cavg,1)
+        wbars=(bar_row('맑음',cavg,bmax,f'{f(cavg)}명 ({cn})')
+               +(bar_row('우천',ravg,bmax,f'{f(ravg)}명 ({rn})') if rn else ''))
+        temp_big=f'{temp_cur:.1f}℃' if temp_cur is not None else '—'
         if tempd is not None:
-            tline+=f', 전월 대비 <b class="{"up" if tempd>=0 else "dn"}">{tempd:+.1f}℃</b>'
-        tline+='입니다. '
-    wline=(f'{cur["n"]}경기 중 <b>우천(강수) {rn}경기</b>, 맑은 날 {cn}경기였고, '
-           f'우천 경기 평균 관중은 <b>{f(ravg)}명</b>으로 맑은 날({f(cavg)}명) 대비 '
-           f'<b class="{"up" if raind>=0 else "dn"}">{abs(raind):.0f}% {"높" if raind>=0 else "낮"}았</b>습니다.' if rn else
-           f'{cur["n"]}경기 모두 강수 없이 진행됐습니다(맑은 날 평균 {f(cavg)}명).')
-    bmax=max(ravg,cavg,1)
-    wbars=(bar_row('맑음',cavg,bmax,f'{f(cavg)}명 ({cn})')
-           +(bar_row('우천',ravg,bmax,f'{f(ravg)}명 ({rn})') if rn else ''))
-    sec4=('<div class="sec"><div class="sec-h"><span class="no">04</span><h2>날씨 영향 (기온 · 강수)</h2>'
-          '<span class="sub">경기 시간대(14~21시) 기준</span></div>'
-          f'<div class="lead">{tline}{wline}</div>'
-          '<div class="wx">'
-          f'<div class="wxcard"><div class="t">기온 · 전월 대비</div>'
-          f'<div class="mono" style="font-size:22px;font-weight:800">{temp_cur:.1f}℃</div>'
-          f'<div style="margin-top:3px">{("<span class=chip "+("up" if (tempd or 0)>=0 else "dn")+">"+("▲" if (tempd or 0)>=0 else "▼")+f" {abs(tempd):.1f}℃</span> vs 전월 {temp_prev:.1f}℃") if tempd is not None else "<span class=note>전월 비교 없음</span>"}</div></div>'
-          f'<div class="wxcard"><div class="t">강수 영향 · 평균 관중</div>{wbars}</div>'
-          '</div>'
-          '<div class="note">※ 데이터에는 예보 강수확률이 없어 <b>실제 강수량/우천여부</b> 기준으로 분석했습니다.</div></div>')
+            temp_delta=(f'<span class="chip {"up" if tempd>=0 else "dn"}">{"▲" if tempd>=0 else "▼"} {abs(tempd):.1f}℃</span> '
+                        f'vs 전월 {temp_prev:.1f}℃')
+        elif temp_cur is None:
+            temp_delta='<span class="note">기온 데이터 없음</span>'
+        else:
+            temp_delta='<span class="note">전월 비교 없음</span>'
+        sec4=('<div class="sec"><div class="sec-h"><span class="no">05</span><h2>날씨 영향 (기온 · 강수)</h2>'
+              '<span class="sub">경기 시간대(14~21시) 기준</span></div>'
+              f'<div class="lead">{tline}{wline}</div>'
+              '<div class="wx">'
+              f'<div class="wxcard"><div class="t">기온 · 전월 대비</div>'
+              f'<div class="mono" style="font-size:22px;font-weight:800">{temp_big}</div>'
+              f'<div style="margin-top:3px">{temp_delta}</div></div>'
+              f'<div class="wxcard"><div class="t">강수 영향 · 평균 관중</div>{wbars}</div>'
+              '</div>'
+              '<div class="note">※ 데이터에는 예보 강수확률이 없어 <b>실제 강수량/우천여부</b> 기준으로 분석했습니다.</div></div>')
 
     foot=('<div class="foot"><b>출처</b> 관중·결과 = KBO 공식 기록 / visualbaseball 기반 산출 · '
           '날씨 = Open-Meteo 과거 기상(구장 좌표·경기 시간대) · 점유율 = 관중 ÷ 구장 수용인원 · '
@@ -353,12 +433,23 @@ def build_html(y,m,cur,prevM,prevY,tcur,tprev,rank_cur,rankrows,r,
           '진행 중 시즌은 잠정값일 수 있습니다. 제작 (주)서던포스트.</div>')
 
     return (head
-            +'<div class="page">'+cover+kpis+lead+sec1+'</div>'
-            +'<div class="page">'+sec2+'</div>'
+            +'<div class="page">'+cover+kpis+lead+sec1+sec2+'</div>'
+            +'<div class="page">'+sec_month+'</div>'
             +'<div class="page">'+sec3+sec4+foot+'</div>'
             +'</body></html>')
 
 # ── 분석 파이프라인 ─────────────────────────────────────
+def season_monthly_stats(games,y,upto_m):
+    """y시즌 누적: 구단별·월별 평균 관중/점유율 (홈경기 기준, upto_m 까지)."""
+    gs=[g for g in games if g['yr']==y and 0<g['mo']<=upto_m]
+    months=sorted({g['mo'] for g in gs})
+    by={}
+    for g in gs: by.setdefault(g['home'],{}).setdefault(g['mo'],[]).append(g)
+    att={t:{mo:sum(x['att'] for x in a)/len(a) for mo,a in mm.items()} for t,mm in by.items()}
+    occ={t:{mo:sum(x['occ'] for x in a)/len(a) for mo,a in mm.items()} for t,mm in by.items()}
+    order=sorted(by.keys(),key=lambda t:-sum(x['att'] for mo in by[t] for x in by[t][mo]))
+    return {'months':months,'order':order,'att':att,'occ':occ}
+
 def analyze(games,y,m):
     cur=summarize(month_games(games,y,m))
     if not cur: return None
@@ -381,9 +472,10 @@ def analyze(games,y,m):
     cg=month_games(games,y,m); pg=month_games(games,py,pm)
     tc=[g['temp'] for g in cg if g['temp'] is not None]; tp=[g['temp'] for g in pg if g['temp'] is not None]
     temp_cur=sum(tc)/len(tc) if tc else None; temp_prev=sum(tp)/len(tp) if tp else None
-    rain_gs=[g for g in cg if g['rainY']]; clear_gs=[g for g in cg if not g['rainY']]
+    wxg=[g for g in cg if (g.get('rain') is not None) or (g.get('temp') is not None)]
+    rain_gs=[g for g in wxg if g['rainY']]; clear_gs=[g for g in wxg if not g['rainY']]
     return dict(cur=cur,prevM=prevM,prevY=prevY,tcur=tcur,tprev=tprev,
-                rank_cur=rank_cur,rankrows=rows,r=r,
+                rank_cur=rank_cur,rankrows=rows,r=r,season=season_monthly_stats(games,y,m),
                 temp_cur=temp_cur,temp_prev=temp_prev,rain_gs=rain_gs,clear_gs=clear_gs)
 
 # ── PDF 인쇄 (Playwright) ───────────────────────────────
@@ -445,8 +537,8 @@ def generate_one(games,y,m,outdir,make_pdf=True):
     if not res:
         print(f'  {y}-{m:02d}: 경기 데이터 없음 → 건너뜀'); return None
     html=build_html(y,m,res['cur'],res['prevM'],res['prevY'],res['tcur'],res['tprev'],
-                    res['rank_cur'],res['rankrows'],res['r'],res['temp_cur'],res['temp_prev'],
-                    res['rain_gs'],res['clear_gs'])
+                    res['rank_cur'],res['rankrows'],res['r'],res['season'],
+                    res['temp_cur'],res['temp_prev'],res['rain_gs'],res['clear_gs'])
     name=f'KBO_월간리포트_{y}-{m:02d}'
     (outdir/(name+'.html')).write_text(html,encoding='utf-8')
     if make_pdf:
