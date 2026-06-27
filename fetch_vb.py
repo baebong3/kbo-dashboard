@@ -8,6 +8,8 @@ visualbaseball.com 관중 수집기 (검증 강화판)
     ④ 관중 수가 있을 것
   → 가짜 대진/스테일(이전 경기 잔상) 읽기를 차단
 - REFETCH_YEARS 에 든 연도는 기존 데이터를 버리고 처음부터 다시 검증 수집
+  · set()  = 아무것도 재검증 안 함(기존 보존 + 없는 경기/연도만 추가)  ← 현재 설정
+  · {2026} = 진행 중 시즌만 매번 재검증(정정 반영). 시즌 바뀌면 숫자만 교체.
 실행: python fetch_vb.py
 """
 import json, re, time
@@ -17,8 +19,13 @@ from playwright.sync_api import sync_playwright, Error as PWError
 
 BASE = "https://visualbaseball.com"
 
-# 이 연도들은 기존 데이터를 무시하고 처음부터 재수집(검증)
-REFETCH_YEARS = {2025, 2026}
+# 기존 데이터는 보존하고, 파일에 없는 경기/연도만 추가
+# (진행 시즌 정정까지 반영하려면 {2026} 처럼 진행 연도를 넣으면 됨)
+REFETCH_YEARS = set()
+
+# 과거 백필 하한(2016까지). 2020은 코로나 무관중이라 제외.
+START_YEAR = 2016
+SKIP_YEARS = {2020}
 
 TEAM_CODE = {
     'LG':'LG', 'OB':'두산', 'SS':'삼성', 'HT':'KIA',
@@ -152,8 +159,8 @@ def save(results, path, until):
 def main():
     today = date.today()
     yesterday = today - timedelta(days=1)
-    print(f'=== visualbaseball 관중 수집(검증판) 2021~{yesterday.year} ===')
-    print(f'재수집(검증) 연도: {sorted(REFETCH_YEARS)}\n')
+    print(f'=== visualbaseball 관중 수집(검증판) {START_YEAR}~{yesterday.year} ===')
+    print(f'재수집(검증) 연도: {sorted(REFETCH_YEARS) if REFETCH_YEARS else "없음(기존 보존, 없는 것만 추가)"}\n')
 
     p = Path('kbo_games.json')
     done = {}
@@ -165,7 +172,7 @@ def main():
     print(f'유지(스킵) 기존: {len(done)}경기 / 재수집 연도는 전부 새로 검증\n')
 
     all_results = list(done.values())
-    years = [y for y in range(yesterday.year, 2015, -1) if y != 2020]
+    years = [y for y in range(yesterday.year, START_YEAR - 1, -1) if y not in SKIP_YEARS]
 
     with sync_playwright() as pw:
         br, page = make_browser(pw)
