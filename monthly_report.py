@@ -115,7 +115,7 @@ def pearson(xs,ys):
 # ── SVG: 산점도(순위변화 × 관중변화) ────────────────────
 def svg_month_lines(months, order, att):
     """월별 구단 평균관중 라인. 세로축 0 미시작(최소값 근처)으로 선 분산 + 오른쪽 끝 팀명."""
-    W,H=372,238; pl,pr,pt,pb=42,54,12,24; iw,ih=W-pl-pr,H-pt-pb
+    W,H=372,206; pl,pr,pt,pb=42,54,10,22; iw,ih=W-pl-pr,H-pt-pb
     vals=[att[t][mo] for t in order for mo in months if att.get(t,{}).get(mo) is not None]
     if not vals: return '<div class="note">데이터 없음</div>'
     vmin,vmax=min(vals),max(vals); span=(vmax-vmin) or vmax or 1000
@@ -234,7 +234,7 @@ body{font-family:'Pretendard','Pretendard Variable',-apple-system,sans-serif;col
 .kpi .v{font-size:20px;font-weight:800;letter-spacing:-.01em;font-family:'JetBrains Mono',monospace}
 .kpi .v small{font-size:11px;font-weight:600;color:#3A4759}
 .kpi .s{font-size:9px;color:#8A93A0;margin-top:4px}
-.sec{margin:20px 0 0}
+.sec{margin:13px 0 0}
 .sec-h{display:flex;align-items:baseline;gap:8px;margin-bottom:9px;border-bottom:2px solid #2B3A55;padding-bottom:5px}
 .sec-h .no{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:800;color:#E85A3C}
 .sec-h h2{font-size:14px;font-weight:800;letter-spacing:-.01em}
@@ -264,8 +264,8 @@ td .dot{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right
 .wx{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:4px}
 .wxcard{border:1px solid #E6E9EE;border-radius:10px;padding:12px 14px}
 .wxcard .t{font-size:10px;color:#8A93A0;font-weight:600;margin-bottom:7px}
-.mwrap{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px}
-.mcard{border:1px solid #E6E9EE;border-radius:11px;padding:12px 13px}
+.mwrap{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
+.mcard{border:1px solid #E6E9EE;border-radius:11px;padding:10px 11px}
 .mcard .mt{font-size:11.5px;font-weight:800;margin-bottom:2px}
 .mcard .ms{font-size:9px;color:#8A93A0;margin-bottom:7px}
 .hm{width:100%;border-collapse:separate;border-spacing:2px;font-size:9px;font-family:'JetBrains Mono',monospace}
@@ -276,8 +276,10 @@ td .dot{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right
 .legend{display:flex;flex-wrap:wrap;gap:6px 12px;justify-content:center;margin-top:11px}
 .legend .lg{display:flex;align-items:center;gap:4px;font-size:9.5px;color:#3A4759;font-weight:600}
 .legend .lg i{width:9px;height:9px;border-radius:2px}
-.opc{line-height:1.9}
-.opp{display:inline-block;padding:1px 5px;margin:1px 1px;border-radius:4px;font-size:9.5px;font-weight:700;background:#F4F6F9}
+.opc{line-height:1.6}
+.opp{display:inline-block;padding:1px 4px;margin:1px 1px;border-radius:4px;font-size:8.8px;font-weight:700;background:#F4F6F9}
+.opt{font-size:10px}
+.opt th,.opt td{padding:4px 6px}
 .opp.ou{color:#1E874B;background:#E9F6EE}
 .opp.od{color:#D64528;background:#FCEAE4}
 .opp.on{color:#6B7682;background:#F1F3F6}
@@ -394,7 +396,7 @@ def build_html(y,m,cur,prevM,prevY,tcur,tprev,rank_cur,rankrows,r,season,
                        f'<td class="opc">{opp_list(x["prev_opp"])}</td>'
                        f'<td class="opc">{opp_list(x["cur_opp"])}</td>'
                        f'<td>{pchip}</td></tr>')
-        opp_body=('<table><thead><tr><th>홈팀(구장)</th><th>전월 홈경기 상대팀</th><th>이번달 홈경기 상대팀</th><th>전월대비</th></tr></thead>'
+        opp_body=('<table class="opt"><thead><tr><th>홈팀(구장)</th><th>전월 홈경기 상대팀</th><th>이번달 홈경기 상대팀</th><th>전월대비</th></tr></thead>'
                   f'<tbody>{"".join(otr)}</tbody></table>'
                   '<div class="note">※ 상대팀 이름 색 = 그 팀이 방문할 때 홈 평균 대비 동원력 — '
                   '<span class="opp ou">초록</span> 평균 이상 / <span class="opp od">빨강</span> 평균 이하 / 회색 비슷 (시즌 누적 기준) · '
@@ -403,8 +405,7 @@ def build_html(y,m,cur,prevM,prevY,tcur,tprev,rank_cur,rankrows,r,season,
         opp_body='<div class="lead">이번달 홈경기 데이터가 부족합니다.</div>'
     sec_opp=('<div class="sec"><div class="sec-h"><span class="no">04</span><h2>상대팀 분석 (홈경기 상대 구성)</h2>'
              '<span class="sub">전월 vs 이번달 맞이한 상대팀 · 홈 관중 증감</span></div>'
-             '<div class="lead">홈 관중은 어떤 팀이 방문하느냐에 따라 달라집니다. 전월과 이번달에 각 홈팀이 맞이한 상대팀을 비교하면, '
-             '동원력이 큰 팀(초록)과의 경기가 줄고 작은 팀(빨강)과의 경기가 늘면 관중이 감소하는 식의 흐름을 읽을 수 있습니다.</div>'
+             '<div class="lead">홈 관중은 방문팀에 따라 달라집니다. 동원력이 큰 팀(초록)과의 경기가 줄고 작은 팀(빨강)과의 경기가 늘면 관중이 감소하는 흐름을 읽을 수 있습니다.</div>'
              +opp_body+'</div>')
 
     # ── 순위 영향 (표) ──
@@ -576,8 +577,7 @@ def build_html(y,m,cur,prevM,prevY,tcur,tprev,rank_cur,rankrows,r,season,
 
     return (head
             +'<div class="page">'+cover+kpis+lead+sec1+sec2+'</div>'
-            +'<div class="page">'+sec_month+'</div>'
-            +'<div class="page">'+sec_opp+'</div>'
+            +'<div class="page">'+sec_month+sec_opp+'</div>'
             +'<div class="page">'+sec3+sec4+'</div>'
             +'<div class="page">'+sec_sum+foot+'</div>'
             +'</body></html>')
