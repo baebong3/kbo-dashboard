@@ -38,6 +38,13 @@ jobs:
           pip install -r requirements.txt
           playwright install chromium --with-deps
 
+      # 3.5 가짜 매치업 정리(수집 전): 한 팀이 하루 2팀 이상과 경기한 옛 수집오류 날짜를 제거.
+      #      직후 수집 단계가 해당 날짜의 실제 경기를 KBO에서 다시 채워 같은 실행에서 정상화된다.
+      #      (이 단계가 매 실행마다 돌아 옛 가짜가 다시 누적·확산되는 것을 영구 차단)
+      - name: 가짜 매치업 정리
+        run: python clean_games.py
+        continue-on-error: true
+
       # 4. KBO 관중 데이터 수집
       #    - 평소(스케줄/일반 수동): fetch_daily.py = 현재 달을 보고 '없는 경기만' 추가(증분)
       #    - 수동 + full_refetch=true: fetch_kbo.py = 전체 시즌 재수집(기존 보존, 누락 보충)
@@ -52,6 +59,16 @@ jobs:
             python fetch_daily.py
           fi
         continue-on-error: true   # 수집 실패해도 배포는 계속(다음 실행이 그 달을 다시 보며 자동 보충)
+
+      # 4.5 스코어(득점) 수집 — 점수 없는 신규 경기만 (visualbaseball), 기존 점수는 자동 스킵
+      - name: 경기 스코어 수집
+        run: python fetch_scores.py
+        continue-on-error: true
+
+      # 4.6 순위 계산 — 스코어 기반으로 각 경기에 '경기 전 순위·승률' 부착
+      - name: 순위 계산
+        run: python compute_standings.py
+        continue-on-error: true
 
       # 5. 날씨 데이터 보강 (신규 경기에만 API 호출, 기존 건은 자동 스킵)
       - name: 경기 날씨 데이터 보강
