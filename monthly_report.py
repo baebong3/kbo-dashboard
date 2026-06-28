@@ -45,6 +45,7 @@ def cap(t, yr, venue=None):
     if (venue and '잠실' in str(venue)) or t in ('LG','두산'):
         return 25000 if yr<=2021 else 23750
     if t=='NC' and yr<=2018: return 11000
+    if t=='SSG' and yr<=2020: return 27800
     if t=='한화': return 13000 if yr<2025 else 17000
     return CAPY.get(t,20000)
 

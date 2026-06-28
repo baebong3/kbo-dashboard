@@ -2,13 +2,14 @@
 KBO 경기장 날씨 데이터 수집기
 - Open-Meteo API (무료, API 키 불필요)
 - kbo_games.json에 기온/강수량/풍속 추가
+- 구장 이전 반영(연도별 좌표): NC 2016~2018 마산구장 / 한화 2025~ 대전 볼파크
 실행: python fetch_weather.py
 """
 import json, time, requests
 from pathlib import Path
 from datetime import date, datetime
 
-# ── 경기장 좌표 ─────────────────────────────────────────────
+# ── 경기장 좌표(기본: 현재 홈구장) ───────────────────────────
 STADIUMS = {
     'LG':   {'name':'잠실야구장',         'lat':37.5121, 'lon':127.0719},
     '두산': {'name':'잠실야구장',         'lat':37.5121, 'lon':127.0719},
@@ -21,6 +22,22 @@ STADIUMS = {
     'NC':   {'name':'창원NC파크',         'lat':35.2226, 'lon':128.5820},
     '키움': {'name':'고척스카이돔',        'lat':37.4982, 'lon':126.8674},
 }
+
+# ── 연도별 구장 이전 보정 ────────────────────────────────────
+# (거리는 짧아 날씨 차이는 미미하지만, 구장정보를 정확히 반영)
+def get_stadium(home, yr):
+    try:
+        yr = int(yr)
+    except (TypeError, ValueError):
+        yr = None
+    if yr is not None:
+        # NC: 2016~2018 마산야구장 → 2019~ 창원NC파크
+        if home == 'NC' and yr <= 2018:
+            return {'name':'마산야구장', 'lat':35.2272, 'lon':128.5747}
+        # 한화: ~2024 대전 이글스파크(한밭) → 2025~ 대전 한화생명 볼파크(인접)
+        if home == '한화' and yr >= 2025:
+            return {'name':'대전한화생명볼파크', 'lat':36.3174, 'lon':127.4316}
+    return STADIUMS.get(home)
 
 # WMO 날씨 코드 → 한국어
 WMO = {
@@ -107,12 +124,12 @@ def main():
         if not home or not gdate:
             continue
 
-        # 이미 날씨 있으면 스킵
+        # 이미 날씨 있으면 스킵 (기존 2019~2026 보존)
         if g.get('temp_avg') is not None:
             skipped += 1
             continue
 
-        stadium = STADIUMS.get(home)
+        stadium = get_stadium(home, g.get('yr'))   # 연도별 구장 반영
         if not stadium:
             continue
 
@@ -139,7 +156,7 @@ def main():
         if (i+1) % 50 == 0:
             p.write_text(json.dumps(data,ensure_ascii=False,indent=2),encoding='utf-8')
             print(f"  {i+1}/{len(games)} | 추가:{added} | 스킵:{skipped} | 실패:{failed}")
-            print(f"    최근: {gdate} {home} → {w.get('temp_avg','?')}°C, {w.get('rain_mm','?')}mm")
+            print(f"    최근: {gdate} {home}({stadium['name']}) → {w.get('temp_avg','?')}°C, {w.get('rain_mm','?')}mm")
 
     # 최종 저장
     p.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding='utf-8')
