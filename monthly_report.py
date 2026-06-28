@@ -35,19 +35,8 @@ def norm(t):
         if k in t: return v
     return t
 
-# ── 수용인원(대시보드 cap() 과 동일 로직) ───────────────
-VENUE_CAP={'포항':12247,'울산':12000,'청주':9500,'사직':23079,'마산':11000,'고척':16000}
-CAPY={'LG':23750,'두산':23750,'삼성':24000,'KIA':20500,'SSG':23000,'롯데':23079,'kt':18700,'NC':17983,'키움':16000}
-def cap(t, yr, venue=None):
-    if venue:
-        for k,v in VENUE_CAP.items():
-            if k in str(venue): return v
-    if (venue and '잠실' in str(venue)) or t in ('LG','두산'):
-        return 25000 if yr<=2021 else 23750
-    if t=='NC' and yr<=2018: return 11000
-    if t=='SSG' and yr<=2020: return 27800
-    if t=='한화': return 13000 if yr<2025 else 17000
-    return CAPY.get(t,20000)
+# ── 수용인원: 단일 소스(caps.json) ───────────────
+from kbo_caps import cap  # 같은 폴더에 kbo_caps.py·caps.json 필요. cap(team, yr, venue[, postseason])
 
 # ── 포맷 ────────────────────────────────────────────────
 def f(n): return f'{round(n):,}'

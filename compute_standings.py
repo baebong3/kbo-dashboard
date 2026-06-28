@@ -11,13 +11,7 @@ import json
 from collections import defaultdict
 from pathlib import Path
 
-CAPY={'LG':23750,'두산':23750,'삼성':24000,'KIA':20500,'SSG':23183,
-      '롯데':23200,'kt':18700,'한화':20007,'NC':18128,'키움':16000}
-CAPY_PRE25={'한화':13000}  # 2025 이전 한화 구장
-
-def cap(team, yr):
-    if yr < 2025 and team in CAPY_PRE25: return CAPY_PRE25[team]
-    return CAPY.get(team, 20000)
+from kbo_caps import cap  # 수용인원 단일 소스(caps.json). 같은 폴더에 kbo_caps.py·caps.json 필요
 
 def winner(g):
     a, h = g.get('away_score'), g.get('home_score')
@@ -85,7 +79,7 @@ def main():
     print("순위 부착 저장 완료.\n")
 
     # ── 요약: 홈팀 순위대별 평균 관중·점유율 ──
-    def occ(g): return g['att']/cap(g['home'], g['yr'])
+    def occ(g): return min(g['att']/cap(g['home'], g['yr']), 1.0)
     for yr in sorted({g.get('yr') for g in games if g.get('yr')} - {2020}):
         rows = [g for g in games if g.get('yr')==yr and g.get('att') and g.get('home_rank')]
         if not rows: continue

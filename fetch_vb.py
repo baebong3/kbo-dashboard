@@ -1,15 +1,11 @@
 """
-visualbaseball.com 관중 수집기 (검증 강화판)
-- schedule 페이지에서 게임 링크 수집(과수집되어도 OK — 아래 검증으로 걸러짐)
+visualbaseball.com 관중 수집기 (검증 강화판 + 과거 구단명 별칭)
 - 각 게임 페이지가 '진짜 완료 경기'인지 검증 후에만 관중 채택:
     ① 페이지에 그 game_id의 날짜(MM.DD)가 보이고
-    ② 양팀 이름이 모두 보이고
+    ② 양팀 이름이 모두 보이고  ★당시 이름 별칭 허용: 넥센=키움, SK=SSG
     ③ '종료' + 점수(d:d)가 있고
     ④ 관중 수가 있을 것
-  → 가짜 대진/스테일(이전 경기 잔상) 읽기를 차단
-- REFETCH_YEARS 에 든 연도는 기존 데이터를 버리고 처음부터 다시 검증 수집
-  · set()  = 아무것도 재검증 안 함(기존 보존 + 없는 경기/연도만 추가)  ← 현재 설정
-  · {2026} = 진행 중 시즌만 매번 재검증(정정 반영). 시즌 바뀌면 숫자만 교체.
+- REFETCH_YEARS = set()  → 기존 보존 + 없는 경기/연도만 추가
 실행: python fetch_vb.py
 """
 import json, re, time
@@ -19,11 +15,7 @@ from playwright.sync_api import sync_playwright, Error as PWError
 
 BASE = "https://visualbaseball.com"
 
-# 기존 데이터는 보존하고, 파일에 없는 경기/연도만 추가
-# (진행 시즌 정정까지 반영하려면 {2026} 처럼 진행 연도를 넣으면 됨)
 REFETCH_YEARS = set()
-
-# 과거 백필 하한(2016까지). 2020은 코로나 무관중이라 제외.
 START_YEAR = 2016
 SKIP_YEARS = {2020}
 
@@ -33,6 +25,15 @@ TEAM_CODE = {
     'NC':'NC', 'WO':'키움',
     'CB':'현대', 'SB':'쌍방울', 'TG':'청보', 'MBC':'LG',
 }
+
+# ★ 과거 구단명 별칭(매핑 이름 → 페이지에서 허용할 표기들)
+TEAM_ALIASES = {
+    '키움': ['키움', '넥센'],   # 2016~2018 넥센 히어로즈
+    'SSG':  ['SSG', 'SK'],      # 2016~2020 SK 와이번스
+}
+def alias_list(t):
+    return TEAM_ALIASES.get(t, [t])
+
 DAYS_KO = ['일','월','화','수','목','금','토']
 MONTHS = ['3월','4월','5월','6월','7월','8월','9월','10월']
 
@@ -101,7 +102,6 @@ def collect_links(page, year):
     except Exception as e:
         print(f'  오류: {e}')
 
-    # 해당 연도 game_id만
     result = sorted(g for g in all_links if g[:4] == str(year))
     print(f'  → {year} 수집 링크 {len(result)}개 (검증 전)')
     return result
@@ -110,24 +110,25 @@ def collect_links(page, year):
 def get_att(page, info):
     """게임 페이지가 진짜 완료 경기인지 검증 후 관중수 반환. 아니면 0."""
     gid = info['game_id']
-    home, away = info['home'], info['away']
-    date_dot = f"{info['mo']:02d}.{info['day']:02d}"   # 예: 06.05
+    home_n, away_n = alias_list(info['home']), alias_list(info['away'])   # ★ 별칭 목록
+    date_dot = f"{info['mo']:02d}.{info['day']:02d}"
     page.goto(f'{BASE}/game/{gid}', wait_until='domcontentloaded', timeout=25000)
     for _ in range(18):
         page.wait_for_timeout(400)
         res = page.evaluate("""(args) => {
-            const [home, away, dateDot] = args;
+            const [homeNames, awayNames, dateDot] = args;
             const txt = document.body.innerText || '';
             const hasFinal = /종료/.test(txt);
             const hasScore = /\\d+\\s*[:：]\\s*\\d+/.test(txt);
             const T = txt.toUpperCase();
-            const teamsOk  = T.includes(home.toUpperCase()) && T.includes(away.toUpperCase());
-            const dateOk   = txt.includes(dateDot);   // 그 경기의 실제 날짜가 페이지에 있어야(스테일 차단)
+            const teamsOk = homeNames.some(n => T.includes(n.toUpperCase()))
+                         && awayNames.some(n => T.includes(n.toUpperCase()));
+            const dateOk = txt.includes(dateDot);
             let att = 0;
             const m = txt.match(/관중[\\s\\n]*([\\d,]{3,7})/);
             if (m) att = parseInt(m[1].replace(/,/g, ''));
             return {att, hasFinal, hasScore, teamsOk, dateOk};
-        }""", [home, away, date_dot])
+        }""", [home_n, away_n, date_dot])
         if (res['att'] and res['att'] > 100 and res['hasFinal']
                 and res['hasScore'] and res['teamsOk'] and res['dateOk']):
             return res['att']
@@ -166,7 +167,6 @@ def main():
     done = {}
     if p.exists():
         for g in json.loads(p.read_text(encoding='utf-8')).get('games', []):
-            # REFETCH_YEARS 는 기존 데이터를 버림(가짜 제거) → done 에 넣지 않음
             if g.get('att',0) > 0 and g.get('game_id') and g.get('yr') not in REFETCH_YEARS:
                 done[g['game_id']] = g
     print(f'유지(스킵) 기존: {len(done)}경기 / 재수집 연도는 전부 새로 검증\n')
@@ -207,7 +207,7 @@ def main():
                     info['att'] = att; ok += 1
                     all_results.append(info); done[info['game_id']] = info
                 else:
-                    rej += 1   # 가짜/미완료/스테일 → 버림
+                    rej += 1
                 if (i+1) % 20 == 0 or i+1 == len(todo):
                     saved = save(all_results, p, yesterday)
                     print(f'  [{(i+1)/len(todo)*100:4.0f}%] {i+1}/{len(todo)} | 채택:{ok} 기각:{rej} | 저장:{saved}')

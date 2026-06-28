@@ -9,6 +9,7 @@
 <link href="https://cdn.jsdelivr.net/npm/jetbrains-mono@1.0.6/css/jetbrains-mono.min.css" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<script src="caps.js"></script><!-- 수용인원 단일 소스(caps.json→caps.js) -->
 <style>
 :root{--navy:#2B3A55;--coral:#E85A3C;--ink:#1F2733;--muted:#8A93A0;--line:#E9ECF1;--bg:#F5F7FA;--card:#fff;
 --wc:#5C8A72;--spo:#3A7CA5;--po:#D98A2B;--ks:#E85A3C;
@@ -114,11 +115,7 @@ const SERIES=[['WC','와일드카드','var(--wc)','#5C8A72'],['준PO','준PO','v
               ['PO','플레이오프','var(--po)','#D98A2B'],['KS','한국시리즈','var(--ks)','#E85A3C']];
 const SC=Object.fromEntries(SERIES.map(s=>[s[0],s[3]]));
 const SLAB=Object.fromEntries(SERIES.map(s=>[s[0],s[1]]));
-const CAPY={LG:{d:23750},'두산':{d:23750},'삼성':{d:24000},KIA:{d:20500},SSG:{d:23000},
-  '롯데':{d:23079},kt:{d:18700},'한화':{d:17000,b25:13000},NC:{d:17983},'키움':{d:16000}};
-const VENUE_CAP={'포항':12247,'울산':12000,'청주':9500,'사직':23079,'마산':11000,'고척':16300};
-function venueCap(v){if(!v)return null;for(const k in VENUE_CAP)if((''+v).includes(k))return VENUE_CAP[k];return null;}
-function cap(t,yr,venue){const vc=venueCap(venue);if(vc)return vc;if((venue&&(''+venue).includes('잠실'))||t==='LG'||t==='두산')return yr<=2021?25000:23750;const c=CAPY[t];if(!c)return 20000;return(c.b25&&yr<2025)?c.b25:c.d;}
+/* 수용인원 cap(team,yr,venue,postseason)은 caps.js(단일 소스 caps.json) 사용 — head의 <script src="caps.js">. 포스트시즌이라 호출 시 4번째 인자 true */
 
 let PS=[],YEARS=[],selYears=[],selSeries='전체';
 const CH={};
@@ -131,7 +128,7 @@ async function load(){
       yr:+g.yr, date:g.date, series:g.series, gno:g.game_no||g.gno||null,
       home:g.home, away:g.away, hs:g.home_score, as:g.away_score,
       att:+g.att, venue:g.venue||null,
-      occ:(+g.att)/cap(g.home,+g.yr,g.venue||null)
+      occ:Math.min((+g.att)/cap(g.home,+g.yr,g.venue||null,true),1)
     }));
     $('upd').textContent=(j.updated?('업데이트 '+j.updated.slice(0,10)+' · '):'')+PS.length+'경기';
   }catch(e){
