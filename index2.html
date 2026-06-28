@@ -201,6 +201,19 @@ select:hover,select:focus{border-color:var(--coral)}
 #dataModal table.cap{width:100%;border-collapse:collapse;font-size:11.5px;margin-top:4px}
 #dataModal table.cap td{border-bottom:1px solid #EEF1F4;padding:4px 6px}
 #dataModal table.cap td:first-child{font-weight:700;color:var(--ink);white-space:nowrap}
+/* ════════ 월간 리포트 모달 ════════ */
+#reportModal{position:fixed;inset:0;background:rgba(20,26,38,.55);display:none;align-items:flex-start;justify-content:center;z-index:9999;padding:40px 16px;overflow:auto}
+#reportModal.on{display:flex}
+#reportModal .m-card{background:#fff;border-radius:16px;max-width:560px;width:100%;padding:24px 30px 28px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+#reportModal h2{font-size:18px;font-weight:800;margin:0 0 4px}
+#reportModal .m-sub{font-size:12px;color:var(--muted);margin-bottom:16px}
+#reportModal .m-x{float:right;border:0;background:#F1F3F6;width:30px;height:30px;border-radius:8px;font-size:18px;cursor:pointer;color:#5A6473;font-weight:700;line-height:1}
+.rep-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 13px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px}
+.rep-item .ri-m{font-weight:800;font-size:13.5px;color:var(--ink)}
+.rep-item .ri-s{font-size:10.5px;color:var(--muted);font-family:var(--mono);margin-top:2px}
+.rep-dl{background:var(--coral);color:#fff;text-decoration:none;font-size:12px;font-weight:700;padding:8px 15px;border-radius:8px;white-space:nowrap}
+.rep-dl:hover{background:#d44e30}
+.rep-empty{color:var(--muted);font-size:12.5px;padding:14px 2px;line-height:1.6}
 /* ════════ 표지 · 비밀번호 게이트 ════════ */
 #cover{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;
   background:radial-gradient(125% 85% at 50% -5%,#36486C 0%,#243149 52%,#1A2335 100%);
@@ -280,6 +293,7 @@ select:hover,select:focus{border-color:var(--coral)}
       <span id="updTime">데이터 로딩 중…</span>
       <span class="src" id="srcBadge">—</span>
       <span class="hd-sep"></span>
+      <button class="lnk" id="reportBtn">📄 월간 리포트</button>
       <button class="lnk" id="dataBtn">ⓘ 데이터 설명</button>
       <button class="lnk" id="resetBtn">초기화</button>
     </div>
@@ -436,7 +450,7 @@ select:hover,select:focus{border-color:var(--coral)}
     <h2>📊 데이터 설명 · 출처</h2>
     <div class="m-sub">KBO 관중 분석 콘솔에서 쓰는 데이터의 범위·출처·지표 정의입니다.</div>
     <h3>데이터 범위</h3>
-    <p>2019 및 2021~2026 KBO 정규시즌 전 경기. 포스트시즌은 상단 토글의 별도 화면에서 제공합니다. 경기별로 관중 수, 경기 결과, 그날의 날씨, 경기 전 순위를 담고 있습니다.</p>
+    <p>2016~2019 및 2021~2026 KBO 정규시즌 전 경기(2020년 코로나 무관중 시즌 제외). 포스트시즌은 상단 토글의 별도 화면에서 제공합니다. 경기별로 관중 수, 경기 결과, 그날의 날씨, 경기 전 순위를 담고 있습니다.</p>
     <h3>출처</h3>
     <ul>
       <li><b>관중·경기 결과</b> — KBO 한국야구위원회 공식 기록</li>
@@ -474,6 +488,15 @@ select:hover,select:focus{border-color:var(--coral)}
   </div>
 </div>
 
+<div id="reportModal">
+  <div class="m-card">
+    <button class="m-x" id="reportModalClose">&times;</button>
+    <h2>📄 월간 리포트</h2>
+    <div class="m-sub">매월 1일 자동 생성되는 KBO 관중 분석 리포트입니다. PDF로 받아 보세요.</div>
+    <div id="reportList"></div>
+  </div>
+</div>
+
 <script>
 /* ════════ 상수 ════════ */
 const TEAMS=['LG','두산','삼성','KIA','SSG','롯데','kt','한화','NC','키움'];
@@ -483,7 +506,7 @@ const CAPY={LG:{d:23750},두산:{d:23750},삼성:{d:24000},KIA:{d:20500},SSG:{d:
   롯데:{d:23079},kt:{d:18700},한화:{d:17000,b25:13000},NC:{d:17983},키움:{d:16000}};
 const VENUE_CAP={'포항':12247,'울산':12000,'청주':9500,'사직':23079,'마산':11000,'고척':16000};
 function venueCap(v){if(!v)return null;for(const k in VENUE_CAP)if((''+v).includes(k))return VENUE_CAP[k];return null;}
-function cap(t,yr,venue){const vc=venueCap(venue);if(vc)return vc;if((venue&&(''+venue).includes('잠실'))||t==='LG'||t==='두산')return yr<=2021?25000:23750;const c=CAPY[t];if(!c)return 20000;return(c.b25&&yr<2025)?c.b25:c.d;}
+function cap(t,yr,venue){const vc=venueCap(venue);if(vc)return vc;if((venue&&(''+venue).includes('잠실'))||t==='LG'||t==='두산')return yr<=2021?25000:23750;if(t==='NC'&&yr<=2018)return 11000;const c=CAPY[t];if(!c)return 20000;return(c.b25&&yr<2025)?c.b25:c.d;}
 const DOWNAME=['일','월','화','수','목','금','토'];
 const NM={'LG':'LG','두산':'두산','삼성':'삼성','KIA':'KIA','SSG':'SSG','롯데':'롯데','kt':'kt','KT':'kt','한화':'한화','NC':'NC','키움':'키움'};
 const NMP={'LG트윈스':'LG','두산베어스':'두산','삼성라이온즈':'삼성','KIA타이거즈':'KIA','SSG랜더스':'SSG',
@@ -549,8 +572,8 @@ function ingest(raw){
     const dt=g.date?new Date(g.date):null;const dow=dt?dt.getDay():2;
     const home=normTeam(g.home),away=normTeam(g.away||'');const att=+g.att;
     if(!home||!att||att<100)return null;
-    const yr=+(g.yr||g.year);if(!yr||yr<2019||yr===2020)return null;
-    return{yr,mo:+(g.mo||g.month),day:+g.day,dow,dowN:DOWNAME[dow],home,away,att,venue:(g.venue||g.stadium||null),occ:att/cap(home,yr,(g.venue||g.stadium||null)),
+    const yr=+(g.yr||g.year);if(!yr||yr<2016||yr===2020)return null;
+    return{yr,mo:+(g.mo||g.month),day:+g.day,dow,dowN:DOWNAME[dow],home,away,att,venue:(g.venue||g.stadium||null),occ:Math.min(att/cap(home,yr,(g.venue||g.stadium||null)),1),
       series:g.series||([5,6,0].includes(dow)?'WE':'WD'),
       temp:g.temp_avg??null,rain:g.rain_mm??null,rainY:g.rain_yn??(g.rain_mm>0),
       date:g.date||null,wx:g.weather||null,homeRank:g.home_rank??null,awayRank:g.away_rank??null,rankGap:g.rank_gap??null};
@@ -998,6 +1021,31 @@ const _dx=$('dataModalClose'); if(_dx) _dx.addEventListener('click',()=>$('dataM
 const _dm=$('dataModal'); if(_dm) _dm.addEventListener('click',e=>{if(e.target.id==='dataModal')_dm.classList.remove('on');});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('dataModal'))$('dataModal').classList.remove('on');});
 
+/* ════════ 월간 리포트 모달 ════════ */
+async function loadReports(){
+  const box=$('reportList'); if(!box) return;
+  box.innerHTML='<div class="rep-empty">불러오는 중…</div>';
+  try{
+    const r=await fetch('reports/reports.json?t='+Date.now(),{cache:'no-store'});
+    if(!r.ok) throw 0;
+    const d=await r.json(), rs=(d.reports||[]);
+    if(!rs.length){box.innerHTML='<div class="rep-empty">아직 생성된 리포트가 없습니다.</div>';return;}
+    box.innerHTML=rs.map(e=>{
+      const p=e.ym.split('-'), href='reports/'+encodeURIComponent(e.file);
+      const avg=Number(e.avg).toLocaleString('ko-KR');
+      return `<div class="rep-item"><div><div class="ri-m">${p[0]}년 ${+p[1]}월</div>`+
+        `<div class="ri-s">${e.n}경기 · 평균 ${avg}명 · 점유율 ${e.occ}%</div></div>`+
+        `<a class="rep-dl" href="${href}" download>PDF 다운로드</a></div>`;
+    }).join('');
+  }catch(e){
+    box.innerHTML='<div class="rep-empty">리포트 목록을 불러오지 못했습니다.<br>(reports/reports.json 이 아직 없거나 배포 전입니다)</div>';
+  }
+}
+const _rb=$('reportBtn'); if(_rb) _rb.addEventListener('click',()=>{$('reportModal').classList.add('on');loadReports();});
+const _rx=$('reportModalClose'); if(_rx) _rx.addEventListener('click',()=>$('reportModal').classList.remove('on'));
+const _rm=$('reportModal'); if(_rm) _rm.addEventListener('click',e=>{if(e.target.id==='reportModal')_rm.classList.remove('on');});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('reportModal'))$('reportModal').classList.remove('on');});
+
 /* ════════ 오늘의 리포트 ════════ */
 function renderTodayReport(){
   const body=$('todayBody'), dEl=$('todayDate'); if(!body) return;
@@ -1128,6 +1176,21 @@ function renderMonthReport(mo){
   const items=[];
   if(prevY) items.push(`<b>전년 동월</b>(${yr-1}년 ${mo}월${isCur?' 같은 기간':''}) ${_cmpTxt(cur.a,prevY.a,'경기당')}.`);
   if(prevM) items.push(`<b>전월 대비</b>(${mo-1}월) ${_cmpTxt(cur.a,prevM.a,'경기당')}.`);
+  if(prevM){
+    const tHome=gs=>{const m={};gs.forEach(g=>{(m[g.home]=m[g.home]||[]).push(g.att);});const o={};for(const t in m)o[t]=m[t].reduce((s,a)=>s+a,0)/m[t].length;return o;};
+    const ca=tHome(cur.gs), pa=tHome(prevM.gs);
+    const tRank=gs=>{const m={};gs.forEach(g=>{if(g.homeRank!=null)(m[g.home]=m[g.home]||[]).push(g.homeRank);if(g.away&&g.awayRank!=null)(m[g.away]=m[g.away]||[]).push(g.awayRank);});const o={};for(const t in m)o[t]=m[t].reduce((s,a)=>s+a,0)/m[t].length;return o;};
+    const rc=tRank(cur.gs), rp=tRank(prevM.gs);
+    const seas=ALL.filter(g=>g.yr===yr&&g.mo<=mo&&g.att);
+    const hsm={};{const m={};seas.forEach(g=>{(m[g.home]=m[g.home]||[]).push(g.att);});for(const t in m)hsm[t]=m[t].reduce((s,a)=>s+a,0)/m[t].length;}
+    const beta={};{const m={};seas.forEach(g=>{if(g.away&&hsm[g.home]!=null)(m[g.away]=m[g.away]||[]).push(g.att-hsm[g.home]);});for(const t in m)beta[t]=m[t].reduce((s,a)=>s+a,0)/m[t].length;}
+    const oppShift=t=>{const cm=cur.gs.filter(g=>g.home===t),pm=prevM.gs.filter(g=>g.home===t);if(!cm.length||!pm.length)return null;const mb=a=>a.reduce((s,g)=>s+(beta[g.away]||0),0)/a.length;return mb(cm)-mb(pm);};
+    const reason=(t,gain)=>{const rs=[];if(rc[t]!=null&&rp[t]!=null){const imp=rp[t]-rc[t];if(gain&&imp>=1)rs.push(`순위 상승(${rp[t].toFixed(1)}→${rc[t].toFixed(1)}위)`);if(!gain&&imp<=-1)rs.push(`연패 등 순위 하락(${rp[t].toFixed(1)}→${rc[t].toFixed(1)}위)`);}const sh=oppShift(t);if(sh!=null){if(gain&&sh>=500)rs.push('동원력 높은 팀과 홈경기 증가');if(!gain&&sh<=-500)rs.push('동원력 낮은 팀과 홈경기 증가');}return rs;};
+    const chg=[];for(const t in ca){if(pa[t]==null)continue;chg.push({t,d:(ca[t]-pa[t])/pa[t]*100});}chg.sort((a,b)=>a.d-b.d);
+    const ups=chg.filter(c=>c.d>0).slice(-2).reverse(), dns=chg.filter(c=>c.d<0).slice(0,2);
+    if(ups.length)items.push(`<b>증가 주도</b> `+ups.map(c=>{const r=reason(c.t,true);return `${nm(c.t)} <b class="up">+${c.d.toFixed(0)}%</b>${r.length?'('+r.join(' · ')+')':''}`;}).join(', ')+`.`);
+    if(dns.length)items.push(`<b>감소 주도</b> `+dns.map(c=>{const r=reason(c.t,false);return `${nm(c.t)} <b class="dn">${c.d.toFixed(0)}%</b>${r.length?'('+r.join(' · ')+')':''}`;}).join(', ')+`.`);
+  }
   items.push(`<b>구단별 평균관중</b> 최다 ${nm(hiAvg.t)} ${fmt(Math.round(hiAvg.avg))}명 · 최소 ${nm(loAvg.t)} ${fmt(Math.round(loAvg.avg))}명.`);
   items.push(`<b>구단별 점유율</b> 최고 ${nm(hiOcc.t)} ${(hiOcc.occ*100).toFixed(0)}% · 최저 ${nm(loOcc.t)} ${(loOcc.occ*100).toFixed(0)}%.`);
   el.innerHTML=`<div class="t-lead">${lead}</div><ul class="t-list">${items.map(t=>`<li>${t}</li>`).join('')}</ul>`;
