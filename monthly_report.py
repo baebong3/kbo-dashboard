@@ -225,6 +225,7 @@ body{font-family:'Pretendard','Pretendard Variable',-apple-system,sans-serif;col
 .cover .eyebrow{font-size:11px;letter-spacing:.18em;color:#9DB0C8;font-weight:700;font-family:'JetBrains Mono',monospace}
 .cover h1{font-size:27px;font-weight:800;letter-spacing:-.02em;margin:8px 0 4px}
 .cover .period{font-size:13px;color:#C7D2E2;font-weight:600}
+.pbadge{display:inline-block;vertical-align:middle;margin-left:9px;font-size:12px;font-weight:800;color:#fff;background:#E85A3C;padding:2px 10px;border-radius:20px;letter-spacing:.02em}
 .cover .rule{width:46px;height:3px;background:#E85A3C;border-radius:2px;margin:16px 0 0}
 .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin:14px 0}
 .kpi{border:1px solid #E6E9EE;border-radius:11px;padding:11px 13px;position:relative;overflow:hidden}
@@ -314,9 +315,11 @@ def build_html(y,m,cur,prevM,prevY,tcur,tprev,rank_cur,rankrows,r,season,
     if prevY:
         d=(cur['avg']-prevY['avg'])/prevY['avg']*100
         pyTxt=f' · 전년 동월({y-1}년 {m}월) 대비 <b class="{"up" if d>=0 else "dn"}">{abs(d):.0f}% {"증가" if d>=0 else "감소"}</b>'
+    prov=(date.today().year==y and date.today().month==m)
+    pbadge='<span class="pbadge">잠정</span>' if prov else ''
     cover=(f'<div class="cover"><div class="eyebrow">KBO ATTENDANCE MONTHLY REPORT</div>'
-           f'<h1>{y}년 {m}월 관중 분석 리포트</h1>'
-           f'<div class="period">{y}.{m:02d} · 정규시즌 {cur["n"]}경기 · (주)서던포스트</div>'
+           f'<h1>{y}년 {m}월 관중 분석 리포트{pbadge}</h1>'
+           f'<div class="period">{y}.{m:02d} · 정규시즌 {cur["n"]}경기{" · 진행 중 잠정 집계" if prov else ""} · (주)서던포스트</div>'
            f'<div class="rule"></div></div>')
     kpis=('<div class="kpis">'
           f'<div class="kpi"><div class="l">경기당 평균 관중</div><div class="v">{f(cur["avg"])}<small>명</small></div>'
@@ -356,7 +359,7 @@ def build_html(y,m,cur,prevM,prevY,tcur,tprev,rank_cur,rankrows,r,season,
         dtd=(f'<span class="{"up" if d>=0 else "dn"}">{d:+.0f}%</span>' if d is not None else '<span style="color:#C5CCD5">—</span>')
         rkv=rank_cur.get(t)
         rk=f'{rkv:.1f}위' if rkv is not None else '—'
-        rows.append(f'<tr><td><span class="dot" style="background:{TCOL.get(t,"#888")}"></span>{STAD.get(t,"")}({t})</td>'
+        rows.append(f'<tr><td><span class="dot" style="background:{TCOL.get(t,"#888")}"></span>{t}({STAD.get(t,"")})</td>'
                     f'<td>{c["n"]}</td><td>{f(c["avg"])}</td><td>{c["occ"]*100:.0f}%</td><td>{rk}</td><td>{dtd}</td></tr>')
     sec2=('<div class="sec"><div class="sec-h"><span class="no">02</span><h2>구단별 현황 · 전월 대비</h2>'
           '<span class="sub">홈경기 기준 · 평균 관중 내림차순</span></div>'
@@ -392,7 +395,7 @@ def build_html(y,m,cur,prevM,prevY,tcur,tprev,rank_cur,rankrows,r,season,
             pct=x['pct']
             pchip=(f'<span class="{"up" if pct>=0 else "dn"}">{pct:+.0f}%</span>' if pct is not None
                    else '<span style="color:#C5CCD5">—</span>')
-            otr.append(f'<tr><td><span class="dot" style="background:{TCOL.get(x["h"],"#888")}"></span>{STAD.get(x["h"],"")}({x["h"]})</td>'
+            otr.append(f'<tr><td><span class="dot" style="background:{TCOL.get(x["h"],"#888")}"></span>{x["h"]}({STAD.get(x["h"],"")})</td>'
                        f'<td class="opc">{opp_list(x["prev_opp"])}</td>'
                        f'<td class="opc">{opp_list(x["cur_opp"])}</td>'
                        f'<td>{pchip}</td></tr>')
@@ -426,7 +429,7 @@ def build_html(y,m,cur,prevM,prevY,tcur,tprev,rank_cur,rankrows,r,season,
             rkchip=(f'<span class="up">▲{ch:.1f}</span>' if ch>0.05 else
                     f'<span class="dn">▼{abs(ch):.1f}</span>' if ch<-0.05 else '<span style="color:#C5CCD5">—</span>')
             da=x['dAtt']; dchip=f'<span class="{"up" if da>=0 else "dn"}">{da:+.0f}%</span>'
-            trows.append(f'<tr><td><span class="dot" style="background:{TCOL.get(x["t"],"#888")}"></span>{STAD.get(x["t"],"")}({x["t"]})</td>'
+            trows.append(f'<tr><td><span class="dot" style="background:{TCOL.get(x["t"],"#888")}"></span>{x["t"]}({STAD.get(x["t"],"")})</td>'
                          f'<td>{x["r0"]:.1f}위</td><td>{x["r1"]:.1f}위</td><td>{rkchip}</td>'
                          f'<td>{f(x["a0"])}</td><td>{f(x["a1"])}</td><td>{dchip}</td></tr>')
         rank_html=(f'<div class="lead">{rtxt}</div>'
