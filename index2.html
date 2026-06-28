@@ -753,12 +753,26 @@ function renderMonthlyHeat(){
       items.push({y:pt.y,x:pt.x,c:d.borderColor,t:d.label});
     });
     if(!items.length)return;
-    items.sort((a,b)=>a.y-b.y); const gap=12;
-    for(let k=1;k<items.length;k++){ if(items[k].y-items[k-1].y<gap) items[k].y=items[k-1].y+gap; }
-    if(items[items.length-1].y>area.bottom){ const o=items[items.length-1].y-area.bottom; items.forEach(it=>it.y-=o); }
-    if(items[0].y<area.top){ const o=area.top-items[0].y; items.forEach(it=>it.y+=o); }
+    items.sort((a,b)=>a.y-b.y); const gap=11;
+    // 겹치는 라벨끼리 블록으로 묶어 중심 기준 대칭 배치(변위 최소)
+    const blocks=[];
+    items.forEach(it=>{
+      let nb={sum:it.y,n:1,items:[it]};
+      while(blocks.length){
+        const last=blocks[blocks.length-1];
+        const lastC=last.sum/last.n, nbC=nb.sum/nb.n;
+        if((nbC-(nb.n-1)*gap/2)-(lastC+(last.n-1)*gap/2)<gap){
+          blocks.pop(); nb={sum:last.sum+nb.sum,n:last.n+nb.n,items:last.items.concat(nb.items)};
+        } else break;
+      }
+      blocks.push(nb);
+    });
+    blocks.forEach(b=>{const c=b.sum/b.n, start=c-(b.n-1)*gap/2; b.items.forEach((it,j)=>it.y=start+j*gap);});
+    const ys=items.map(it=>it.y), mx=Math.max(...ys), mn=Math.min(...ys);
+    if(mx>area.bottom){const o=mx-area.bottom; items.forEach(it=>it.y-=o);}
+    if(mn<area.top){const o=area.top-mn; items.forEach(it=>it.y+=o);}
     ctx.save(); ctx.font='800 11px Pretendard,system-ui,sans-serif'; ctx.textBaseline='middle';
-    items.forEach(it=>{ ctx.fillStyle=it.c; ctx.fillText(it.t,it.x+5,it.y); });
+    items.forEach(it=>{ ctx.fillStyle=it.c; ctx.fillText(it.t,it.x+6,it.y); });
     ctx.restore();
   }};
   CH.monthTeam=new Chart(cv,{type:'line',data:{labels:months.map(m=>m+'월'),datasets:ds},
