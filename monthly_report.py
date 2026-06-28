@@ -165,20 +165,21 @@ def svg_month_lines(months, order, att):
     s.append('</svg>'); return ''.join(s)
 
 def html_month_heat(months, order, occ):
-    """월별 구단 점유율 히트맵(CSS 표) + 시즌 평균 열."""
+    """월별 구단 점유율 히트맵(CSS 표) + 시즌 평균 열(코랄 톤, 명암은 월별과 동일)."""
     cells=[occ[t][mo] for t in order for mo in months if occ.get(t,{}).get(mo) is not None]
     if not cells: return '<div class="note">데이터 없음</div>'
     mn,mx=min(cells),max(cells)
-    def cell(v):
+    def cell(v,avg=False):
         if v is None: return '<td class="hm-e">·</td>'
         r=(v-mn)/(mx-mn) if mx>mn else 0.6
-        return f'<td style="background:rgba(43,58,85,{0.12+r*0.82:.2f});color:{"#fff" if r>0.55 else "#1F2733"}">{v*100:.0f}</td>'
+        rgb='232,90,60' if avg else '43,58,85'
+        return f'<td style="background:rgba({rgb},{0.12+r*0.82:.2f});color:{"#fff" if r>0.55 else "#1F2733"}">{v*100:.0f}</td>'
     head='<tr><th>구단</th>'+''.join(f'<th>{mo}월</th>' for mo in months)+'<th>평균</th></tr>'
     rows=[]
     for t in order:
         vs=[occ[t][mo] for mo in months if occ.get(t,{}).get(mo) is not None]
         avgv=sum(vs)/len(vs) if vs else None
-        rows.append(f'<tr><td class="hm-t">{t}</td>'+''.join(cell(occ.get(t,{}).get(mo)) for mo in months)+cell(avgv)+'</tr>')
+        rows.append(f'<tr><td class="hm-t">{t}</td>'+''.join(cell(occ.get(t,{}).get(mo)) for mo in months)+cell(avgv,True)+'</tr>')
     return f'<table class="hm">{head}{"".join(rows)}</table>'
 
 def team_legend(order):
@@ -514,14 +515,18 @@ def build_html(y,m,cur,prevM,prevY,tcur,tprev,rank_cur,rankrows,r,season,
     def reasons(t,gain):
         rs=[]
         if t in rk:
-            r0,r1=rk[t]
-            if gain and r0-r1>=1.0: rs.append(f'순위 상승({r0:.1f}→{r1:.1f}위)')
-            if (not gain) and r0-r1<=-1.0: rs.append(f'연패 등으로 순위 하락({r0:.1f}→{r1:.1f}위)')
+            r0,r1=rk[t]; imp=r0-r1
+            if gain and imp>=1.0: rs.append(f'순위 상승({r0:.1f}→{r1:.1f}위)')
+            elif gain and imp>=0.3: rs.append('순위 소폭 상승')
+            elif (not gain) and imp<=-1.0: rs.append(f'연패 등으로 순위 하락({r0:.1f}→{r1:.1f}위)')
+            elif (not gain) and imp<=-0.3: rs.append('순위 소폭 하락')
         sh=oshift.get(t)
         if sh is not None:
             if gain and sh>=500: rs.append('관중 동원력 높은 팀과의 홈경기 증가')
-            if (not gain) and sh<=-500: rs.append('관중 동원력 낮은 팀과의 홈경기 증가')
-        return rs
+            elif gain and sh>=150: rs.append('상대 구성 다소 유리')
+            elif (not gain) and sh<=-500: rs.append('관중 동원력 낮은 팀과의 홈경기 증가')
+            elif (not gain) and sh<=-150: rs.append('상대 구성 다소 불리')
+        return rs[:2]
     chg=[]
     for t in tcur:
         p=tprev.get(t)
@@ -537,37 +542,38 @@ def build_html(y,m,cur,prevM,prevY,tcur,tprev,rank_cur,rankrows,r,season,
         seg=f'전월 대비 <b class="{"up" if dM>=0 else "dn"}">{dM:+.1f}%</b>'
         if dY is not None: seg+=f', 전년 동월 대비 <b class="{"up" if dY>=0 else "dn"}">{dY:+.1f}%</b>'
         kf.append(f'이번달 경기당 평균 관중은 <b>{f(cur["avg"])}명</b>으로 {seg}, 전반적으로 {wd}.')
-    # 2) 증가 상위
-    ups=[c for c in chg if c['d']>0][::-1][:2]
-    if ups:
-        parts=[]
-        for c in ups:
-            rs=reasons(c['t'],True); named.add(c['t'])
-            parts.append(f'<b>{c["t"]} ({c["d"]:+.0f}%)</b>'+(('—'+' · '.join(rs)) if rs else ''))
-        kf.append('관중이 늘어난 대표 구단: '+'; '.join(parts)+'.')
-    # 3) 감소 상위
-    dns=[c for c in chg if c['d']<0][:2]
-    if dns:
-        parts=[]
-        for c in dns:
-            rs=reasons(c['t'],False); named.add(c['t'])
-            parts.append(f'<b>{c["t"]} ({c["d"]:+.0f}%)</b>'+(('—'+' · '.join(rs)) if rs else ''))
-        kf.append('관중이 줄어든 대표 구단: '+'; '.join(parts)+'.')
+    # 2) 증가 대표 1팀(특별한 이유 있는)
+    rep=None
+    for c in [c for c in chg if c['d']>0][::-1]:
+        rs=reasons(c['t'],True)
+        if rs: rep=(c,rs); break
+    if rep:
+        c,rs=rep; named.add(c['t'])
+        kf.append(f'관중이 가장 많이 늘어난 구단은 <b>{c["t"]} ({c["d"]:+.0f}%)</b>로, {" · ".join(rs)} 영향으로 보입니다.')
+    # 3) 감소 대표 1팀
+    rep=None
+    for c in [c for c in chg if c['d']<0]:
+        rs=reasons(c['t'],False)
+        if rs: rep=(c,rs); break
+    if rep:
+        c,rs=rep; named.add(c['t'])
+        kf.append(f'관중이 가장 많이 줄어든 구단은 <b>{c["t"]} ({c["d"]:+.0f}%)</b>로, {" · ".join(rs)} 영향으로 보입니다.')
     # 4) 상대팀 구성 효과 (위에서 안 다룬 구단 위주)
     if oshift:
         mx=max(oshift,key=lambda k:oshift[k]); mn=min(oshift,key=lambda k:oshift[k])
         bits=[]
-        if oshift[mx]>=400 and mx not in named: bits.append(f'<b>{mx}</b>은 관중 동원력 높은 팀과의 홈경기가 늘어 유리했고')
+        if oshift[mx]>=400 and mx not in named: bits.append(f'<b>{mx}</b>은 관중 동원력 높은 팀과의 홈경기가 늘어 유리했습니다')
         if oshift[mn]<=-400 and mn not in named: bits.append(f'<b>{mn}</b>은 관중 동원력 낮은 팀과의 경기가 많아 불리했습니다')
-        if bits: kf.append('상대팀 구성 측면에서 '+', '.join(bits)+'.')
+        if bits: kf.append('상대팀 구성 측면에서, '+' &nbsp;/&nbsp; '.join(bits)+'.')
     # 5) 순위-관중 상관 (유의할 때만 방향 단정)
     if r is not None and rankrows:
         if r>0.1:
             downs=[x['t'] for x in sorted(rankrows,key=lambda x:x['r1']-x['r0'],reverse=True) if x['r1']-x['r0']>=1.0][:3]
             ups2=[x['t'] for x in sorted(rankrows,key=lambda x:x['r0']-x['r1'],reverse=True) if x['r0']-x['r1']>=1.0][:3]
-            tailb=''
-            if downs: tailb+=f' 순위가 떨어진 {"·".join(downs)} 등은 관중도 함께 줄고,'
-            if ups2: tailb+=f' 오른 {"·".join(ups2)} 등은 늘었습니다.'
+            cl=[]
+            if downs: cl.append(f'순위가 떨어진 {"·".join(downs)} 등은 관중도 함께 줄었습니다')
+            if ups2: cl.append(f'순위가 오른 {"·".join(ups2)} 등은 관중이 늘었습니다')
+            tailb=(' '+' &nbsp;/&nbsp; '.join(cl)+'.') if cl else ''
             kf.append(f'순위와 관중은 <b>양의 상관(r={r:.2f})</b>을 보였습니다.{tailb}')
         elif r<-0.1:
             kf.append(f'순위와 관중은 <b>음의 상관(r={r:.2f})</b>으로, 순위 변화와 관중이 반대로 움직인 이례적 흐름이었습니다.')
