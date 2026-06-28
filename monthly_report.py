@@ -140,7 +140,7 @@ def svg_month_lines(months, order, att):
         s.append(f'<polyline points="{" ".join(f"{x:.1f},{y:.1f}" for x,y in pts)}" fill="none" stroke="{c}" stroke-width="1.8"/>')
         for x,y in pts: s.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="2.1" fill="{c}"/>')
         ends.append({'t':t,'oy':pts[-1][1],'y':pts[-1][1],'c':c})
-    ends.sort(key=lambda e:e['y']); gap=9.6
+    ends.sort(key=lambda e:e['y']); gap=9.0
     blocks=[]
     for it in ends:
         nb={'sum':it['y'],'n':1,'items':[it]}
