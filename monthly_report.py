@@ -140,12 +140,26 @@ def svg_month_lines(months, order, att):
         s.append(f'<polyline points="{" ".join(f"{x:.1f},{y:.1f}" for x,y in pts)}" fill="none" stroke="{c}" stroke-width="1.8"/>')
         for x,y in pts: s.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="2.1" fill="{c}"/>')
         ends.append({'t':t,'oy':pts[-1][1],'y':pts[-1][1],'c':c})
-    ends.sort(key=lambda e:e['y']); gap=9.4
-    for i in range(1,len(ends)):
-        if ends[i]['y']-ends[i-1]['y']<gap: ends[i]['y']=ends[i-1]['y']+gap
-    if ends and ends[-1]['y']>pt+ih:
-        over=ends[-1]['y']-(pt+ih)
+    ends.sort(key=lambda e:e['y']); gap=9.6
+    blocks=[]
+    for it in ends:
+        nb={'sum':it['y'],'n':1,'items':[it]}
+        while blocks:
+            last=blocks[-1]; lastC=last['sum']/last['n']; nbC=nb['sum']/nb['n']
+            if (nbC-(nb['n']-1)*gap/2)-(lastC+(last['n']-1)*gap/2)<gap:
+                blocks.pop(); nb={'sum':last['sum']+nb['sum'],'n':last['n']+nb['n'],'items':last['items']+nb['items']}
+            else: break
+        blocks.append(nb)
+    for b in blocks:
+        c=b['sum']/b['n']; start=c-(b['n']-1)*gap/2
+        for j,it in enumerate(b['items']): it['y']=start+j*gap
+    ys=[e['y'] for e in ends]
+    if ys and max(ys)>pt+ih:
+        over=max(ys)-(pt+ih)
         for e in ends: e['y']-=over
+    if ys and min(e['y'] for e in ends)<pt:
+        sh=pt-min(e['y'] for e in ends)
+        for e in ends: e['y']+=sh
     for e in ends:
         s.append(f'<text x="{pl+iw+4:.1f}" y="{e["y"]+3:.1f}" font-size="8.5" font-weight="800" fill="{e["c"]}">{e["t"]}</text>')
     s.append('</svg>'); return ''.join(s)
