@@ -401,14 +401,14 @@ def build_html(y,m,cur,prevM,prevY,tcur,tprev,rank_cur,rankrows,r,season,
                        f'<td>{pchip}</td></tr>')
         opp_body=('<table class="opt"><thead><tr><th>홈팀(구장)</th><th>전월 홈경기 상대팀</th><th>이번달 홈경기 상대팀</th><th>전월대비</th></tr></thead>'
                   f'<tbody>{"".join(otr)}</tbody></table>'
-                  '<div class="note">※ 상대팀 이름 색 = 그 팀이 방문할 때 홈 평균 대비 동원력 — '
+                  '<div class="note">※ 상대팀 이름 색 = 그 팀이 방문할 때 홈 평균 대비 관중 동원력 — '
                   '<span class="opp ou">초록</span> 평균 이상 / <span class="opp od">빨강</span> 평균 이하 / 회색 비슷 (시즌 누적 기준) · '
                   '×n = 그 달 n경기 · 전월대비 = 해당 홈팀 평균 관중 증감률.</div>')
     else:
         opp_body='<div class="lead">이번달 홈경기 데이터가 부족합니다.</div>'
     sec_opp=('<div class="sec"><div class="sec-h"><span class="no">04</span><h2>상대팀 분석 (홈경기 상대 구성)</h2>'
              '<span class="sub">전월 vs 이번달 맞이한 상대팀 · 홈 관중 증감</span></div>'
-             '<div class="lead">홈 관중은 방문팀에 따라 달라집니다. 동원력이 큰 팀(초록)과의 경기가 줄고 작은 팀(빨강)과의 경기가 늘면 관중이 감소하는 흐름을 읽을 수 있습니다.</div>'
+             '<div class="lead">홈 관중은 방문팀에 따라 달라집니다. 관중 동원력이 큰 팀(초록)과의 경기가 줄고 작은 팀(빨강)과의 경기가 늘면 관중이 감소하는 흐름을 읽을 수 있습니다.</div>'
              +opp_body+'</div>')
 
     # ── 순위 영향 (표) ──
@@ -506,8 +506,8 @@ def build_html(y,m,cur,prevM,prevY,tcur,tprev,rank_cur,rankrows,r,season,
             if (not gain) and r0-r1<=-1.0: rs.append(f'연패 등으로 순위 하락({r0:.1f}→{r1:.1f}위)')
         sh=oshift.get(t)
         if sh is not None:
-            if gain and sh>=500: rs.append('동원력 높은 팀과의 홈경기 증가')
-            if (not gain) and sh<=-500: rs.append('동원력 낮은 팀과의 홈경기 증가')
+            if gain and sh>=500: rs.append('관중 동원력 높은 팀과의 홈경기 증가')
+            if (not gain) and sh<=-500: rs.append('관중 동원력 낮은 팀과의 홈경기 증가')
         return rs
     chg=[]
     for t in tcur:
@@ -544,8 +544,8 @@ def build_html(y,m,cur,prevM,prevY,tcur,tprev,rank_cur,rankrows,r,season,
     if oshift:
         mx=max(oshift,key=lambda k:oshift[k]); mn=min(oshift,key=lambda k:oshift[k])
         bits=[]
-        if oshift[mx]>=400 and mx not in named: bits.append(f'<b>{mx}</b>은 동원력 높은 팀과의 홈경기가 늘어 유리했고')
-        if oshift[mn]<=-400 and mn not in named: bits.append(f'<b>{mn}</b>은 동원력 낮은 팀과의 경기가 많아 불리했습니다')
+        if oshift[mx]>=400 and mx not in named: bits.append(f'<b>{mx}</b>은 관중 동원력 높은 팀과의 홈경기가 늘어 유리했고')
+        if oshift[mn]<=-400 and mn not in named: bits.append(f'<b>{mn}</b>은 관중 동원력 낮은 팀과의 경기가 많아 불리했습니다')
         if bits: kf.append('상대팀 구성 측면에서 '+', '.join(bits)+'.')
     # 5) 순위-관중 상관 (유의할 때만 방향 단정)
     if r is not None and rankrows:

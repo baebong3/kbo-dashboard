@@ -1206,11 +1206,11 @@ function renderMonthReport(mo){
     const hsm={};{const m={};seas.forEach(g=>{(m[g.home]=m[g.home]||[]).push(g.att);});for(const t in m)hsm[t]=m[t].reduce((s,a)=>s+a,0)/m[t].length;}
     const beta={};{const m={};seas.forEach(g=>{if(g.away&&hsm[g.home]!=null)(m[g.away]=m[g.away]||[]).push(g.att-hsm[g.home]);});for(const t in m)beta[t]=m[t].reduce((s,a)=>s+a,0)/m[t].length;}
     const oppShift=t=>{const cm=cur.gs.filter(g=>g.home===t),pm=prevM.gs.filter(g=>g.home===t);if(!cm.length||!pm.length)return null;const mb=a=>a.reduce((s,g)=>s+(beta[g.away]||0),0)/a.length;return mb(cm)-mb(pm);};
-    const reason=(t,gain)=>{const rs=[];if(rc[t]!=null&&rp[t]!=null){const imp=rp[t]-rc[t];if(gain&&imp>=1)rs.push(`순위 상승(${rp[t].toFixed(1)}→${rc[t].toFixed(1)}위)`);if(!gain&&imp<=-1)rs.push(`연패 등 순위 하락(${rp[t].toFixed(1)}→${rc[t].toFixed(1)}위)`);}const sh=oppShift(t);if(sh!=null){if(gain&&sh>=500)rs.push('동원력 높은 팀과 홈경기 증가');if(!gain&&sh<=-500)rs.push('동원력 낮은 팀과 홈경기 증가');}return rs;};
+    const reason=(t,gain)=>{const rs=[];if(rc[t]!=null&&rp[t]!=null){const imp=rp[t]-rc[t];if(gain&&imp>=1)rs.push(`순위 상승(${rp[t].toFixed(1)}→${rc[t].toFixed(1)}위)`);if(!gain&&imp<=-1)rs.push(`연패 등 순위 하락(${rp[t].toFixed(1)}→${rc[t].toFixed(1)}위)`);}const sh=oppShift(t);if(sh!=null){if(gain&&sh>=500)rs.push('관중 동원력 높은 팀과 홈경기 증가');if(!gain&&sh<=-500)rs.push('관중 동원력 낮은 팀과 홈경기 증가');}return rs;};
     const chg=[];for(const t in ca){if(pa[t]==null)continue;chg.push({t,d:(ca[t]-pa[t])/pa[t]*100});}chg.sort((a,b)=>a.d-b.d);
     const ups=chg.filter(c=>c.d>0).slice(-2).reverse(), dns=chg.filter(c=>c.d<0).slice(0,2);
     if(ups.length)items.push(`<b>증가 주도</b> `+ups.map(c=>{const r=reason(c.t,true);return `${nm(c.t)} <b class="up">+${c.d.toFixed(0)}%</b>${r.length?'('+r.join(' · ')+')':''}`;}).join(', ')+`.`);
-    if(dns.length)items.push(`<b>감소 주도</b> `+dns.map(c=>{const r=reason(c.t,false);return `${nm(c.t)} <b class="dn">${c.d.toFixed(0)}%</b>${r.length?'('+r.join(' · ')+')':''}`;}).join(', ')+`.`);
+    if(dns.length)items.push(`<b>감소 원인</b> `+dns.map(c=>{const r=reason(c.t,false);return `${nm(c.t)} <b class="dn">${c.d.toFixed(0)}%</b>${r.length?'('+r.join(' · ')+')':''}`;}).join(', ')+`.`);
   }
   items.push(`<b>구단별 평균관중</b> 최다 ${nm(hiAvg.t)} ${fmt(Math.round(hiAvg.avg))}명 · 최소 ${nm(loAvg.t)} ${fmt(Math.round(loAvg.avg))}명.`);
   items.push(`<b>구단별 점유율</b> 최고 ${nm(hiOcc.t)} ${(hiOcc.occ*100).toFixed(0)}% · 최저 ${nm(loOcc.t)} ${(loOcc.occ*100).toFixed(0)}%.`);
