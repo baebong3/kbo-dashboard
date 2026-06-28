@@ -1,7 +1,7 @@
 """
 게임 페이지에서 원정/홈 점수(득점) 추출 — 순위 분석용 (검증 모드 우선)
 - TEST_LIMIT > 0 이면 그 개수만 뽑아서 화면에 출력(파일 저장 안 함) → 추출이 맞는지 먼저 확인
-- 확인되면 TEST_LIMIT = 0 으로 두고 전체 실행 → kbo_games.json 의 2025·2026 경기에
+- 확인되면 TEST_LIMIT = 0 으로 두고 전체 실행 → kbo_games.json 의 대상 경기에
   away_score / home_score 추가 (이미 있는 건 스킵)
 실행: python fetch_scores.py
 """
@@ -11,7 +11,7 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright, Error as PWError
 
 BASE = "https://visualbaseball.com"
-TARGET_YEARS = {2025, 2026}
+TARGET_YEARS = {2016, 2017, 2018, 2019, 2021, 2022, 2023, 2024, 2025, 2026}
 TEST_LIMIT = 0           # 0 이면 전체 실행, >0 이면 그 개수만 검증 출력
 
 def get_score(page, info):

@@ -1,0 +1,52 @@
+name: KBO 월간 리포트
+
+on:
+  schedule:
+    # 매월 1일 00:00 UTC = 09:00 KST (직전 달 전체를 리포트)
+    - cron: '0 0 1 * *'
+  workflow_dispatch:        # 수동 실행 버튼
+    inputs:
+      month:
+        description: '단일 월 (YYYY-MM, 비우면 지난달)'
+        required: false
+      from:
+        description: '백필 시작 월 (YYYY-MM, 입력 시 그 달부터 지난달까지 일괄)'
+        required: false
+
+permissions:
+  contents: write
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 의존성 설치
+        run: |
+          python -m pip install --upgrade pip
+          pip install playwright
+          python -m playwright install --with-deps chromium
+
+      - name: 월간 리포트 생성 (자동 저장)
+        env:
+          REPORT_YM: ${{ github.event.inputs.month }}
+        run: |
+          if [ -n "${{ github.event.inputs.from }}" ]; then
+            python monthly_report.py --from "${{ github.event.inputs.from }}"
+          else
+            python monthly_report.py
+          fi
+
+      - name: reports 커밋 (PDF·HTML·매니페스트)
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add reports/ || true
+          git commit -m "월간 리포트 자동 생성 $(date +%Y-%m)" || echo "변경 없음"
+          git pull --no-rebase --no-edit -X ours origin main || true
+          git push || true

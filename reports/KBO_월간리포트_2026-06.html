@@ -1,0 +1,60 @@
+<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css"><link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+@page{size:A4;margin:14mm 13mm}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Pretendard','Pretendard Variable',-apple-system,sans-serif;color:#16202C;font-size:11px;line-height:1.55;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.mono{font-family:'JetBrains Mono',ui-monospace,monospace;font-feature-settings:'tnum' 1}
+.page{padding:0 0 6mm}
+.page+.page{page-break-before:always}
+/* 인쇄 단락 구분: 섹션/표/카드가 페이지 경계에서 쪼개지지 않게 */
+.sec{page-break-inside:avoid;break-inside:avoid}
+.sec-h{page-break-after:avoid;break-after:avoid}
+.cover,.kpis,.kpi,.cmp,.cmp .box,.wxcard,.lead,.wx,table,tr,.brow,.foot{page-break-inside:avoid;break-inside:avoid}
+.cover{background:linear-gradient(135deg,#2B3A55,#1E2A40);color:#fff;border-radius:14px;padding:30px 32px;margin-bottom:18px}
+.cover .eyebrow{font-size:11px;letter-spacing:.18em;color:#9DB0C8;font-weight:700;font-family:'JetBrains Mono',monospace}
+.cover h1{font-size:27px;font-weight:800;letter-spacing:-.02em;margin:8px 0 4px}
+.cover .period{font-size:13px;color:#C7D2E2;font-weight:600}
+.cover .rule{width:46px;height:3px;background:#E85A3C;border-radius:2px;margin:16px 0 0}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin:14px 0}
+.kpi{border:1px solid #E6E9EE;border-radius:11px;padding:11px 13px;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:#E85A3C}
+.kpi.n2::before{background:#2B3A55}.kpi.n3::before{background:#C6452B}.kpi.n4::before{background:#6B7A8F}
+.kpi .l{font-size:9.5px;color:#8A93A0;font-weight:600;margin-bottom:5px}
+.kpi .v{font-size:20px;font-weight:800;letter-spacing:-.01em;font-family:'JetBrains Mono',monospace}
+.kpi .v small{font-size:11px;font-weight:600;color:#3A4759}
+.kpi .s{font-size:9px;color:#8A93A0;margin-top:4px}
+.sec{margin:20px 0 0}
+.sec-h{display:flex;align-items:baseline;gap:8px;margin-bottom:9px;border-bottom:2px solid #2B3A55;padding-bottom:5px}
+.sec-h .no{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:800;color:#E85A3C}
+.sec-h h2{font-size:14px;font-weight:800;letter-spacing:-.01em}
+.sec-h .sub{font-size:10px;color:#8A93A0;margin-left:auto;font-weight:500}
+.lead{font-size:11.5px;line-height:1.7;color:#39414E;background:#F7F8FA;border-left:3px solid #E85A3C;border-radius:8px;padding:10px 13px;margin-bottom:10px}
+.lead b{color:#C6452B;font-weight:700}
+.lead .up{color:#1F7A4D}.lead .dn{color:#C8413B}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:10px 0}
+.cmp .box{border:1px solid #E6E9EE;border-radius:10px;padding:10px 13px}
+.cmp .box .t{font-size:10px;color:#8A93A0;font-weight:600;margin-bottom:4px}
+.cmp .box .row{display:flex;align-items:baseline;gap:8px}
+.cmp .box .big{font-size:16px;font-weight:800;font-family:'JetBrains Mono',monospace}
+.chip{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;padding:1px 7px;border-radius:6px}
+.chip.up{background:#E6F4EC;color:#1F7A4D}.chip.dn{background:#E7EAF0;color:#2B3A55}.chip.fl{background:#F1F3F6;color:#8A93A0}
+table{width:100%;border-collapse:collapse;font-size:10.5px;margin-top:6px}
+th{font-size:9px;letter-spacing:.04em;color:#8A93A0;text-transform:uppercase;text-align:right;padding:6px 7px;border-bottom:1.5px solid #2B3A55}
+th:first-child{text-align:left}
+td{padding:6px 7px;text-align:right;font-family:'JetBrains Mono',monospace;border-bottom:1px solid #F1F3F6}
+td:first-child{text-align:left;font-family:'Pretendard',sans-serif;font-weight:700}
+td .dot{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;vertical-align:middle}
+.up{color:#1F7A4D;font-weight:700}.dn{color:#C8413B;font-weight:700}
+.brow{display:grid;grid-template-columns:64px 1fr 150px;align-items:center;gap:9px;padding:2.5px 0}
+.blab{font-size:10.5px;font-weight:700;color:#3A4759;text-align:right}
+.btrk{height:15px;background:#F1F3F6;border-radius:4px;overflow:hidden}
+.bfill{height:100%;background:#E85A3C;border-radius:4px}
+.bval{font-size:10px;font-family:'JetBrains Mono',monospace;font-weight:700;color:#16202C}
+.wx{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:4px}
+.wxcard{border:1px solid #E6E9EE;border-radius:10px;padding:12px 14px}
+.wxcard .t{font-size:10px;color:#8A93A0;font-weight:600;margin-bottom:7px}
+.foot{margin-top:18px;padding-top:9px;border-top:1px solid #E6E9EE;font-size:9px;color:#8A93A0;line-height:1.6}
+.foot b{color:#3A4759}
+.note{font-size:9.5px;color:#8A93A0;margin-top:5px}
+</style>
+</head><body><div class="page"><div class="cover"><div class="eyebrow">KBO ATTENDANCE MONTHLY REPORT</div><h1>2026년 6월 관중 분석 리포트</h1><div class="period">2026.06 · 정규시즌 109경기 · (주)서던포스트</div><div class="rule"></div></div><div class="kpis"><div class="kpi"><div class="l">경기당 평균 관중</div><div class="v">17,518<small>명</small></div><div class="s"><span class="chip dn">▼ 6%</span> vs 전월</div></div><div class="kpi n2"><div class="l">총 관중</div><div class="v">190.9<small>만명</small></div><div class="s">109경기 합산</div></div><div class="kpi n3"><div class="l">평균 좌석 점유율</div><div class="v">84<small>%</small></div><div class="s"><span class="chip dn">▼ 5%</span> vs 전월</div></div><div class="kpi n4"><div class="l">완전 매진</div><div class="v">53<small>경기</small></div><div class="s">전체 109경기 중 49%</div></div></div><div class="lead"><b>2026년 6월</b> 정규시즌 109경기에 총 <b>190.9만 명</b>이 입장해 경기당 평균 <b>17,518명</b>(좌석 점유율 84%)을 기록했습니다. 전월(5월) 평균 18,563명 대비 <b class="dn">6% 감소</b> · 전년 동월(2025년 6월) 대비 <b class="dn">0% 감소</b>.</div><div class="sec"><div class="sec-h"><span class="no">01</span><h2>전체 관중 현황 · 변화</h2><span class="sub">경기당 평균 관중 기준</span></div><div class="cmp"><div class="box"><div class="t">전월 대비 (5월)</div><div class="row"><span class="big">17,518명</span><span class="chip dn">▼ 6%</span><span class="mono" style="font-size:10px;color:#8A93A0">5월 18,563명</span></div></div><div class="box"><div class="t">전년 동월 대비 (2025년 6월)</div><div class="row"><span class="big">17,518명</span><span class="chip dn">▼ 0%</span><span class="mono" style="font-size:10px;color:#8A93A0">2025.6 17,586명</span></div></div></div></div></div><div class="page"><div class="sec"><div class="sec-h"><span class="no">02</span><h2>구단별 현황 · 전월 대비</h2><span class="sub">홈경기 기준 · 평균 관중 내림차순</span></div><table><thead><tr><th>구단(구장)</th><th>경기</th><th>평균관중</th><th>점유율</th><th>평균순위</th><th>전월비</th></tr></thead><tbody><tr><td><span class="dot" style="background:#1167B1"></span>대구(삼성)</td><td>10</td><td>23,732</td><td>99%</td><td>—</td><td><span class="up">+6%</span></td></tr><tr><td><span class="dot" style="background:#C30452"></span>잠실(LG)</td><td>12</td><td>22,792</td><td>96%</td><td>—</td><td><span class="dn">-4%</span></td></tr><tr><td><span class="dot" style="background:#EA0029"></span>광주(KIA)</td><td>12</td><td>19,842</td><td>97%</td><td>—</td><td><span class="up">+9%</span></td></tr><tr><td><span class="dot" style="background:#16193F"></span>잠실(두산)</td><td>10</td><td>19,594</td><td>83%</td><td>—</td><td><span class="dn">-11%</span></td></tr><tr><td><span class="dot" style="background:#0A2E5C"></span>사직(롯데)</td><td>10</td><td>18,261</td><td>79%</td><td>—</td><td><span class="dn">-13%</span></td></tr><tr><td><span class="dot" style="background:#F03C2E"></span>문학(SSG)</td><td>10</td><td>16,952</td><td>74%</td><td>—</td><td><span class="dn">-18%</span></td></tr><tr><td><span class="dot" style="background:#FF6600"></span>대전(한화)</td><td>9</td><td>16,896</td><td>99%</td><td>—</td><td><span class="dn">-0%</span></td></tr><tr><td><span class="dot" style="background:#5A5A5A"></span>수원(kt)</td><td>14</td><td>13,752</td><td>74%</td><td>—</td><td><span class="dn">-2%</span></td></tr><tr><td><span class="dot" style="background:#820024"></span>고척(키움)</td><td>12</td><td>13,145</td><td>82%</td><td>—</td><td><span class="up">+6%</span></td></tr><tr><td><span class="dot" style="background:#2E8FA6"></span>창원(NC)</td><td>10</td><td>11,014</td><td>61%</td><td>—</td><td><span class="dn">-28%</span></td></tr></tbody></table><div style="margin-top:10px"><div class="brow"><div class="blab">삼성</div><div class="btrk"><div class="bfill" style="width:100.0%"></div></div><div class="bval">23,732명 <span class="chip up">▲ 6%</span></div></div><div class="brow"><div class="blab">LG</div><div class="btrk"><div class="bfill" style="width:96.0%"></div></div><div class="bval">22,792명 <span class="chip dn">▼ 4%</span></div></div><div class="brow"><div class="blab">KIA</div><div class="btrk"><div class="bfill" style="width:83.6%"></div></div><div class="bval">19,842명 <span class="chip up">▲ 9%</span></div></div><div class="brow"><div class="blab">두산</div><div class="btrk"><div class="bfill" style="width:82.6%"></div></div><div class="bval">19,594명 <span class="chip dn">▼ 11%</span></div></div><div class="brow"><div class="blab">롯데</div><div class="btrk"><div class="bfill" style="width:76.9%"></div></div><div class="bval">18,261명 <span class="chip dn">▼ 13%</span></div></div><div class="brow"><div class="blab">SSG</div><div class="btrk"><div class="bfill" style="width:71.4%"></div></div><div class="bval">16,952명 <span class="chip dn">▼ 18%</span></div></div><div class="brow"><div class="blab">한화</div><div class="btrk"><div class="bfill" style="width:71.2%"></div></div><div class="bval">16,896명 <span class="chip fl">— 0%</span></div></div><div class="brow"><div class="blab">kt</div><div class="btrk"><div class="bfill" style="width:57.9%"></div></div><div class="bval">13,752명 <span class="chip dn">▼ 2%</span></div></div><div class="brow"><div class="blab">키움</div><div class="btrk"><div class="bfill" style="width:55.4%"></div></div><div class="bval">13,145명 <span class="chip up">▲ 6%</span></div></div><div class="brow"><div class="blab">NC</div><div class="btrk"><div class="bfill" style="width:46.4%"></div></div><div class="bval">11,014명 <span class="chip dn">▼ 28%</span></div></div></div></div></div><div class="page"><div class="sec"><div class="sec-h"><span class="no">03</span><h2>순위가 관중에 미친 영향</h2><span class="sub">경기일 기준 평균 순위 · 전월 대비</span></div><div class="lead">전월 비교가 가능한 구단·순위 데이터가 부족해 순위-관중 분석을 생략했습니다.</div></div><div class="sec"><div class="sec-h"><span class="no">04</span><h2>날씨 영향 (기온 · 강수)</h2><span class="sub">경기 시간대(14~21시) 기준</span></div><div class="lead">이번달 경기 시간대 평균 기온은 <b>25.5℃</b>입니다. 109경기 중 <b>우천(강수) 31경기</b>, 맑은 날 78경기였고, 우천 경기 평균 관중은 <b>16,861명</b>으로 맑은 날(17,779명) 대비 <b class="dn">5% 낮았</b>습니다.</div><div class="wx"><div class="wxcard"><div class="t">기온 · 전월 대비</div><div class="mono" style="font-size:22px;font-weight:800">25.5℃</div><div style="margin-top:3px"><span class=note>전월 비교 없음</span></div></div><div class="wxcard"><div class="t">강수 영향 · 평균 관중</div><div class="brow"><div class="blab">맑음</div><div class="btrk"><div class="bfill" style="width:100.0%"></div></div><div class="bval">17,779명 (78) </div></div><div class="brow"><div class="blab">우천</div><div class="btrk"><div class="bfill" style="width:94.8%"></div></div><div class="bval">16,861명 (31) </div></div></div></div><div class="note">※ 데이터에는 예보 강수확률이 없어 <b>실제 강수량/우천여부</b> 기준으로 분석했습니다.</div></div><div class="foot"><b>출처</b> 관중·결과 = KBO 공식 기록 / visualbaseball 기반 산출 · 날씨 = Open-Meteo 과거 기상(구장 좌표·경기 시간대) · 점유율 = 관중 ÷ 구장 수용인원 · 순위 = 경기 직전 기준. <b>완전 매진</b> = 점유율 100% 이상. 진행 중 시즌은 잠정값일 수 있습니다. 제작 (주)서던포스트.</div></div></body></html>
