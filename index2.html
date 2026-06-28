@@ -506,7 +506,7 @@ const CAPY={LG:{d:23750},두산:{d:23750},삼성:{d:24000},KIA:{d:20500},SSG:{d:
   롯데:{d:23079},kt:{d:18700},한화:{d:17000,b25:13000},NC:{d:17983},키움:{d:16000}};
 const VENUE_CAP={'포항':12247,'울산':12000,'청주':9500,'사직':23079,'마산':11000,'고척':16000};
 function venueCap(v){if(!v)return null;for(const k in VENUE_CAP)if((''+v).includes(k))return VENUE_CAP[k];return null;}
-function cap(t,yr,venue){const vc=venueCap(venue);if(vc)return vc;if((venue&&(''+venue).includes('잠실'))||t==='LG'||t==='두산')return yr<=2021?25000:23750;if(t==='NC'&&yr<=2018)return 11000;const c=CAPY[t];if(!c)return 20000;return(c.b25&&yr<2025)?c.b25:c.d;}
+function cap(t,yr,venue){const vc=venueCap(venue);if(vc)return vc;if((venue&&(''+venue).includes('잠실'))||t==='LG'||t==='두산')return yr<=2021?25000:23750;if(t==='NC'&&yr<=2018)return 11000;if(t==='SSG'&&yr<=2020)return 27800;const c=CAPY[t];if(!c)return 20000;return(c.b25&&yr<2025)?c.b25:c.d;}
 const DOWNAME=['일','월','화','수','목','금','토'];
 const NM={'LG':'LG','두산':'두산','삼성':'삼성','KIA':'KIA','SSG':'SSG','롯데':'롯데','kt':'kt','KT':'kt','한화':'한화','NC':'NC','키움':'키움'};
 const NMP={'LG트윈스':'LG','두산베어스':'두산','삼성라이온즈':'삼성','KIA타이거즈':'KIA','SSG랜더스':'SSG',
@@ -793,7 +793,7 @@ function renderMonthlyHeat(){
     const body=rows.map(r=>{
       const tg=tmap[r.t].filter(g=>months.indexOf(g.mo)>=0);
       const rav=tg.length?tg.reduce((s,g)=>s+g.occ,0)/tg.length:null;
-      return `<tr><td class="mh-team">${r.t}</td>${r.cells.map(v=>_mhCell(v,mn,mx,rgb,fmt)).join('')}${_mhCell(rav,mn,mx,rgb,fmt)}</tr>`;
+      return `<tr><td class="mh-team">${r.t}</td>${r.cells.map(v=>_mhCell(v,mn,mx,rgb,fmt)).join('')}${_mhCell(rav,mn,mx,'232,90,60',fmt)}</tr>`;
     }).join('');
     return `<table class="mheat"><thead>${head}</thead><tbody>${body}</tbody></table>`;
   }
@@ -1216,11 +1216,12 @@ function renderMonthReport(mo){
     const hsm={};{const m={};seas.forEach(g=>{(m[g.home]=m[g.home]||[]).push(g.att);});for(const t in m)hsm[t]=m[t].reduce((s,a)=>s+a,0)/m[t].length;}
     const beta={};{const m={};seas.forEach(g=>{if(g.away&&hsm[g.home]!=null)(m[g.away]=m[g.away]||[]).push(g.att-hsm[g.home]);});for(const t in m)beta[t]=m[t].reduce((s,a)=>s+a,0)/m[t].length;}
     const oppShift=t=>{const cm=cur.gs.filter(g=>g.home===t),pm=prevM.gs.filter(g=>g.home===t);if(!cm.length||!pm.length)return null;const mb=a=>a.reduce((s,g)=>s+(beta[g.away]||0),0)/a.length;return mb(cm)-mb(pm);};
-    const reason=(t,gain)=>{const rs=[];if(rc[t]!=null&&rp[t]!=null){const imp=rp[t]-rc[t];if(gain&&imp>=1)rs.push(`순위 상승(${rp[t].toFixed(1)}→${rc[t].toFixed(1)}위)`);if(!gain&&imp<=-1)rs.push(`연패 등 순위 하락(${rp[t].toFixed(1)}→${rc[t].toFixed(1)}위)`);}const sh=oppShift(t);if(sh!=null){if(gain&&sh>=500)rs.push('관중 동원력 높은 팀과 홈경기 증가');if(!gain&&sh<=-500)rs.push('관중 동원력 낮은 팀과 홈경기 증가');}return rs;};
+    const reason=(t,gain)=>{const rs=[];if(rc[t]!=null&&rp[t]!=null){const imp=rp[t]-rc[t];if(gain&&imp>=1)rs.push(`순위 상승(${rp[t].toFixed(1)}→${rc[t].toFixed(1)}위)`);else if(gain&&imp>=0.3)rs.push('순위 소폭 상승');else if(!gain&&imp<=-1)rs.push(`연패 등 순위 하락(${rp[t].toFixed(1)}→${rc[t].toFixed(1)}위)`);else if(!gain&&imp<=-0.3)rs.push('순위 소폭 하락');}const sh=oppShift(t);if(sh!=null){if(gain&&sh>=500)rs.push('관중 동원력 높은 팀과 홈경기 증가');else if(gain&&sh>=150)rs.push('상대 구성 다소 유리');else if(!gain&&sh<=-500)rs.push('관중 동원력 낮은 팀과 홈경기 증가');else if(!gain&&sh<=-150)rs.push('상대 구성 다소 불리');}return rs.slice(0,2);};
     const chg=[];for(const t in ca){if(pa[t]==null)continue;chg.push({t,d:(ca[t]-pa[t])/pa[t]*100});}chg.sort((a,b)=>a.d-b.d);
-    const ups=chg.filter(c=>c.d>0).slice(-2).reverse(), dns=chg.filter(c=>c.d<0).slice(0,2);
-    if(ups.length)items.push(`<b>증가 주도</b> `+ups.map(c=>{const r=reason(c.t,true);return `${nm(c.t)} <b class="up">+${c.d.toFixed(0)}%</b>${r.length?'('+r.join(' · ')+')':''}`;}).join(', ')+`.`);
-    if(dns.length)items.push(`<b>감소 원인</b> `+dns.map(c=>{const r=reason(c.t,false);return `${nm(c.t)} <b class="dn">${c.d.toFixed(0)}%</b>${r.length?'('+r.join(' · ')+')':''}`;}).join(', ')+`.`);
+    const repUp=chg.filter(c=>c.d>0).reverse().map(c=>({c,r:reason(c.t,true)})).find(x=>x.r.length);
+    const repDn=chg.filter(c=>c.d<0).map(c=>({c,r:reason(c.t,false)})).find(x=>x.r.length);
+    if(repUp)items.push(`<b>증가 주도</b> ${nm(repUp.c.t)} <b class="up">+${repUp.c.d.toFixed(0)}%</b> — ${repUp.r.join(' · ')}.`);
+    if(repDn)items.push(`<b>감소 원인</b> ${nm(repDn.c.t)} <b class="dn">${repDn.c.d.toFixed(0)}%</b> — ${repDn.r.join(' · ')}.`);
   }
   items.push(`<b>구단별 평균관중</b> 최다 ${nm(hiAvg.t)} ${fmt(Math.round(hiAvg.avg))}명 · 최소 ${nm(loAvg.t)} ${fmt(Math.round(loAvg.avg))}명.`);
   items.push(`<b>구단별 점유율</b> 최고 ${nm(hiOcc.t)} ${(hiOcc.occ*100).toFixed(0)}% · 최저 ${nm(loOcc.t)} ${(loOcc.occ*100).toFixed(0)}%.`);
