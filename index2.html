@@ -1117,7 +1117,7 @@ function renderTodayReport(){
   const top=day.slice().sort((a,b)=>b.att-a.att)[0];
   const rainG=day.filter(g=>g.rainY);
   const nm=t=>`${t}(${STAD[t]||'?'})`;
-  let lead=`어제 <b>${mo}/${dd}(${dowN})</b> ${n}경기에 총 <b>${fmt(tot)}명</b>이 입장해 경기당 평균 <b>${fmt(Math.round(dAvg))}명</b>을 기록했습니다. `+
+  let lead=`어제 <b>${mo}/${dd}(${dowN})</b> ${n}경기에 총 <b>${fmt(tot)}명</b>이 입장해 경기당 평균 <b>${fmt(Math.round(dAvg))}명</b>을 기록했습니다.<br>`+
     `올해 평균(${fmt(Math.round(sAvg))}명)보다 <b class="${updn?'up':'dn'}">${fmt(Math.round(Math.abs(diff)))}명</b> ${updn?'많았':'적었'}습니다(${diffP>=0?'+':''}${diffP.toFixed(0)}%).`;
   const items=[];
   let occLine=`평균 <b>좌석 점유율 ${(dOcc*100).toFixed(0)}%</b> (시즌 평균 ${(sOcc*100).toFixed(0)}%) — `;
@@ -1172,7 +1172,7 @@ function renderWeekReport(){
   const allSold=stats.filter(x=>x.allSell).sort((a,b)=>b.n-a.n);
   const byOcc=stats.slice().sort((a,b)=>b.occ-a.occ), hi=byOcc[0], lo=byOcc[byOcc.length-1];
   const sellN=wk.filter(g=>g.occ>=1).length, rainN=wk.filter(g=>g.rainY).length;
-  let lead=`지난주(<b>${md(lastTue)}~${md(lastSun)}</b>) <b>${n}경기</b>가 열려 총 <b>${man(tot)}만 명</b>(경기당 평균 <b>${fmt(Math.round(avgA))}명</b>)이 입장했습니다. `+
+  let lead=`지난주(<b>${md(lastTue)}~${md(lastSun)}</b>) <b>${n}경기</b>가 열려 총 <b>${man(tot)}만 명</b>(경기당 평균 <b>${fmt(Math.round(avgA))}명</b>)이 입장했습니다.<br>`+
     `올해 평균(${fmt(Math.round(sAvg))}명)보다 <b class="${updn?'up':'dn'}">${fmt(Math.round(Math.abs(diff)))}명</b> ${updn?'많았':'적었'}습니다(${diffP>=0?'+':''}${diffP.toFixed(0)}%).`;
   const items=[];
   items.push(`주간 평균 <b>좌석 점유율 ${(occW*100).toFixed(0)}%</b> (시즌 ${(sOcc*100).toFixed(0)}%) · <b>매진 ${sellN}경기</b>(전체 ${n}경기 중).`);
