@@ -744,14 +744,35 @@ function renderMonthlyHeat(){
     return {label:t,data,borderColor:c,backgroundColor:c,tension:.3,borderWidth:2,pointRadius:2.6,pointHoverRadius:5,spanGaps:true,datalabels:{display:false}};
   });
   if(CH.monthTeam)CH.monthTeam.destroy();
+  const endLabels={id:'endLabels',afterDatasetsDraw(ch){
+    const ctx=ch.ctx, area=ch.chartArea, items=[];
+    ch.data.datasets.forEach((d,i)=>{
+      const meta=ch.getDatasetMeta(i); if(meta.hidden)return;
+      let idx=-1; for(let k=d.data.length-1;k>=0;k--){ if(d.data[k]!=null){ idx=k; break; } }
+      if(idx<0)return; const pt=meta.data[idx]; if(!pt)return;
+      items.push({oy:pt.y,y:pt.y,x:pt.x,c:d.borderColor,t:d.label});
+    });
+    if(!items.length)return;
+    items.sort((a,b)=>a.y-b.y); const gap=13;
+    for(let k=1;k<items.length;k++){ if(items[k].y-items[k-1].y<gap) items[k].y=items[k-1].y+gap; }
+    if(items[items.length-1].y>area.bottom){ const o=items[items.length-1].y-area.bottom; items.forEach(it=>it.y-=o); }
+    if(items[0].y<area.top){ const o=area.top-items[0].y; items.forEach(it=>it.y+=o); }
+    ctx.save(); ctx.font='800 11px Pretendard,system-ui,sans-serif'; ctx.textBaseline='middle';
+    items.forEach(it=>{
+      ctx.globalAlpha=.5; ctx.strokeStyle=it.c; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(it.x+2,it.oy); ctx.lineTo(it.x+6,it.y); ctx.stroke();
+      ctx.globalAlpha=1; ctx.fillStyle=it.c; ctx.fillText(it.t,it.x+8,it.y);
+    });
+    ctx.restore();
+  }};
   CH.monthTeam=new Chart(cv,{type:'line',data:{labels:months.map(m=>m+'월'),datasets:ds},
-    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:6,right:8,bottom:4}},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:6,right:46,bottom:4}},
       interaction:{mode:'nearest',intersect:false},
-      plugins:{legend:{display:true,position:'top',labels:{boxWidth:8,boxHeight:8,usePointStyle:true,pointStyle:'circle',font:{size:10.5,weight:'700'},padding:7,color:'#3A4350'}},
+      plugins:{legend:{display:false},
         tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y!=null?c.parsed.y.toLocaleString('ko-KR'):'-'}명`}}},
       scales:{x:{grid:{display:false},ticks:{color:'#5A6473',font:{size:11,weight:'700'}}},
         y:{grid:{color:'#F1F3F6'},ticks:{callback:v=>(v/1000)+'천',color:'#8A93A0',font:{size:10}}}}},
-    plugins:[ChartDataLabels]});
+    plugins:[ChartDataLabels,endLabels]});
   // 점유율: 히트맵 유지
   function table(rgb,fmt){
     const rows=teams.map(t=>({t,cells:months.map(m=>{const gs=tmap[t].filter(g=>g.mo===m);if(!gs.length)return null;return gs.reduce((s,g)=>s+g.occ,0)/gs.length;})}));
