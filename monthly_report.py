@@ -147,8 +147,7 @@ def svg_month_lines(months, order, att):
         over=ends[-1]['y']-(pt+ih)
         for e in ends: e['y']-=over
     for e in ends:
-        s.append(f'<line x1="{pl+iw:.1f}" y1="{e["oy"]:.1f}" x2="{pl+iw+3:.1f}" y2="{e["y"]:.1f}" stroke="{e["c"]}" stroke-width="0.7" opacity="0.55"/>')
-        s.append(f'<text x="{pl+iw+5:.1f}" y="{e["y"]+3:.1f}" font-size="8.5" font-weight="800" fill="{e["c"]}">{e["t"]}</text>')
+        s.append(f'<text x="{pl+iw+4:.1f}" y="{e["y"]+3:.1f}" font-size="8.5" font-weight="800" fill="{e["c"]}">{e["t"]}</text>')
     s.append('</svg>'); return ''.join(s)
 
 def html_month_heat(months, order, occ):

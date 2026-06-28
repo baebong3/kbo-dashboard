@@ -750,19 +750,15 @@ function renderMonthlyHeat(){
       const meta=ch.getDatasetMeta(i); if(meta.hidden)return;
       let idx=-1; for(let k=d.data.length-1;k>=0;k--){ if(d.data[k]!=null){ idx=k; break; } }
       if(idx<0)return; const pt=meta.data[idx]; if(!pt)return;
-      items.push({oy:pt.y,y:pt.y,x:pt.x,c:d.borderColor,t:d.label});
+      items.push({y:pt.y,x:pt.x,c:d.borderColor,t:d.label});
     });
     if(!items.length)return;
-    items.sort((a,b)=>a.y-b.y); const gap=13;
+    items.sort((a,b)=>a.y-b.y); const gap=12;
     for(let k=1;k<items.length;k++){ if(items[k].y-items[k-1].y<gap) items[k].y=items[k-1].y+gap; }
     if(items[items.length-1].y>area.bottom){ const o=items[items.length-1].y-area.bottom; items.forEach(it=>it.y-=o); }
     if(items[0].y<area.top){ const o=area.top-items[0].y; items.forEach(it=>it.y+=o); }
     ctx.save(); ctx.font='800 11px Pretendard,system-ui,sans-serif'; ctx.textBaseline='middle';
-    items.forEach(it=>{
-      ctx.globalAlpha=.5; ctx.strokeStyle=it.c; ctx.lineWidth=1;
-      ctx.beginPath(); ctx.moveTo(it.x+2,it.oy); ctx.lineTo(it.x+6,it.y); ctx.stroke();
-      ctx.globalAlpha=1; ctx.fillStyle=it.c; ctx.fillText(it.t,it.x+8,it.y);
-    });
+    items.forEach(it=>{ ctx.fillStyle=it.c; ctx.fillText(it.t,it.x+5,it.y); });
     ctx.restore();
   }};
   CH.monthTeam=new Chart(cv,{type:'line',data:{labels:months.map(m=>m+'월'),datasets:ds},
@@ -1084,7 +1080,7 @@ function renderTodayReport(){
   const low=day.slice().sort((a,b)=>a.occ-b.occ)[0];
   const top=day.slice().sort((a,b)=>b.att-a.att)[0];
   const rainG=day.filter(g=>g.rainY);
-  const nm=t=>`${STAD[t]||'?'}(${t})`;
+  const nm=t=>`${t}(${STAD[t]||'?'})`;
   let lead=`어제 <b>${mo}/${dd}(${dowN})</b> ${n}경기에 총 <b>${fmt(tot)}명</b>이 입장해 경기당 평균 <b>${fmt(Math.round(dAvg))}명</b>을 기록했습니다. `+
     `올해 평균(${fmt(Math.round(sAvg))}명)보다 <b class="${updn?'up':'dn'}">${fmt(Math.round(Math.abs(diff)))}명</b> ${updn?'많았':'적었'}습니다(${diffP>=0?'+':''}${diffP.toFixed(0)}%).`;
   const items=[];
@@ -1129,7 +1125,7 @@ function renderWeekReport(){
   const n=wk.length, tot=wk.reduce((s,g)=>s+g.att,0), avgA=tot/n, occW=wk.reduce((s,g)=>s+g.occ,0)/n;
   const sAvg=cur.reduce((s,g)=>s+g.att,0)/cur.length, sOcc=cur.reduce((s,g)=>s+g.occ,0)/cur.length;
   const diff=avgA-sAvg, diffP=sAvg?diff/sAvg*100:0, updn=diff>=0;
-  const nm=t=>`${STAD[t]||'?'}(${t})`;
+  const nm=t=>`${t}(${STAD[t]||'?'})`;
   const byTeam={}; wk.forEach(g=>{(byTeam[g.home]=byTeam[g.home]||[]).push(g);});
   const stats=Object.keys(byTeam).map(t=>{const gs=byTeam[t];const occ=gs.reduce((s,g)=>s+g.occ,0)/gs.length;
     const sells=gs.filter(g=>g.occ>=1).length;
@@ -1186,7 +1182,7 @@ function renderMonthReport(mo){
   const cur=_mMetrics(yr,mo,null); if(!cur){ el.innerHTML='<div class="t-lead">해당 월 데이터가 없습니다.</div>'; return; }
   const prevY=_mMetrics(yr-1,mo,isCur?cutDay:null);
   const prevM=(mo>=5)?_mMetrics(yr,mo-1,null):null;
-  const nm=t=>`${STAD[t]||'?'}(${t})`;
+  const nm=t=>`${t}(${STAD[t]||'?'})`;
   // 구단(구장)별
   const by={}; cur.gs.forEach(g=>{(by[g.home]=by[g.home]||[]).push(g);});
   const tagg=Object.keys(by).map(t=>{const a=by[t];return{t,n:a.length,avg:a.reduce((s,g)=>s+g.att,0)/a.length,occ:a.reduce((s,g)=>s+g.occ,0)/a.length};});
