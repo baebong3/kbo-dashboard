@@ -215,72 +215,10 @@ select:hover,select:focus{border-color:var(--coral)}
 .rep-dl{background:var(--coral);color:#fff;text-decoration:none;font-size:12px;font-weight:700;padding:8px 15px;border-radius:8px;white-space:nowrap}
 .rep-dl:hover{background:#d44e30}
 .rep-empty{color:var(--muted);font-size:12.5px;padding:14px 2px;line-height:1.6}
-/* ════════ 표지 · 비밀번호 게이트 ════════ */
-#cover{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;
-  background:radial-gradient(125% 85% at 50% -5%,#36486C 0%,#243149 52%,#1A2335 100%);
-  font-family:var(--sans);color:#fff;transition:opacity .5s ease,visibility .5s ease}
-#cover.hide{opacity:0;visibility:hidden;pointer-events:none}
-.cv-emblem{filter:drop-shadow(0 12px 30px rgba(0,0,0,.4));margin-bottom:22px}
-.cv-title{margin:0;font-size:30px;font-weight:800;letter-spacing:-.02em;text-align:center}
-.cv-sub{margin:9px 0 0;font-size:11.5px;font-weight:600;color:#9DA9BE;letter-spacing:.16em;text-align:center;font-family:var(--mono)}
-.cv-rule{width:46px;height:3px;border-radius:2px;background:var(--coral);margin:20px 0 26px}
-.cv-form{display:flex;flex-direction:column;gap:9px;width:min(330px,86vw)}
-.cv-row{display:flex;gap:8px}
-.cv-input{flex:1;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);border-radius:10px;padding:12px 14px;
-  color:#fff;font-size:14px;font-family:var(--sans);outline:none;transition:border-color .15s,background .15s}
-.cv-input::placeholder{color:#8C97AB}
-.cv-input:focus{border-color:var(--coral);background:rgba(255,255,255,.1)}
-.cv-btn{background:var(--coral);color:#fff;border:none;border-radius:10px;padding:0 22px;font-size:14px;font-weight:700;
-  font-family:var(--sans);cursor:pointer;white-space:nowrap;transition:background .15s,transform .05s}
-.cv-btn:hover{background:#d44e30}.cv-btn:active{transform:translateY(1px)}
-.cv-err{min-height:15px;font-size:12px;color:#FF9B86;font-weight:600;text-align:center;opacity:0;transition:opacity .15s}
-.cv-err.on{opacity:1}
-.cv-foot{position:absolute;bottom:20px;font-size:11px;color:#6E7A90;letter-spacing:.06em;font-family:var(--mono)}
-@keyframes cvshake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
-.cv-form.shake{animation:cvshake .4s}
 </style>
 </head>
 <body>
-<div id="cover">
-  <svg class="cv-emblem" width="106" height="106" viewBox="0 0 120 120" role="img" aria-label="KBO 엠블럼">
-    <circle cx="60" cy="60" r="58" fill="#1E2A40"/>
-    <circle cx="60" cy="60" r="58" fill="none" stroke="#E85A3C" stroke-width="1.5" opacity=".7"/>
-    <circle cx="60" cy="60" r="49" fill="#FBFBF7"/>
-    <path d="M31 23 Q49 60 31 97" fill="none" stroke="#E85A3C" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="0.1 5.6"/>
-    <path d="M89 23 Q71 60 89 97" fill="none" stroke="#E85A3C" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="0.1 5.6"/>
-    <text x="60" y="73" text-anchor="middle" font-family="'JetBrains Mono','Pretendard',sans-serif" font-size="29" font-weight="800" letter-spacing="-1.5" fill="#1E2A40">KBO</text>
-  </svg>
-  <h1 class="cv-title">KBO 관중 분석 콘솔</h1>
-  <p class="cv-sub">KBO ATTENDANCE ANALYTICS CONSOLE</p>
-  <div class="cv-rule"></div>
-  <div class="cv-form" id="cvForm">
-    <div class="cv-row">
-      <input type="password" id="cvPw" class="cv-input" placeholder="비밀번호를 입력하세요" autocomplete="off" autofocus>
-      <button class="cv-btn" id="cvBtn">입장</button>
-    </div>
-    <div class="cv-err" id="cvErr">비밀번호가 올바르지 않습니다.</div>
-  </div>
-  <div class="cv-foot">제작 · (주)서던포스트</div>
-</div>
-<script>
-(function(){
-  var KEY='kbo_unlocked', PASS='kbostpost1234';
-  var cover=document.getElementById('cover'), pw=document.getElementById('cvPw'),
-      btn=document.getElementById('cvBtn'), err=document.getElementById('cvErr'), form=document.getElementById('cvForm');
-  function isUnlocked(){try{return sessionStorage.getItem(KEY)==='1';}catch(e){return false;}}
-  function unlock(){try{sessionStorage.setItem(KEY,'1');}catch(e){}
-    cover.classList.add('hide');document.body.style.overflow='';
-    setTimeout(function(){cover.style.display='none';},550);}
-  if(isUnlocked()){cover.style.display='none';}
-  else{document.body.style.overflow='hidden';setTimeout(function(){if(pw)pw.focus();},60);}
-  function tryPw(){
-    if(pw.value===PASS){unlock();}
-    else{err.classList.add('on');form.classList.remove('shake');void form.offsetWidth;form.classList.add('shake');pw.value='';pw.focus();}
-  }
-  if(btn)btn.addEventListener('click',tryPw);
-  if(pw)pw.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();tryPw();}else{err.classList.remove('on');}});
-})();
-</script>
+<!-- 비밀번호 게이트 제거됨 -->
 
 <header class="hd">
   <div class="hd-in">
@@ -1149,10 +1087,9 @@ function renderWeekReport(){
   const cur=ALL.filter(g=>g.yr===recent&&g.att&&g.date);
   if(!cur.length){ body.innerHTML='<div class="t-lead">표시할 경기가 없습니다.</div>'; return; }
   const maxD=new Date(Math.max.apply(null,cur.map(g=>+new Date(g.date))));
-  const dow=maxD.getDay(), monOff=(dow===0?6:dow-1);
-  const curMon=new Date(maxD); curMon.setDate(maxD.getDate()-monOff);
-  const lastSun=new Date(curMon); lastSun.setDate(curMon.getDate()-1);
-  const lastTue=new Date(curMon); lastTue.setDate(curMon.getDate()-6);
+  const dow=maxD.getDay();                                                       // 0=일
+  const lastSun=new Date(maxD); lastSun.setDate(maxD.getDate()-(dow===0?0:dow));  // maxD 포함 가장 최근 일요일(=직전 완료 주의 끝)
+  const lastTue=new Date(lastSun); lastTue.setDate(lastSun.getDate()-5);          // 그 주 화요일
   const t0=+lastTue, t1=+lastSun+86399999;
   const wk=cur.filter(g=>{const t=+new Date(g.date);return t>=t0&&t<=t1;});
   const md=d=>`${d.getMonth()+1}/${d.getDate()}`;
