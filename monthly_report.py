@@ -63,11 +63,24 @@ def load(path='kbo_games.json'):
             'temp':g.get('temp_avg'),'rain':g.get('rain_mm'),
             'rainY':g.get('rain_yn') if g.get('rain_yn') is not None else ((g.get('rain_mm') or 0)>0),
             'rank':g.get('home_rank'),'arank':g.get('away_rank'),
+            'hs':g.get('home_score'),'as':g.get('away_score'),
         })
     return out
 
 # ── 월 집계 ─────────────────────────────────────────────
 def month_games(games,y,m): return [g for g in games if g['yr']==y and g['mo']==m]
+def team_records(games,y,m):
+    """그 달 각 구단의 성적(홈·원정 전체) → {팀:{'w','d','l','pct'}}. 승률=승/(승+패)."""
+    rec={}
+    for g in month_games(games,y,m):
+        hs,asc=g.get('hs'),g.get('as')
+        if hs is None or asc is None: continue
+        h,a=g['home'],g['away']
+        rec.setdefault(h,[0,0,0]); rec.setdefault(a,[0,0,0])
+        if hs>asc:   rec[h][0]+=1; rec[a][2]+=1
+        elif hs<asc: rec[h][2]+=1; rec[a][0]+=1
+        else:        rec[h][1]+=1; rec[a][1]+=1
+    return {t:{'w':w,'d':d,'l':l,'pct':(w/(w+l) if (w+l) else 0)} for t,(w,d,l) in rec.items()}
 def summarize(gs):
     if not gs: return None
     n=len(gs); tot=sum(g['att'] for g in gs)
@@ -218,7 +231,7 @@ CSS = """
 @page{size:A4;margin:14mm 13mm}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Pretendard','Pretendard Variable',-apple-system,sans-serif;color:#16202C;font-size:11px;line-height:1.55;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-.mono{font-family:'JetBrains Mono',ui-monospace,monospace;font-feature-settings:'tnum' 1}
+.mono{font-family:'Pretendard','Pretendard Variable',sans-serif;font-feature-settings:'tnum' 1}
 .page{padding:0 0 6mm}
 .page+.page{page-break-before:always}
 /* 인쇄 단락 구분: 섹션/표/카드가 페이지 경계에서 쪼개지지 않게 */
@@ -226,7 +239,7 @@ body{font-family:'Pretendard','Pretendard Variable',-apple-system,sans-serif;col
 .sec-h{page-break-after:avoid;break-after:avoid}
 .cover,.kpis,.kpi,.cmp,.cmp .box,.wxcard,.lead,.wx,table,tr,.brow,.foot{page-break-inside:avoid;break-inside:avoid}
 .cover{background:linear-gradient(135deg,#2B3A55,#1E2A40);color:#fff;border-radius:14px;padding:30px 32px;margin-bottom:18px}
-.cover .eyebrow{font-size:11px;letter-spacing:.18em;color:#9DB0C8;font-weight:700;font-family:'JetBrains Mono',monospace}
+.cover .eyebrow{font-size:11px;letter-spacing:.18em;color:#9DB0C8;font-weight:700;font-family:'Pretendard','Pretendard Variable',sans-serif}
 .cover h1{font-size:27px;font-weight:800;letter-spacing:-.02em;margin:8px 0 4px}
 .cover .period{font-size:13px;color:#C7D2E2;font-weight:600}
 .pbadge{display:inline-block;vertical-align:middle;margin-left:9px;font-size:12px;font-weight:800;color:#fff;background:#E85A3C;padding:2px 10px;border-radius:20px;letter-spacing:.02em}
@@ -236,12 +249,12 @@ body{font-family:'Pretendard','Pretendard Variable',-apple-system,sans-serif;col
 .kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:#E85A3C}
 .kpi.n2::before{background:#2B3A55}.kpi.n3::before{background:#C6452B}.kpi.n4::before{background:#6B7A8F}
 .kpi .l{font-size:9.5px;color:#8A93A0;font-weight:600;margin-bottom:5px}
-.kpi .v{font-size:20px;font-weight:800;letter-spacing:-.01em;font-family:'JetBrains Mono',monospace}
+.kpi .v{font-size:20px;font-weight:800;letter-spacing:-.01em;font-family:'Pretendard','Pretendard Variable',sans-serif;font-variant-numeric:tabular-nums}
 .kpi .v small{font-size:11px;font-weight:600;color:#3A4759}
 .kpi .s{font-size:9px;color:#8A93A0;margin-top:4px}
 .sec{margin:13px 0 0}
 .sec-h{display:flex;align-items:baseline;gap:8px;margin-bottom:9px;border-bottom:2px solid #2B3A55;padding-bottom:5px}
-.sec-h .no{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:800;color:#E85A3C}
+.sec-h .no{font-family:'Pretendard','Pretendard Variable',sans-serif;font-size:11px;font-weight:800;color:#E85A3C}
 .sec-h h2{font-size:14px;font-weight:800;letter-spacing:-.01em}
 .sec-h .sub{font-size:10px;color:#8A93A0;margin-left:auto;font-weight:500}
 .lead{font-size:11.5px;line-height:1.7;color:#39414E;background:#F7F8FA;border-left:3px solid #E85A3C;border-radius:8px;padding:10px 13px;margin-bottom:10px}
@@ -251,13 +264,13 @@ body{font-family:'Pretendard','Pretendard Variable',-apple-system,sans-serif;col
 .cmp .box{border:1px solid #E6E9EE;border-radius:10px;padding:10px 13px}
 .cmp .box .t{font-size:10px;color:#8A93A0;font-weight:600;margin-bottom:4px}
 .cmp .box .row{display:flex;align-items:baseline;gap:8px}
-.cmp .box .big{font-size:16px;font-weight:800;font-family:'JetBrains Mono',monospace}
-.chip{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;padding:1px 7px;border-radius:6px}
+.cmp .box .big{font-size:16px;font-weight:800;font-family:'Pretendard','Pretendard Variable',sans-serif}
+.chip{font-family:'Pretendard','Pretendard Variable',sans-serif;font-size:10px;font-weight:700;padding:1px 7px;border-radius:6px}
 .chip.up{background:#E6F4EC;color:#1F7A4D}.chip.dn{background:#E7EAF0;color:#2B3A55}.chip.fl{background:#F1F3F6;color:#8A93A0}
 table{width:100%;border-collapse:collapse;font-size:10.5px;margin-top:6px}
 th{font-size:9px;letter-spacing:.04em;color:#8A93A0;text-transform:uppercase;text-align:right;padding:6px 7px;border-bottom:1.5px solid #2B3A55}
 th:first-child{text-align:left}
-td{padding:6px 7px;text-align:right;font-family:'JetBrains Mono',monospace;border-bottom:1px solid #F1F3F6}
+td{padding:6px 7px;text-align:right;font-family:'Pretendard','Pretendard Variable',sans-serif;font-variant-numeric:tabular-nums;border-bottom:1px solid #F1F3F6}
 td:first-child{text-align:left;font-family:'Pretendard',sans-serif;font-weight:700}
 td .dot{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;vertical-align:middle}
 .up{color:#1F7A4D;font-weight:700}.dn{color:#C8413B;font-weight:700}
@@ -265,7 +278,7 @@ td .dot{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right
 .blab{font-size:10.5px;font-weight:700;color:#3A4759;text-align:right}
 .btrk{height:15px;background:#F1F3F6;border-radius:4px;overflow:hidden}
 .bfill{height:100%;background:#E85A3C;border-radius:4px}
-.bval{font-size:10px;font-family:'JetBrains Mono',monospace;font-weight:700;color:#16202C}
+.bval{font-size:10px;font-family:'Pretendard','Pretendard Variable',sans-serif;font-weight:700;color:#16202C}
 .wx{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:4px}
 .wxcard{border:1px solid #E6E9EE;border-radius:10px;padding:12px 14px}
 .wxcard .t{font-size:10px;color:#8A93A0;font-weight:600;margin-bottom:7px}
@@ -273,7 +286,7 @@ td .dot{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right
 .mcard{border:1px solid #E6E9EE;border-radius:11px;padding:10px 11px}
 .mcard .mt{font-size:11.5px;font-weight:800;margin-bottom:2px}
 .mcard .ms{font-size:9px;color:#8A93A0;margin-bottom:7px}
-.hm{width:100%;border-collapse:separate;border-spacing:2px;font-size:9px;font-family:'JetBrains Mono',monospace}
+.hm{width:100%;border-collapse:separate;border-spacing:2px;font-size:9px;font-family:'Pretendard','Pretendard Variable',sans-serif}
 .hm th{font-size:8px;color:#8A93A0;font-weight:700;padding:2px 1px;text-align:center;border:0}
 .hm td{text-align:center;padding:3px 1px;border-radius:3px;border:0;font-weight:700}
 .hm td.hm-t{background:#F4F6F9;color:#16202C;font-family:'Pretendard',sans-serif;text-align:left;padding-left:4px;font-weight:800}
@@ -290,7 +303,7 @@ td .dot{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right
 .opp.on{color:#6B7682;background:#F1F3F6}
 .kf{margin:6px 0 0;padding:0;list-style:none;counter-reset:kf}
 .kf li{counter-increment:kf;position:relative;padding:9px 11px 9px 36px;margin-bottom:7px;border:1px solid #E6E9EE;border-radius:9px;font-size:11px;line-height:1.62;color:#2A3340}
-.kf li::before{content:counter(kf);position:absolute;left:9px;top:9px;width:19px;height:19px;border-radius:50%;background:#2B3A55;color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace}
+.kf li::before{content:counter(kf);position:absolute;left:9px;top:9px;width:19px;height:19px;border-radius:50%;background:#2B3A55;color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;font-family:'Pretendard','Pretendard Variable',sans-serif}
 .foot{margin-top:18px;padding-top:9px;border-top:1px solid #E6E9EE;font-size:9px;color:#8A93A0;line-height:1.6}
 .foot b{color:#3A4759}
 .note{font-size:9.5px;color:#8A93A0;margin-top:5px}
@@ -302,7 +315,6 @@ def build_html(y,m,cur,prevM,prevY,tcur,tprev,rank_cur,rankrows,r,season,
                temp_cur,temp_prev,rain_gs,clear_gs):
     head=('<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8">'
           '<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">'
-          '<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">'
           +CSS+'</head><body>')
 
     # ── 표지 + 요약 ──
@@ -433,14 +445,21 @@ def build_html(y,m,cur,prevM,prevY,tcur,tprev,rank_cur,rankrows,r,season,
             rkchip=(f'<span class="up">▲{ch:.1f}</span>' if ch>0.05 else
                     f'<span class="dn">▼{abs(ch):.1f}</span>' if ch<-0.05 else '<span style="color:#C5CCD5">—</span>')
             da=x['dAtt']; dchip=f'<span class="{"up" if da>=0 else "dn"}">{da:+.0f}%</span>'
+            rc=x.get('rec')
+            if rc:
+                pr=f'{rc["pct"]:.3f}'; pr=pr[1:] if pr.startswith('0') else pr
+                rectd=f'{rc["w"]}승 {rc["d"]}무 {rc["l"]}패 <span style="color:#8A93A0">({pr})</span>'
+            else:
+                rectd='<span style="color:#C5CCD5">—</span>'
             trows.append(f'<tr><td><span class="dot" style="background:{TCOL.get(x["t"],"#888")}"></span>{x["t"]}({STAD.get(x["t"],"")})</td>'
+                         f'<td style="white-space:nowrap">{rectd}</td>'
                          f'<td>{x["r0"]:.1f}위</td><td>{x["r1"]:.1f}위</td><td>{rkchip}</td>'
                          f'<td>{f(x["a0"])}</td><td>{f(x["a1"])}</td><td>{dchip}</td></tr>')
         rank_html=(f'<div class="lead">{rtxt}</div>'
-                   '<table><thead><tr><th>구단(구장)</th><th>전월 순위</th><th>이번달 순위</th><th>순위변화</th>'
+                   '<table><thead><tr><th>구단(구장)</th><th>이번달 성적</th><th>전월 순위</th><th>이번달 순위</th><th>순위변화</th>'
                    '<th>전월 평균관중</th><th>이번달 평균관중</th><th>관중 변화</th></tr></thead>'
                    f'<tbody>{"".join(trows)}</tbody></table>'
-                   '<div class="note">※ 순위 = 해당 구단의 경기일 기준 순위를 그 달 전체로 평균(소수 1자리) · 순위변화 ▲상승 / ▼하락 · '
+                   '<div class="note">※ 성적 = 그 달 홈·원정 전체 승·무·패(괄호는 승률=승/(승+패)) · 순위 = 해당 구단의 경기일 기준 순위를 그 달 전체로 평균(소수 1자리) · 순위변화 ▲상승 / ▼하락 · '
                    '<b>양의 상관 = 순위가 오를수록 관중 증가</b> · 정렬 = 이번달 평균관중 내림차순.</div>')
     else:
         rank_html='<div class="lead">전월 비교가 가능한 구단·순위 데이터가 부족해 순위-관중 분석을 생략했습니다.</div>'
@@ -549,11 +568,22 @@ def build_html(y,m,cur,prevM,prevY,tcur,tprev,rank_cur,rankrows,r,season,
         c,rs=rep; named.add(c['t'])
         kf.append(f'관중이 가장 많이 줄어든 구단은 <b>{c["t"]} ({c["d"]:+.0f}%)</b>로, {" · ".join(rs)} 영향으로 보입니다.')
     # 4) 상대팀 구성 효과 (위에서 안 다룬 구단 위주)
+    chgD={c['t']:c['d'] for c in chg}
     if oshift:
         mx=max(oshift,key=lambda k:oshift[k]); mn=min(oshift,key=lambda k:oshift[k])
         bits=[]
-        if oshift[mx]>=400 and mx not in named: bits.append(f'<b>{mx}</b>은 관중 동원력 높은 팀과의 홈경기가 늘어 유리했습니다')
-        if oshift[mn]<=-400 and mn not in named: bits.append(f'<b>{mn}</b>은 관중 동원력 낮은 팀과의 경기가 많아 불리했습니다')
+        if oshift[mx]>=400 and mx not in named:
+            dmx=chgD.get(mx)
+            if dmx is not None and dmx<-1:
+                bits.append(f'<b>{mx}</b>은 관중 동원력 높은 팀과의 홈경기가 늘어 유리했지만, 평균관중은 오히려 <b class="dn">{dmx:+.0f}%</b> 감소했습니다')
+            else:
+                bits.append(f'<b>{mx}</b>은 관중 동원력 높은 팀과의 홈경기가 늘어 유리했습니다'+(f'(평균관중 <b class="up">{dmx:+.0f}%</b>)' if dmx is not None and dmx>1 else ''))
+        if oshift[mn]<=-400 and mn not in named:
+            dmn=chgD.get(mn)
+            if dmn is not None and dmn>1:
+                bits.append(f'<b>{mn}</b>은 관중 동원력 낮은 팀과의 경기가 많아 불리했지만, 그럼에도 평균관중은 <b class="up">{dmn:+.0f}%</b> 증가했습니다')
+            else:
+                bits.append(f'<b>{mn}</b>은 관중 동원력 낮은 팀과의 경기가 많아 불리했습니다')
         if bits: kf.append('상대팀 구성 측면에서, '+' &nbsp;/&nbsp; '.join(bits)+'.')
     # 5) 순위-관중 상관 (유의할 때만 방향 단정)
     if r is not None and rankrows:
@@ -650,10 +680,11 @@ def analyze(games,y,m):
     rank_cur=team_rank_avg_allgames(games,y,m)
     rank_prev=team_rank_avg_allgames(games,py,pm)
     rows=[]
+    recs=team_records(games,y,m)
     for t in tcur:
         c=tcur[t]; p=tprev.get(t); rc=rank_cur.get(t); rp=rank_prev.get(t)
         if not p or rc is None or rp is None or p['avg']==0: continue
-        rows.append({'t':t,'r0':rp,'r1':rc,'dRank':rc-rp,
+        rows.append({'t':t,'r0':rp,'r1':rc,'dRank':rc-rp,'rec':recs.get(t),
                      'a0':p['avg'],'a1':c['avg'],'dAtt':(c['avg']-p['avg'])/p['avg']*100})
     r=pearson([-x['dRank'] for x in rows],[x['dAtt'] for x in rows]) if len(rows)>=3 else None
     # 기온

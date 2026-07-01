@@ -3,7 +3,7 @@ name: KBO 월간 리포트
 on:
   schedule:
     # 매월 1일 00:00 UTC = 09:00 KST (직전 달 전체를 리포트)
-    - cron: '0 0 1 * *'
+    - cron: '30 1 1 * *'   # 매월 1일 10:30 KST (01:30 UTC) — 정각 혼잡 회피, 일일 업데이트(08:30) 이후
   workflow_dispatch:        # 수동 실행 버튼
     inputs:
       month:
