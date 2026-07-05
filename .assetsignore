@@ -1,0 +1,24 @@
+# Cloudflare Workers 정적 자산에서 제외 (사이트에 불필요·민감 파일은 서빙하지 않음)
+# .gitignore 와 동일한 형식
+
+# git 저장소 (전체 히스토리 노출 방지 — 필수!)
+.git
+**/.git
+.gitignore
+
+# CI / 배포 설정
+.github
+.wrangler
+**/.wrangler
+wrangler.jsonc
+wrangler.toml
+.assetsignore
+
+# 파이썬 파이프라인 (사이트는 파이썬 불필요)
+*.py
+requirements.txt
+
+# 워크플로/문서
+*.yml
+*.yaml
+README.md

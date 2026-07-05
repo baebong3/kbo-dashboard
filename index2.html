@@ -441,6 +441,13 @@ const TC={LG:'#C30452',두산:'#1A1748',삼성:'#0A4DA2',KIA:'#EA0029',SSG:'#CE0
   롯데:'#041E42',kt:'#3A3A3A',한화:'#FC4E00',NC:'#1D467F',키움:'#820024'};
 /* 수용인원 cap(team,yr,venue)은 caps.js(단일 소스 caps.json) 전역 함수 사용 — head의 <script src="caps.js"> */
 const DOWNAME=['일','월','화','수','목','금','토'];
+/* 공휴일(YYYY-MM-DD) — 화·수·목이라도 공휴일이면 '주말 기준'으로 비교. ※ 매년 갱신 필요 */
+const HOLIDAYS=new Set([
+  '2026-01-01','2026-02-16','2026-02-17','2026-02-18','2026-03-01','2026-03-02',
+  '2026-05-05','2026-05-24','2026-05-25','2026-06-03','2026-06-06','2026-07-17',
+  '2026-08-15','2026-08-17','2026-09-24','2026-09-25','2026-09-26',
+  '2026-10-03','2026-10-05','2026-10-09','2026-12-25'
+]);
 const NM={'LG':'LG','두산':'두산','삼성':'삼성','KIA':'KIA','SSG':'SSG','롯데':'롯데','kt':'kt','KT':'kt','한화':'한화','NC':'NC','키움':'키움'};
 const NMP={'LG트윈스':'LG','두산베어스':'두산','삼성라이온즈':'삼성','KIA타이거즈':'KIA','SSG랜더스':'SSG',
   '롯데자이언츠':'롯데','kt wiz':'kt','KT위즈':'kt','한화이글스':'한화','NC다이노스':'NC','키움히어로즈':'키움',
@@ -1057,6 +1064,19 @@ function renderTodayReport(){
   const nm=t=>`${t}(${STAD[t]||'?'})`;
   let lead=`어제 <b>${mo}/${dd}(${dowN})</b> ${n}경기에 총 <b>${fmt(tot)}명</b>이 입장해 경기당 평균 <b>${fmt(Math.round(dAvg))}명</b>을 기록했습니다.<br>`+
     `올해 평균(${fmt(Math.round(sAvg))}명)보다 <b class="${updn?'up':'dn'}">${fmt(Math.round(Math.abs(diff)))}명</b> ${updn?'많았':'적었'}습니다(${diffP>=0?'+':''}${diffP.toFixed(0)}%).`;
+  /* 요일·공휴일 기반 비교: 화·수·목→주중 / 금·토·일→주말 / 화·수·목이라도 공휴일이면 주말 기준 */
+  const wdG=cur.filter(g=>g.series==='WD'), weG=cur.filter(g=>g.series==='WE');
+  const wdAvg=wdG.length?wdG.reduce((s,g)=>s+g.att,0)/wdG.length:0;
+  const weAvg=weG.length?weG.reduce((s,g)=>s+g.att,0)/weG.length:0;
+  const yKey=`${recent}-${String(mo).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
+  const yHol=HOLIDAYS.has(yKey), yWD=day[0].series==='WD';
+  const weLike=!yWD||yHol;
+  const cmpAvg=weLike?weAvg:wdAvg, cmpLbl=weLike?'주말(금·토·일)':'주중(화·수·목)';
+  if(cmpAvg>0){
+    const d2=dAvg-cmpAvg, p2=cmpAvg?d2/cmpAvg*100:0, up2=d2>=0;
+    const holN=(yHol&&yWD)?`이 날은 공휴일이라 주말 기준으로 볼 때, `:'';
+    lead+=`<br>${holN}${cmpLbl} 평균(${fmt(Math.round(cmpAvg))}명)보다 <b class="${up2?'up':'dn'}">${fmt(Math.round(Math.abs(d2)))}명</b> ${up2?'많았':'적었'}습니다(${p2>=0?'+':''}${p2.toFixed(0)}%).`;
+  }
   const items=[];
   let occLine=`평균 <b>좌석 점유율 ${(dOcc*100).toFixed(0)}%</b> (시즌 평균 ${(sOcc*100).toFixed(0)}%) — `;
   if(dAvg<sAvg && dOcc>=sOcc-0.005){
@@ -1151,7 +1171,7 @@ function renderMonthReport(mo){
   const el=$('monthRepBody'); if(!el) return;
   const yr=Math.max.apply(null,YEARS);
   const latestMo=Math.max.apply(null,ALL.filter(g=>g.yr===yr&&g.att).map(g=>g.mo));
-  const isCur=(mo===latestMo);
+  const _now=new Date(); const isCur=(yr===_now.getFullYear()&&mo===_now.getMonth()+1); // 현재 '달력상' 달만 잠정, 지난 달은 종료 직후 확정
   const cutDay=isCur?Math.max.apply(null,ALL.filter(g=>g.yr===yr&&g.mo===mo&&g.att).map(g=>g.day)):null;
   const cur=_mMetrics(yr,mo,null); if(!cur){ el.innerHTML='<div class="t-lead">해당 월 데이터가 없습니다.</div>'; return; }
   const prevY=_mMetrics(yr-1,mo,isCur?cutDay:null);
