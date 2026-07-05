@@ -1160,7 +1160,8 @@ function buildMonthTabs(){
   const box=$('monthTabs'); if(!box) return;
   const yr=Math.max.apply(null,YEARS);
   const all26=ALL.filter(g=>g.yr===yr&&g.att);
-  const mos=[...new Set(all26.map(g=>g.mo))].filter(mo=>all26.filter(g=>g.mo===mo).length>=20).sort((a,b)=>a-b);
+  const _n=new Date(); const curM=(yr===_n.getFullYear())?_n.getMonth()+1:null;
+  const mos=[...new Set(all26.map(g=>g.mo))].filter(mo=>mo&&(all26.filter(g=>g.mo===mo).length>=20||mo===curM)).sort((a,b)=>a-b);
   if(!mos.length){ box.innerHTML=''; $('monthRepBody').innerHTML='<div class="t-lead">표시할 월이 없습니다.</div>'; return; }
   const latest=Math.max.apply(null,mos);
   if(curMonthRep==null||!mos.includes(curMonthRep)) curMonthRep=latest;
