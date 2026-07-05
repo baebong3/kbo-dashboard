@@ -87,3 +87,13 @@ jobs:
           git add kbo_games.json || true
           git diff --staged --quiet || git commit -m "KBO 데이터 자동 업데이트 ${DEPLOY_DATE}"
           git push || true
+
+      # 8. GitHub Pages 배포 (github.io 공개 사이트 갱신)
+      - name: GitHub Pages 배포
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./
+          publish_branch: gh-pages
+          exclude_assets: '.github,*.py,*.txt,*.md,*.bak,*.json.bak'
+          commit_message: "대시보드 배포 ${{ env.DEPLOY_DATE }}"
