@@ -1,0 +1,23 @@
+{
+  "_meta": {
+    "purpose": "KBO 취소 경기 기록(우천취소·폭염취소·그라운드사정 등). kbo_games.json에는 열린 경기만 수집되므로 취소 경기는 이 파일에서 별도 관리.",
+    "source": "KBO 공식 일정/결과 페이지 화면 캡처 수기 확인",
+    "format": "away = 원정, home = 홈 (KBO 일정 표기 '원정 vs 홈'과 동일)",
+    "coverage": "2026-07-05 ~ 2026-08-02 캡처 확인분. 캡처에 없는 기간의 취소는 누락일 수 있음.",
+    "updated": "2026-08-03",
+    "usage": "index2.html이 로딩 시 fetch — 주간·월간 요약 리포트에서만 언급"
+  },
+  "items": [
+    {"date": "2026-07-05", "away": "한화", "home": "LG",  "venue": "잠실", "reason": "그라운드사정"},
+    {"date": "2026-07-05", "away": "NC",  "home": "KIA", "venue": "광주", "reason": "그라운드사정"},
+    {"date": "2026-07-08", "away": "NC",  "home": "한화", "venue": "대전", "reason": "우천취소"},
+    {"date": "2026-07-09", "away": "키움", "home": "kt",  "venue": "수원", "reason": "우천취소"},
+    {"date": "2026-07-17", "away": "롯데", "home": "삼성", "venue": "대구", "reason": "우천취소"},
+    {"date": "2026-07-22", "away": "NC",  "home": "LG",  "venue": "잠실", "reason": "우천취소"},
+    {"date": "2026-07-22", "away": "두산", "home": "kt",  "venue": "수원", "reason": "그라운드사정"},
+    {"date": "2026-07-23", "away": "두산", "home": "kt",  "venue": "수원", "reason": "그라운드사정"},
+    {"date": "2026-08-01", "away": "삼성", "home": "롯데", "venue": "사직", "reason": "폭염취소"},
+    {"date": "2026-08-01", "away": "KIA", "home": "NC",  "venue": "창원", "reason": "폭염취소"},
+    {"date": "2026-08-02", "away": "KIA", "home": "NC",  "venue": "창원", "reason": "폭염취소"}
+  ]
+}
