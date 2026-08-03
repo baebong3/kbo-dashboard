@@ -63,6 +63,7 @@ select:hover,select:focus{border-color:var(--coral)}
 .kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--coral)}
 .kpi.k-occ::before{background:var(--navy)} .kpi.k-sell::before{background:var(--coral-d)}
 .kpi.k-tot::before{background:var(--ink2)} .kpi.k-n::before{background:var(--muted)}
+.kpi.k-tot .kpi-val{font-size:20px;white-space:nowrap;padding-top:4px;letter-spacing:-.02em}
 .kpi-lbl{font-size:11px;color:var(--muted);font-weight:600;margin-bottom:7px}
 .kpi-val{font-family:var(--mono);font-size:25px;font-weight:700;line-height:1;letter-spacing:-.01em}
 .kpi-val .u{font-size:13px;font-weight:600;color:var(--ink2);margin-left:1px}
@@ -168,6 +169,8 @@ select:hover,select:focus{border-color:var(--coral)}
 .fb-in.has-note{}
 .today.wk{border-left-color:#2B3A55}
 .today.wk .t-date{color:#2B3A55;background:#ECEFF4}
+.tglbtn{border:1px solid var(--line);background:#fff;color:#5A6473;font-family:inherit;font-weight:700;font-size:11.5px;padding:5px 12px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.tglbtn.on{background:#2B3A55;color:#fff;border-color:#2B3A55}
 .mtab{display:flex;gap:6px;flex-wrap:wrap;margin:2px 0 14px}
 .mtab button{border:1px solid var(--line);background:#fff;color:#5A6473;font-family:inherit;font-weight:700;font-size:12.5px;padding:5px 15px;border-radius:8px;cursor:pointer}
 .mtab button.on{background:#2B3A55;color:#fff;border-color:#2B3A55}
@@ -311,12 +314,13 @@ select:hover,select:focus{border-color:var(--coral)}
     <div class="card">
       <div class="card-hd">
         <div><div class="eyebrow">월별 리포트</div><div class="ctitle">구단별 월별 평균 관중</div><div class="csub">홈경기 기준 · 구단별 월별 추이 (선형)</div></div>
+        <button id="btnMTLbl" class="tglbtn" type="button">관중수 OFF</button>
       </div>
       <div class="chwrap" style="height:340px"><canvas id="cMonthTeam"></canvas></div>
     </div>
     <div class="card">
       <div class="card-hd">
-        <div><div class="eyebrow">월별 리포트</div><div class="ctitle">구단별 월별 좌석 점유율</div><div class="csub">홈경기 기준 · 진할수록 만석 · 오른쪽=시즌 평균</div></div>
+        <div><div class="eyebrow">월별 리포트</div><div class="ctitle">구단별 월별 좌석 점유율</div><div class="csub">홈경기 기준 · 진할수록 만석 · 오른쪽=시즌 평균 · 단위: %</div></div>
       </div>
       <div id="mHeatOcc" style="overflow:auto"></div>
     </div>
@@ -337,13 +341,21 @@ select:hover,select:focus{border-color:var(--coral)}
     </div>
   </div>
 
-  <div class="card" style="margin-bottom:14px">
-    <div class="card-hd">
-      <div><div class="eyebrow">순위 영향도</div><div class="ctitle">홈팀 순위별 평균 관중</div><div class="csub">경기 직전(그날) 순위 기준 · 선택 시즌별 평균 관중(연도별 라인)</div></div>
-      
+  <div class="grid g-11">
+    <div class="card">
+      <div class="card-hd">
+        <div><div class="eyebrow">순위 영향도</div><div class="ctitle">홈팀 순위별 평균 관중</div><div class="csub">경기 직전(그날) 순위 기준 · 선택 시즌별 평균 관중(연도별 라인)</div></div>
+      </div>
+      <div class="chwrap" style="height:340px"><canvas id="cRank"></canvas></div>
+      <div id="rankNote" style="margin-top:10px;font-size:12px;color:var(--muted);line-height:1.65"></div>
     </div>
-    <div class="chwrap" style="height:340px"><canvas id="cRank"></canvas></div>
-    <div id="rankNote" style="margin-top:10px;font-size:12px;color:var(--muted);line-height:1.65"></div>
+    <div class="card">
+      <div class="card-hd">
+        <div><div class="eyebrow">구단별 동원력 ③</div><div class="ctitle">구단별 홈경기 매진 횟수·비율</div><div class="csub">현재 필터 조건 기준 · 막대 = 매진 경기 수 · 라벨 = 횟수(홈경기 대비 비율)</div></div>
+      </div>
+      <div class="chwrap" style="height:340px"><canvas id="cSellout"></canvas></div>
+      <div id="selloutNote" style="margin-top:10px;font-size:12px;color:var(--muted);line-height:1.65"></div>
+    </div>
   </div>
 
   <div class="card" style="margin-bottom:14px">
@@ -455,7 +467,7 @@ const NMP={'LG트윈스':'LG','두산베어스':'두산','삼성라이온즈':'�
 function normTeam(s){if(!s)return'';s=(''+s).trim();if(NM[s])return NM[s];for(const k in NMP)if(s.includes(k))return NMP[k];return s;}
 
 /* ════════ 상태 ════════ */
-let ALL=[], filtered=[], selYears=[], YEARS=[];
+let ALL=[], filtered=[], selYears=[], YEARS=[], CANCELS=[];
 let samePeriod=true;
 const STAD={'LG':'잠실','두산':'잠실','삼성':'대구','KIA':'광주','SSG':'문학','롯데':'사직','kt':'수원','한화':'대전','NC':'창원','키움':'고척'};
 const YPAL=['#E85A3C','#2B3A55','#3A7CA5','#D98A2B','#5C8A72','#8E5BC4','#B5651D'];
@@ -497,6 +509,11 @@ const man=n=>Math.round(n/10000);
 function banner(msg,type){const b=$('banner');b.className=`banner show ${type}`;$('bannerMsg').textContent=msg;
   if(type==='ok')setTimeout(()=>b.classList.remove('show'),5000);}
 async function loadData(){
+  try{const rc=await fetch('./cancellations.json?t='+Date.now(),{cache:'no-store'});
+    if(rc.ok){const dc=await rc.json();
+      CANCELS=(dc.items||[]).map(c=>{const[y,m,d]=String(c.date).split('-').map(Number);
+        return{date:c.date,yr:y,mo:m,day:d,away:normTeam(c.away)||c.away,home:normTeam(c.home)||c.home,venue:c.venue||'',reason:c.reason||'취소'};});}
+  }catch(e){CANCELS=[];}
   try{
     const r=await fetch('./kbo_games.json?t='+Date.now(),{cache:'no-store'});
     if(r.ok){const d=await r.json();
@@ -541,7 +558,8 @@ function ingest(raw){
     const home=normTeam(g.home),away=normTeam(g.away||'');const att=+g.att;
     if(!home||!att||att<100)return null;
     const yr=+(g.yr||g.year);if(!yr||yr<2016||yr===2020)return null;
-    return{yr,mo:+(g.mo||g.month),day:+g.day,dow,dowN:DOWNAME[dow],home,away,att,venue:(g.venue||g.stadium||null),occ:Math.min(att/cap(home,yr,(g.venue||g.stadium||null)),1),
+    const vn=g.venue||g.stadium||((window.KBO_CAPS&&KBO_CAPS.venue_games)?KBO_CAPS.venue_games[g.game_id]:null)||null;
+    return{yr,mo:+(g.mo||g.month),day:+g.day,dow,dowN:DOWNAME[dow],home,away,att,venue:vn,occ:Math.min(att/cap(home,yr,vn),1),
       series:g.series||([5,6,0].includes(dow)?'WE':'WD'),
       temp:g.temp_avg??null,rain:g.rain_mm??null,rainY:g.rain_yn??(g.rain_mm>0),
       date:g.date||null,wx:g.weather||null,homeRank:g.home_rank??null,awayRank:g.away_rank??null,rankGap:g.rank_gap??null};
@@ -579,7 +597,7 @@ function refresh(){
   const lab=selYears.slice().sort((a,b)=>a-b).join(' · ');
   if($('yrTag'))$('yrTag').textContent=lab||'—';
   if($('spNote')){const _t=spNoteText();$('spNote').textContent=_t;const _fi=document.querySelector('.fb-in');if(_fi)_fi.classList.toggle('has-note',!!_t);}
-  renderKPIs();renderYearSummary();renderInsight();renderImpact();renderSplit();renderTrend();renderMonthlyHeat();renderScatter();renderScatter2();renderRankTier();renderRain();renderTemp();renderMatchup();renderFoot();
+  renderKPIs();renderYearSummary();renderInsight();renderImpact();renderSplit();renderTrend();renderMonthlyHeat();renderScatter();renderScatter2();renderRankTier();renderSellout();renderRain();renderTemp();renderMatchup();renderFoot();
 }
 
 function spCut(){
@@ -617,7 +635,7 @@ function renderKPIs(){
   $('kOccS').innerHTML=cmpBadge(m25?+(m25.o*100).toFixed(1):null,m26?+(m26.o*100).toFixed(1):null,v=>v.toFixed(1),'%');
   $('kSell').innerHTML=Math.round(sell/filtered.length*100)+'<span class="u">%</span>';
   $('kSellS').innerHTML=`완전 매진 <b style="color:var(--coral-d);font-family:var(--mono)">${sell}</b>경기`;
-  $('kTot').innerHTML=man(tot)+'<span class="u">만 명</span>';
+  $('kTot').innerHTML=fmt(tot)+'<span class="u">명</span>';
   $('kTotS').innerHTML=`<span class="cmp fl">${fmt(filtered.length)}경기 합산</span>`;
   $('kN').innerHTML=fmt(filtered.length)+'<span class="u">경기</span>';
   const wd=filtered.filter(g=>g.series==='WD').length,we=filtered.filter(g=>g.series==='WE').length;
@@ -699,6 +717,48 @@ function _mhCell(v,mn,mx,rgb,fmt){
   return `<td style="background:rgba(${rgb},${a});color:${fg}">${fmt(v)}</td>`;
 }
 const TCOL={'LG':'#C30452','두산':'#16193F','삼성':'#1167B1','KIA':'#EA0029','SSG':'#F03C2E','롯데':'#0A2E5C','kt':'#5A5A5A','한화':'#FF6600','NC':'#2E8FA6','키움':'#820024'};
+let showMTLbl=false;
+/* 월별 차트 포인트 라벨: 월(x) 컬럼별로 y 정렬 후 최소 간격 배치(겹침 방지) */
+const mtPtLabels={id:'mtPtLabels',afterDatasetsDraw(ch){
+  if(!showMTLbl)return;
+  const ctx=ch.ctx, area=ch.chartArea, nX=ch.data.labels.length, gap=11;
+  ctx.save(); ctx.font="700 9px 'JetBrains Mono',monospace"; ctx.textBaseline='middle';
+  for(let xi=0;xi<nX;xi++){
+    const items=[];
+    ch.data.datasets.forEach((d,i)=>{
+      const meta=ch.getDatasetMeta(i); if(meta.hidden)return;
+      const v=d.data[xi]; if(v==null)return; const pt=meta.data[xi]; if(!pt)return;
+      items.push({y:pt.y,x:pt.x,v,c:d.borderColor});
+    });
+    if(!items.length)continue;
+    items.sort((a,b)=>a.y-b.y);
+    // 블록 병합으로 최소 변위 대칭 배치
+    const blocks=[];
+    items.forEach(it=>{
+      let nb={sum:it.y,n:1,items:[it]};
+      while(blocks.length){
+        const last=blocks[blocks.length-1], lc=last.sum/last.n, nc=nb.sum/nb.n;
+        if((nc-(nb.n-1)*gap/2)-(lc+(last.n-1)*gap/2)<gap){
+          blocks.pop(); nb={sum:last.sum+nb.sum,n:last.n+nb.n,items:last.items.concat(nb.items)};
+        } else break;
+      }
+      blocks.push(nb);
+    });
+    blocks.forEach(b=>{const c=b.sum/b.n, st=c-(b.n-1)*gap/2; b.items.forEach((it,j)=>it.ly=st+j*gap);});
+    const ys=items.map(it=>it.ly), mx=Math.max(...ys), mn=Math.min(...ys);
+    if(mx>area.bottom-4){const o=mx-(area.bottom-4); items.forEach(it=>it.ly-=o);}
+    if(mn<area.top+4){const o=(area.top+4)-mn; items.forEach(it=>it.ly+=o);}
+    // 짝수 월은 점 오른쪽, 홀수 월은 왼쪽에 배치해 좌우로도 분산
+    const right=xi%2===0;
+    ctx.textAlign=right?'left':'right';
+    items.forEach(it=>{
+      const tx=it.x+(right?7:-7), txt=(it.v/1000).toFixed(1);
+      ctx.lineWidth=3; ctx.strokeStyle='#fff'; ctx.strokeText(txt,tx,it.ly);
+      ctx.fillStyle=it.c; ctx.fillText(txt,tx,it.ly);
+    });
+  }
+  ctx.restore();
+}};
 function renderMonthlyHeat(){
   const f=filtered, eO=$('mHeatOcc'), cv=$('cMonthTeam'); if(!eO||!cv) return;
   if(!f||!f.length){ eO.innerHTML=''; if(CH.monthTeam){CH.monthTeam.destroy();CH.monthTeam=null;} return; }
@@ -744,13 +804,13 @@ function renderMonthlyHeat(){
     ctx.restore();
   }};
   CH.monthTeam=new Chart(cv,{type:'line',data:{labels:months.map(m=>m+'월'),datasets:ds},
-    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:6,right:46,bottom:4}},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:6,right:46,bottom:4,left:showMTLbl?26:0}},
       interaction:{mode:'nearest',intersect:false},
       plugins:{legend:{display:false},
         tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y!=null?c.parsed.y.toLocaleString('ko-KR'):'-'}명`}}},
       scales:{x:{grid:{display:false},ticks:{color:'#5A6473',font:{size:11,weight:'700'}}},
         y:{grid:{color:'#F1F3F6'},ticks:{callback:v=>(v/1000)+'천',color:'#8A93A0',font:{size:10}}}}},
-    plugins:[ChartDataLabels,endLabels]});
+    plugins:[ChartDataLabels,endLabels,mtPtLabels]});
   // 점유율: 히트맵 유지
   function table(rgb,fmt){
     const rows=teams.map(t=>({t,cells:months.map(m=>{const gs=tmap[t].filter(g=>g.mo===m);if(!gs.length)return null;return gs.reduce((s,g)=>s+g.occ,0)/gs.length;})}));
@@ -765,7 +825,7 @@ function renderMonthlyHeat(){
     }).join('');
     return `<table class="mheat"><thead>${head}</thead><tbody>${body}</tbody></table>`;
   }
-  eO.innerHTML=table('43,58,85',v=>(v*100).toFixed(0)+'%');
+  eO.innerHTML=table('43,58,85',v=>(v*100).toFixed(1));
 }
 function renderTrend(){
   if(CH.trend)CH.trend.destroy();
@@ -818,6 +878,44 @@ function renderRankTier(){
     const tav=idx=>{const xs=idx.map(i=>dd[i]).filter(v=>v!=null);return xs.length?xs.reduce((s,v)=>s+v,0)/xs.length:null;};
     const t=tav([0,1,2]),b=tav([7,8,9]);
     note.innerHTML=(t&&b)?`연도별 라인 비교 \u2014 ${yy} 기준 상위 3순위(1~3위)가 하위 3순위(8~10위)보다 평균 <b>+${fmt(t-b)}명(+${Math.round((t-b)/b*100)}%)</b> 더 동원.`:'순위별 평균 관중을 연도별 라인으로 비교합니다.';}
+}
+
+/* 구단별 홈경기 매진 횟수·비율 */
+function renderSellout(){
+  const cv=$('cSellout'); if(!cv) return;
+  if(CH.sellout){CH.sellout.destroy();CH.sellout=null;}
+  const note=$('selloutNote');
+  if(!filtered.length){if(note)note.innerHTML='';return;}
+  const by={};
+  filtered.forEach(g=>{const b=(by[g.home]=by[g.home]||{n:0,s:0});b.n++;if(g.occ>=1)b.s++;});
+  const rows=Object.keys(by).map(t=>({t,n:by[t].n,s:by[t].s,r:by[t].s/by[t].n*100}))
+    .sort((a,b)=>b.s-a.s||b.r-a.r);
+  const maxS=Math.max(...rows.map(r=>r.s),1);
+  CH.sellout=new Chart(cv,{type:'bar',
+    data:{labels:rows.map(r=>r.t),datasets:[{
+      data:rows.map(r=>r.s),
+      backgroundColor:rows.map(r=>(TCOL[r.t]||'#888')+'CC'),
+      borderColor:rows.map(r=>TCOL[r.t]||'#888'),
+      borderWidth:1.5,borderRadius:5,maxBarThickness:44,
+      datalabels:{anchor:'end',align:'top',offset:2,
+        formatter:(v,c)=>{const r=rows[c.dataIndex];return r.s>0?[`${r.s}회`,`(${r.r.toFixed(0)}%)`]:'0회';},
+        color:c=>TCOL[rows[c.dataIndex].t]||'#5A6473',textAlign:'center',
+        font:{family:"'JetBrains Mono'",size:9.5,weight:'700'},textStrokeColor:'#fff',textStrokeWidth:3}
+    }]},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:30}},
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:c=>{const r=rows[c.dataIndex];return `매진 ${r.s}회 / 홈 ${r.n}경기 (${r.r.toFixed(1)}%)`;}}}},
+      scales:{x:{grid:{display:false},ticks:{color:'#5A6473',font:{size:11,weight:700}}},
+        y:{beginAtZero:true,suggestedMax:Math.ceil(maxS*1.18),grid:{color:'#F1F3F6'},
+          title:{display:true,text:'매진 경기 수',color:'#8A93A0',font:{size:10,weight:600}},
+          ticks:{color:'#8A93A0',font:{size:10},precision:0}}}},
+    plugins:[ChartDataLabels]});
+  if(note){
+    const top=rows[0], tot=rows.reduce((s,r)=>s+r.s,0), totN=rows.reduce((s,r)=>s+r.n,0);
+    note.innerHTML=tot>0
+      ?`조건 내 매진 총 <b>${tot}경기</b>(전체 홈경기의 ${(tot/totN*100).toFixed(1)}%) — 최다는 <b>${top.t}</b>(${top.s}회, 홈경기의 ${top.r.toFixed(0)}%).`
+      :'현재 조건에서 매진(만원기준 도달) 경기가 없습니다.';
+  }
 }
 
 /* ════════ 구단 산점도 ════════ */
@@ -1012,6 +1110,7 @@ function spNoteText(){
   return `※ ${recent}시즌 진행 기간(~${Math.floor(cut/100)}/${cut%100})과 동일한 기간 기준으로 비교 중`;
 }
 const _spChk=$('spChk'); if(_spChk) _spChk.addEventListener('change',e=>{samePeriod=e.target.checked;refresh();});
+const _mtb=$('btnMTLbl'); if(_mtb) _mtb.addEventListener('click',()=>{showMTLbl=!showMTLbl;_mtb.classList.toggle('on',showMTLbl);_mtb.textContent='관중수 '+(showMTLbl?'ON':'OFF');renderMonthlyHeat();});
 
 /* ════════ 데이터 설명 모달 ════════ */
 const _db=$('dataBtn'); if(_db) _db.addEventListener('click',()=>$('dataModal').classList.add('on'));
@@ -1139,6 +1238,8 @@ function renderWeekReport(){
   if(lo&&lo.t!==hi.t){const r=[];if(lo.rank&&lo.rank>=7)r.push(`홈팀 ${lo.rank}위 하위권`);if(lo.weR<0.5)r.push('주중 비중↑');if(cap(lo.t,recent,null)>=20000)r.push('대형 구장');
     items.push(`<b>점유율 최저</b>: ${nm(lo.t)} ${(lo.occ*100).toFixed(0)}%${lo.n>1?`(홈 ${lo.n}경기)`:''} — ${r.length?r.join('·')+' 영향으로 보입니다':'상대적으로 저조'}.`);}
   if(rainN) items.push(`<b>날씨</b>: ${n}경기 중 ${rainN}경기에서 비가 관측됐습니다.`);
+  const wkC=CANCELS.filter(c=>{const t=+new Date(c.date);return t>=t0&&t<=t1;});
+  if(wkC.length) items.push(`<b>경기 취소 ${wkC.length}경기</b>: ${wkC.map(c=>`${c.mo}/${c.day} ${c.away}-${c.home}(${c.venue}, ${c.reason})`).join(' · ')}.`);
   body.innerHTML=`<div class="t-lead">${lead}</div><ul class="t-list">${items.map(t=>`<li>${t}</li>`).join('')}</ul>`;
 }
 
@@ -1206,6 +1307,12 @@ function renderMonthReport(mo){
   }
   items.push(`<b>구단별 평균관중</b> 최다 ${nm(hiAvg.t)} ${fmt(Math.round(hiAvg.avg))}명 · 최소 ${nm(loAvg.t)} ${fmt(Math.round(loAvg.avg))}명.`);
   items.push(`<b>구단별 점유율</b> 최고 ${nm(hiOcc.t)} ${(hiOcc.occ*100).toFixed(0)}% · 최저 ${nm(loOcc.t)} ${(loOcc.occ*100).toFixed(0)}%.`);
+  const moC=CANCELS.filter(c=>c.yr===yr&&c.mo===mo);
+  if(moC.length){
+    const byR={}; moC.forEach(c=>{(byR[c.reason]=byR[c.reason]||[]).push(c);});
+    const rsum=Object.keys(byR).map(r=>`${r} ${byR[r].length}`).join(' · ');
+    items.push(`<b>경기 취소 ${moC.length}경기</b>(${rsum}) — ${moC.map(c=>`${c.mo}/${c.day} ${c.away}-${c.home}(${c.venue})`).join(' · ')}.`);
+  }
   el.innerHTML=`<div class="t-lead">${lead}</div><ul class="t-list">${items.map(t=>`<li>${t}</li>`).join('')}</ul>`;
 }
 const _mt=$('monthTabs'); if(_mt) _mt.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;curMonthRep=+b.dataset.mo;[...e.currentTarget.children].forEach(c=>c.classList.toggle('on',+c.dataset.mo===curMonthRep));renderMonthReport(curMonthRep);});
