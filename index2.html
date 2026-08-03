@@ -76,7 +76,8 @@ select:hover,select:focus{border-color:var(--coral)}
 .note b{color:var(--coral-d);font-weight:700}
 
 .yrcard{padding:6px 10px;margin-bottom:11px;overflow-x:auto}
-.yrtab{width:100%;border-collapse:collapse;font-size:12px;min-width:560px}
+.yrtab{width:100%;border-collapse:collapse;font-size:12px;min-width:560px;table-layout:fixed}
+.yrtab th:nth-child(1){width:15%}.yrtab th:nth-child(2){width:11%}.yrtab th:nth-child(3){width:21%}.yrtab th:nth-child(4){width:21%}.yrtab th:nth-child(5){width:16%}.yrtab th:nth-child(6){width:16%}
 .yrtab th{font-size:10px;font-weight:700;letter-spacing:.04em;color:var(--muted);text-transform:uppercase;text-align:right;padding:8px 10px;border-bottom:1px solid var(--line)}
 .yrtab th:first-child{text-align:left}
 .yrtab td{padding:9px 10px;text-align:right;font-family:var(--mono);font-weight:600;border-bottom:1px solid var(--line2)}
@@ -647,14 +648,14 @@ function renderYearSummary(){
   const yrs=selYears.slice().sort((a,b)=>a-b);
   const row=(yr)=>{const m=metricsFor(yr);const dot=`<i style="background:${yColor(yr)}"></i>`;
     return m
-    ? `<tr><td class="yt-yr">${dot}${yr}</td><td>${fmt(m.n)}</td><td>${man(m.tot)}만</td><td>${fmt(m.a)}</td><td>${(m.o*100).toFixed(1)}%</td><td>${(m.sell*100).toFixed(0)}%</td></tr>`
+    ? `<tr><td class="yt-yr">${dot}${yr}</td><td>${fmt(m.n)}</td><td>${fmt(m.tot)}</td><td>${fmt(m.a)}</td><td>${(m.o*100).toFixed(1)}%</td><td>${(m.sell*100).toFixed(0)}%</td></tr>`
     : `<tr><td class="yt-yr">${dot}${yr}</td><td colspan="5" style="text-align:center;color:var(--muted);font-family:var(--sans)">해당 조건 경기 없음</td></tr>`;};
   let deltaRow='';
   if(yrs.length===2){const a=metricsFor(yrs[0]),b=metricsFor(yrs[1]);
     if(a&&b){const dv=(x,y)=>{const d=x?(y-x)/Math.abs(x)*100:0;const c=d>0.5?'up':d<-0.5?'dn':'';const ar=d>0.5?'\u25B2':d<-0.5?'\u25BC':'\u2014';return `<span class="d ${c}">${ar}${Math.abs(d).toFixed(d>=10?0:1)}%</span>`;};
       deltaRow=`<tr style="border-top:1px solid var(--line)"><td class="yt-yr" style="color:var(--muted);font-weight:600">${yrs[0]} \u2192 ${yrs[1]} 증감</td>`+
         `<td>${dv(a.n,b.n)}</td><td>${dv(a.tot,b.tot)}</td><td>${dv(a.a,b.a)}</td><td>${dv(a.o,b.o)}</td><td>${dv(a.sell,b.sell)}</td></tr>`;}}
-  $('yrTab').innerHTML=`<thead><tr><th>시즌</th><th>경기수</th><th>누적 관중</th><th>경기당 평균</th><th>점유율</th><th>완전매진</th></tr></thead>`+
+  $('yrTab').innerHTML=`<thead><tr><th>시즌</th><th>경기수</th><th>누적 관중(명)</th><th>경기당 평균(명)</th><th>점유율</th><th>완전매진</th></tr></thead>`+
     `<tbody>${yrs.map(row).join('')}${deltaRow}</tbody>`;
 }
 
@@ -748,8 +749,8 @@ const mtPtLabels={id:'mtPtLabels',afterDatasetsDraw(ch){
     const ys=items.map(it=>it.ly), mx=Math.max(...ys), mn=Math.min(...ys);
     if(mx>area.bottom-4){const o=mx-(area.bottom-4); items.forEach(it=>it.ly-=o);}
     if(mn<area.top+4){const o=(area.top+4)-mn; items.forEach(it=>it.ly+=o);}
-    // 짝수 월은 점 오른쪽, 홀수 월은 왼쪽에 배치해 좌우로도 분산
-    const right=xi%2===0;
+    // 짝수 월은 점 오른쪽, 홀수 월은 왼쪽 배치 — 단, 마지막 월은 구단명 자리 보호를 위해 항상 왼쪽
+    const right=(xi%2===0)&&xi!==nX-1;
     ctx.textAlign=right?'left':'right';
     items.forEach(it=>{
       const tx=it.x+(right?7:-7), txt=(it.v/1000).toFixed(1);
@@ -799,8 +800,8 @@ function renderMonthlyHeat(){
     const ys=items.map(it=>it.y), mx=Math.max(...ys), mn=Math.min(...ys);
     if(mx>area.bottom){const o=mx-area.bottom; items.forEach(it=>it.y-=o);}
     if(mn<area.top){const o=area.top-mn; items.forEach(it=>it.y+=o);}
-    ctx.save(); ctx.font='800 11px Pretendard,system-ui,sans-serif'; ctx.textBaseline='middle';
-    items.forEach(it=>{ ctx.fillStyle=it.c; ctx.fillText(it.t,it.x+6,it.y); });
+    ctx.save(); ctx.font='800 11px Pretendard,system-ui,sans-serif'; ctx.textBaseline='middle'; ctx.textAlign='left';
+    items.forEach(it=>{ ctx.lineWidth=3; ctx.strokeStyle='#fff'; ctx.strokeText(it.t,it.x+6,it.y); ctx.fillStyle=it.c; ctx.fillText(it.t,it.x+6,it.y); });
     ctx.restore();
   }};
   CH.monthTeam=new Chart(cv,{type:'line',data:{labels:months.map(m=>m+'월'),datasets:ds},
@@ -810,7 +811,7 @@ function renderMonthlyHeat(){
         tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y!=null?c.parsed.y.toLocaleString('ko-KR'):'-'}명`}}},
       scales:{x:{grid:{display:false},ticks:{color:'#5A6473',font:{size:11,weight:'700'}}},
         y:{grid:{color:'#F1F3F6'},ticks:{callback:v=>(v/1000)+'천',color:'#8A93A0',font:{size:10}}}}},
-    plugins:[ChartDataLabels,endLabels,mtPtLabels]});
+    plugins:[ChartDataLabels,mtPtLabels,endLabels]});
   // 점유율: 히트맵 유지
   function table(rgb,fmt){
     const rows=teams.map(t=>({t,cells:months.map(m=>{const gs=tmap[t].filter(g=>g.mo===m);if(!gs.length)return null;return gs.reduce((s,g)=>s+g.occ,0)/gs.length;})}));
