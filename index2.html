@@ -773,9 +773,6 @@ function renderMonthlyHeat(){
     return {label:t,data,borderColor:c,backgroundColor:c,tension:.3,borderWidth:2,pointRadius:2.6,pointHoverRadius:5,spanGaps:true,datalabels:{display:false}};
   });
   if(CH.monthTeam)CH.monthTeam.destroy();
-  const _mv=ds.flatMap(d=>d.data).filter(v=>v!=null);
-  const yLo=_mv.length?Math.max(0,Math.floor((Math.min(..._mv)-1600)/1000)*1000):0;
-  const yHi=_mv.length?Math.ceil((Math.max(..._mv)+1600)/1000)*1000:26000;
   const endLabels={id:'endLabels',afterDatasetsDraw(ch){
     const ctx=ch.ctx, area=ch.chartArea, items=[];
     ch.data.datasets.forEach((d,i)=>{
@@ -785,7 +782,7 @@ function renderMonthlyHeat(){
       items.push({y:pt.y,x:pt.x,c:d.borderColor,t:d.label});
     });
     if(!items.length)return;
-    items.sort((a,b)=>a.y-b.y); const gap=showMTLbl?13:10;
+    items.sort((a,b)=>a.y-b.y); const gap=10;
     // 겹치는 라벨끼리 블록으로 묶어 중심 기준 대칭 배치(변위 최소)
     const blocks=[];
     items.forEach(it=>{
@@ -803,20 +800,17 @@ function renderMonthlyHeat(){
     const ys=items.map(it=>it.y), mx=Math.max(...ys), mn=Math.min(...ys);
     if(mx>area.bottom){const o=mx-area.bottom; items.forEach(it=>it.y-=o);}
     if(mn<area.top){const o=area.top-mn; items.forEach(it=>it.y+=o);}
-    // ON: 차트 영역 오른쪽 바깥 고정 거터(값 라벨과 분리) / OFF: 기존처럼 각 라인 끝점 옆
-    const gx=area.right+10;
     ctx.save(); ctx.font='800 11px Pretendard,system-ui,sans-serif'; ctx.textBaseline='middle'; ctx.textAlign='left';
-    items.forEach(it=>{ const tx=showMTLbl?gx:it.x+6;
-      ctx.lineWidth=3; ctx.strokeStyle='#fff'; ctx.strokeText(it.t,tx,it.y); ctx.fillStyle=it.c; ctx.fillText(it.t,tx,it.y); });
+    items.forEach(it=>{ ctx.lineWidth=3; ctx.strokeStyle='#fff'; ctx.strokeText(it.t,it.x+6,it.y); ctx.fillStyle=it.c; ctx.fillText(it.t,it.x+6,it.y); });
     ctx.restore();
   }};
   CH.monthTeam=new Chart(cv,{type:'line',data:{labels:months.map(m=>m+'월'),datasets:ds},
-    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:6,right:52,bottom:4,left:showMTLbl?26:0}},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:6,right:46,bottom:4,left:showMTLbl?26:0}},
       interaction:{mode:'nearest',intersect:false},
       plugins:{legend:{display:false},
         tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y!=null?c.parsed.y.toLocaleString('ko-KR'):'-'}명`}}},
       scales:{x:{grid:{display:false},ticks:{color:'#5A6473',font:{size:11,weight:'700'}}},
-        y:{min:yLo,max:yHi,grid:{color:'#F1F3F6'},ticks:{callback:v=>(v/1000)+'천',color:'#8A93A0',font:{size:10}}}}},
+        y:{grid:{color:'#F1F3F6'},ticks:{callback:v=>(v/1000)+'천',color:'#8A93A0',font:{size:10}}}}},
     plugins:[ChartDataLabels,mtPtLabels,endLabels]});
   // 점유율: 히트맵 유지
   function table(rgb,fmt){
@@ -1246,8 +1240,20 @@ function renderWeekReport(){
     items.push(`<b>점유율 최저</b>: ${nm(lo.t)} ${(lo.occ*100).toFixed(0)}%${lo.n>1?`(홈 ${lo.n}경기)`:''} — ${r.length?r.join('·')+' 영향으로 보입니다':'상대적으로 저조'}.`);}
   if(rainN) items.push(`<b>날씨</b>: ${n}경기 중 ${rainN}경기에서 비가 관측됐습니다.`);
   const wkC=CANCELS.filter(c=>{const t=+new Date(c.date);return t>=t0&&t<=t1;});
-  if(wkC.length) items.push(`<b>경기 취소 ${wkC.length}경기</b>: ${wkC.map(c=>`${c.mo}/${c.day} ${c.away}-${c.home}(${c.venue}, ${c.reason})`).join(' · ')}.`);
+  if(wkC.length) items.push(`<b>경기 취소 ${wkC.length}경기</b>: ${fmtCancels(wkC,true)}.`);
   body.innerHTML=`<div class="t-lead">${lead}</div><ul class="t-list">${items.map(t=>`<li>${t}</li>`).join('')}</ul>`;
+}
+
+/* 취소 경기 목록: 같은 날짜는 한 번만 표기하고 경기를 묶어서 출력 */
+function fmtCancels(list,withReason){
+  const by={},order=[];
+  list.slice().sort((a,b)=>String(a.date)<String(b.date)?-1:1).forEach(c=>{
+    const k=`${c.mo}/${c.day}`; if(!by[k]){by[k]=[];order.push(k);} by[k].push(c);});
+  return order.map(k=>{
+    const gs=by[k], rs=[...new Set(gs.map(c=>c.reason))], uni=withReason&&rs.length===1;
+    const inner=gs.map(c=>`${c.away}-${c.home}(${c.venue}${withReason&&!uni?', '+c.reason:''})`).join('·');
+    return `<b>${k}</b> ${inner}${uni?` — ${rs[0]}`:''}`;
+  }).join(' / ');
 }
 
 /* ════════ 월별 리포트 ════════ */
@@ -1318,7 +1324,7 @@ function renderMonthReport(mo){
   if(moC.length){
     const byR={}; moC.forEach(c=>{(byR[c.reason]=byR[c.reason]||[]).push(c);});
     const rsum=Object.keys(byR).map(r=>`${r} ${byR[r].length}`).join(' · ');
-    items.push(`<b>경기 취소 ${moC.length}경기</b>(${rsum}) — ${moC.map(c=>`${c.mo}/${c.day} ${c.away}-${c.home}(${c.venue})`).join(' · ')}.`);
+    items.push(`<b>경기 취소 ${moC.length}경기</b>(${rsum}) — ${fmtCancels(moC,Object.keys(byR).length>1)}.`);
   }
   el.innerHTML=`<div class="t-lead">${lead}</div><ul class="t-list">${items.map(t=>`<li>${t}</li>`).join('')}</ul>`;
 }
