@@ -163,6 +163,8 @@ def merge(got, dry=False):
     meta['source'] = 'KBO 공식 「경기일정・결과」 [비고] 칸 — fetch_cancels.py 자동 수집'
     meta['format'] = 'away = 원정, home = 홈 (KBO 일정 표기 "원정 vs 홈"과 동일)'
     meta['coverage'] = f'{merged[0]["date"]} ~ {merged[-1]["date"]}' if merged else ''
+    # 수집에 성공한 달 목록 — 취소 0건인 달과 아직 안 본 달을 대시보드가 구분하는 근거
+    meta['collected'] = sorted(set(meta.get('collected', [])) | {f'{y}-{m:02d}' for y, m in got})
     meta['updated'] = date.today().isoformat()
     meta['usage'] = 'index2.html이 로딩 시 fetch — 주간·월간 요약 리포트에서만 언급'
 
