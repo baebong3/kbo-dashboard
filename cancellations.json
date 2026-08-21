@@ -3,14 +3,130 @@
     "purpose": "KBO 취소 경기 기록(우천취소·폭염취소·그라운드사정 등). kbo_games.json에는 열린 경기만 수집되므로 취소 경기는 이 파일에서 별도 관리.",
     "source": "KBO 공식 「경기일정・결과」 [비고] 칸 — fetch_cancels.py 자동 수집",
     "format": "away = 원정, home = 홈 (KBO 일정 표기 \"원정 vs 홈\"과 동일)",
-    "coverage": "2026-07-05 ~ 2026-08-16",
+    "coverage": "2026-04-09 ~ 2026-08-16",
     "updated": "2026-08-21",
-    "usage": "index2.html이 로딩 시 fetch — 주간·월간 요약 리포트에서만 언급",
-    "collected": [
-      "2026-08"
-    ]
+    "usage": "index2.html이 로딩 시 fetch — 주간·월간 요약 리포트에서만 언급"
   },
   "items": [
+    {
+      "date": "2026-04-09",
+      "away": "삼성",
+      "home": "KIA",
+      "venue": "광주",
+      "reason": "우천취소"
+    },
+    {
+      "date": "2026-04-09",
+      "away": "LG",
+      "home": "NC",
+      "venue": "창원",
+      "reason": "우천취소"
+    },
+    {
+      "date": "2026-04-09",
+      "away": "한화",
+      "home": "SSG",
+      "venue": "문학",
+      "reason": "우천취소"
+    },
+    {
+      "date": "2026-04-09",
+      "away": "키움",
+      "home": "두산",
+      "venue": "잠실",
+      "reason": "우천취소"
+    },
+    {
+      "date": "2026-04-09",
+      "away": "kt",
+      "home": "롯데",
+      "venue": "사직",
+      "reason": "우천취소"
+    },
+    {
+      "date": "2026-04-17",
+      "away": "SSG",
+      "home": "NC",
+      "venue": "창원",
+      "reason": "우천취소"
+    },
+    {
+      "date": "2026-04-17",
+      "away": "한화",
+      "home": "롯데",
+      "venue": "사직",
+      "reason": "우천취소"
+    },
+    {
+      "date": "2026-04-17",
+      "away": "LG",
+      "home": "삼성",
+      "venue": "대구",
+      "reason": "우천취소"
+    },
+    {
+      "date": "2026-05-07",
+      "away": "롯데",
+      "home": "kt",
+      "venue": "수원",
+      "reason": "우천취소"
+    },
+    {
+      "date": "2026-05-20",
+      "away": "LG",
+      "home": "KIA",
+      "venue": "광주",
+      "reason": "우천취소"
+    },
+    {
+      "date": "2026-05-20",
+      "away": "NC",
+      "home": "두산",
+      "venue": "잠실",
+      "reason": "우천취소"
+    },
+    {
+      "date": "2026-05-20",
+      "away": "kt",
+      "home": "삼성",
+      "venue": "포항",
+      "reason": "우천취소"
+    },
+    {
+      "date": "2026-05-20",
+      "away": "롯데",
+      "home": "한화",
+      "venue": "대전",
+      "reason": "우천취소"
+    },
+    {
+      "date": "2026-05-26",
+      "away": "한화",
+      "home": "NC",
+      "venue": "창원",
+      "reason": "우천취소"
+    },
+    {
+      "date": "2026-05-26",
+      "away": "삼성",
+      "home": "SSG",
+      "venue": "문학",
+      "reason": "우천취소"
+    },
+    {
+      "date": "2026-06-14",
+      "away": "NC",
+      "home": "kt",
+      "venue": "수원",
+      "reason": "우천취소"
+    },
+    {
+      "date": "2026-06-30",
+      "away": "kt",
+      "home": "한화",
+      "venue": "대전",
+      "reason": "우천취소"
+    },
     {
       "date": "2026-07-05",
       "away": "NC",
