@@ -596,7 +596,7 @@ function refresh(){
   const lab=selYears.slice().sort((a,b)=>a-b).join(' · ');
   if($('yrTag'))$('yrTag').textContent=lab||'—';
   if($('spNote')){const _t=spNoteText();$('spNote').textContent=_t;const _fi=document.querySelector('.fb-in');if(_fi)_fi.classList.toggle('has-note',!!_t);}
-  renderKPIs();renderYearSummary();renderInsight();renderImpact();renderSplit();renderTrend();renderMonthlyHeat();renderScatter();renderScatter2();renderRankTier();renderSellout();renderRain();renderTemp();renderMatchup();renderFoot();
+  renderKPIs();renderYearSummary();renderInsight();renderImpact();renderSplit();renderTrend();renderMonthlyHeat();renderScatter();renderScatter2();renderRankTier();renderSellout();renderWeather();renderMatchup();renderFoot();
 }
 
 function spCut(){
@@ -1018,17 +1018,9 @@ function renderScatter2(){
 }
 
 /* ════════ 날씨 (강수량·기온) ════════ */
-function wxBar(id,bins,cols){
+function wxBar(id,bins,cols,sc){
   if(CH[id])CH[id].destroy();
-  /* 평균 관중은 구간 간 차이가 전체 규모 대비 작아 0부터 그리면 막대가 거의 같아 보임
-     → 표본이 있는 구간의 최솟값 아래로만 여유를 두고 y축 하한을 올림(축 절단은 부제에 명시) */
-  const vals=bins.filter(b=>b.n).map(b=>b.a);
-  let ymin=0,ymax;
-  if(vals.length>1){
-    const mn=Math.min(...vals),mx=Math.max(...vals),rg=mx-mn;
-    ymin=Math.max(0,Math.floor((mn-Math.max(rg*0.55,mx*0.04))/1000)*1000);
-    ymax=Math.ceil((mx+Math.max(rg*0.18,mx*0.02))/1000)*1000;
-  }
+  const ymin=sc?sc.min:0, ymax=sc?sc.max:undefined;
   CH[id]=new Chart($(id),{type:'bar',
     data:{labels:bins.map(b=>`${b.lb}\n(${b.n})`),datasets:[{data:bins.map(b=>b.a),backgroundColor:cols,borderRadius:6,maxBarThickness:64}]},
     options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:22}},
@@ -1039,18 +1031,28 @@ function wxBar(id,bins,cols){
         y:{min:ymin,max:ymax,beginAtZero:false,grid:{color:'#F1F3F6'},ticks:{maxTicksLimit:6,callback:v=>(v/1000).toFixed(v%1000?1:0)+'천',color:'#8A93A0',font:{size:10}}}}},
     plugins:[ChartDataLabels]});
 }
-function renderRain(){
-  const defs=[['맑음\n0mm',g=>g.rain<=0],['0~5mm',g=>g.rain>0&&g.rain<=5],['5mm+',g=>g.rain>5]];
-  const bins=defs.map(([lb,f])=>{const gs=filtered.filter(g=>g.rain!=null&&f(g));return{lb,a:avg(gs.map(g=>g.att)),n:gs.length};});
-  // 5mm+ 는 우천취소·돔구장 영향으로 표본이 적어 저신뢰 → 라벨 표시 + 흐린 색
-  if(bins[2]) bins[2].lb='5mm+\n표본적음';
-  wxBar('cRain',bins,['#E85A3C','#7E93B0','#C2C9D3']);
+/* 두 차트의 y축을 같은 눈금으로 맞춘다 — 좌우 막대 높이를 곧바로 비교할 수 있어야 하므로.
+   0부터 그리면 차이가 안 보여, 표본이 있는 구간의 최솟값 아래로만 여유를 두고 1천 단위로 끊는다. */
+function wxScale(binSets){
+  const vals=[].concat(...binSets).filter(b=>b.n).map(b=>b.a);
+  if(vals.length<2) return null;
+  const mn=Math.min(...vals),mx=Math.max(...vals),rg=mx-mn;
+  return{min:Math.max(0,Math.floor((mn-Math.max(rg*0.55,mx*0.04))/1000)*1000),
+         max:Math.ceil(mx/1000)*1000};
 }
-function renderTemp(){
-  const defs=[['15°C\n미만',g=>g.temp<15],['15~20°C',g=>g.temp>=15&&g.temp<20],['20~25°C',g=>g.temp>=20&&g.temp<25],
+function renderWeather(){
+  const rDefs=[['맑음\n0mm',g=>g.rain<=0],['0~5mm',g=>g.rain>0&&g.rain<=5],['5mm+',g=>g.rain>5]];
+  const rBins=rDefs.map(([lb,f])=>{const gs=filtered.filter(g=>g.rain!=null&&f(g));return{lb,a:avg(gs.map(g=>g.att)),n:gs.length};});
+  // 5mm+ 는 우천취소·돔구장 영향으로 표본이 적어 저신뢰 → 라벨 표시 + 흐린 색
+  if(rBins[2]) rBins[2].lb='5mm+\n표본적음';
+
+  const tDefs=[['15°C\n미만',g=>g.temp<15],['15~20°C',g=>g.temp>=15&&g.temp<20],['20~25°C',g=>g.temp>=20&&g.temp<25],
     ['25~30°C',g=>g.temp>=25&&g.temp<30],['30°C\n이상',g=>g.temp>=30]];
-  const bins=defs.map(([lb,f])=>{const gs=filtered.filter(g=>g.temp!=null&&f(g));return{lb,a:avg(gs.map(g=>g.att)),n:gs.length};});
-  wxBar('cTemp',bins,['#7E93B0','#5E83A8','#C98A2E','#E07B3C','#E85A3C']);
+  const tBins=tDefs.map(([lb,f])=>{const gs=filtered.filter(g=>g.temp!=null&&f(g));return{lb,a:avg(gs.map(g=>g.att)),n:gs.length};});
+
+  const sc=wxScale([rBins,tBins]);
+  wxBar('cRain',rBins,['#E85A3C','#7E93B0','#C2C9D3'],sc);
+  wxBar('cTemp',tBins,['#7E93B0','#5E83A8','#C98A2E','#E07B3C','#E85A3C'],sc);
 }
 
 /* ════════ 대진 히트맵 (관중 · 점유율) ════════ */
