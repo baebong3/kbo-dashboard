@@ -70,6 +70,12 @@ jobs:
         run: python compute_standings.py
         continue-on-error: true
 
+      # 4.7 취소 경기 수집 — KBO 일정표 [비고] 칸에서 우천·폭염취소 등을 읽어 cancellations.json 갱신
+      #      (kbo_games.json에는 열린 경기만 들어오므로 취소는 여기서만 관리)
+      - name: 취소 경기 수집
+        run: python fetch_cancels.py --no-shot
+        continue-on-error: true
+
       # 5. 날씨 데이터 보강 (신규 경기에만 API 호출, 기존 건은 자동 스킵)
       - name: 경기 날씨 데이터 보강
         run: python fetch_weather.py
@@ -84,7 +90,7 @@ jobs:
         run: |
           git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add kbo_games.json || true
+          git add kbo_games.json cancellations.json || true
           git diff --staged --quiet || git commit -m "KBO 데이터 자동 업데이트 ${DEPLOY_DATE}"
           git push || true
 
