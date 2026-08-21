@@ -361,7 +361,7 @@ select:hover,select:focus{border-color:var(--coral)}
 
   <div class="card" style="margin-bottom:14px">
     <div class="card-hd">
-      <div><div class="eyebrow">날씨 영향</div><div class="ctitle">강수량·기온대별 평균 관중</div><div class="csub">막대 위 = 평균 관중 · 괄호 = 경기 수 · 5mm+ 표본 적음</div></div>
+      <div><div class="eyebrow">날씨 영향</div><div class="ctitle">강수량·기온대별 평균 관중</div><div class="csub">막대 위 = 평균 관중 · 괄호 = 경기 수 · 5mm+ 표본 적음 · 구간 차이를 보기 위해 y축은 0부터 시작하지 않음</div></div>
     </div>
     <div class="g-11" style="display:grid;gap:18px">
       <div class="chwrap" style="height:240px"><canvas id="cRain"></canvas></div>
@@ -1022,6 +1022,15 @@ function renderScatter2(){
 /* ════════ 날씨 (강수량·기온) ════════ */
 function wxBar(id,bins,cols){
   if(CH[id])CH[id].destroy();
+  /* 평균 관중은 구간 간 차이가 전체 규모 대비 작아 0부터 그리면 막대가 거의 같아 보임
+     → 표본이 있는 구간의 최솟값 아래로만 여유를 두고 y축 하한을 올림(축 절단은 부제에 명시) */
+  const vals=bins.filter(b=>b.n).map(b=>b.a);
+  let ymin=0,ymax;
+  if(vals.length>1){
+    const mn=Math.min(...vals),mx=Math.max(...vals),rg=mx-mn;
+    ymin=Math.max(0,Math.floor((mn-Math.max(rg*0.55,mx*0.04))/1000)*1000);
+    ymax=Math.ceil((mx+Math.max(rg*0.18,mx*0.02))/1000)*1000;
+  }
   CH[id]=new Chart($(id),{type:'bar',
     data:{labels:bins.map(b=>`${b.lb}\n(${b.n})`),datasets:[{data:bins.map(b=>b.a),backgroundColor:cols,borderRadius:6,maxBarThickness:64}]},
     options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:22}},
@@ -1029,7 +1038,7 @@ function wxBar(id,bins,cols){
         datalabels:{display:true,anchor:'end',align:'top',formatter:(v,c)=>bins[c.dataIndex].n?fmt(v):'',color:'#16202C',font:{family:"'JetBrains Mono'",size:10,weight:'700'}},
         tooltip:{callbacks:{title:c=>c[0].label.replace(/\n/g,' '),label:c=>`평균 ${fmt(c.parsed.y)}명 · ${bins[c.dataIndex].n}경기`}}},
       scales:{x:{grid:{display:false},ticks:{color:'#8A93A0',font:{size:10},maxRotation:0}},
-        y:{grid:{color:'#F1F3F6'},ticks:{callback:v=>(v/1000)+'천',color:'#8A93A0',font:{size:10}}}}},
+        y:{min:ymin,max:ymax,beginAtZero:false,grid:{color:'#F1F3F6'},ticks:{maxTicksLimit:6,callback:v=>(v/1000).toFixed(v%1000?1:0)+'천',color:'#8A93A0',font:{size:10}}}}},
     plugins:[ChartDataLabels]});
 }
 function renderRain(){
