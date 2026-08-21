@@ -72,8 +72,14 @@ jobs:
 
       # 4.7 취소 경기 수집 — KBO 일정표 [비고] 칸에서 우천·폭염취소 등을 읽어 cancellations.json 갱신
       #      (kbo_games.json에는 열린 경기만 들어오므로 취소는 여기서만 관리)
+      #      평소엔 현재 달만, 매월 1일에는 시즌 전체를 다시 훑어 지난 달 정정분까지 반영
       - name: 취소 경기 수집
-        run: python fetch_cancels.py --no-shot
+        run: |
+          if [ "$(TZ=Asia/Seoul date '+%d')" = "01" ]; then
+            python fetch_cancels.py --season "$(TZ=Asia/Seoul date '+%Y')" --no-shot
+          else
+            python fetch_cancels.py --no-shot
+          fi
         continue-on-error: true
 
       # 5. 날씨 데이터 보강 (신규 경기에만 API 호출, 기존 건은 자동 스킵)
