@@ -5,7 +5,10 @@
     "format": "away = 원정, home = 홈 (KBO 일정 표기 \"원정 vs 홈\"과 동일)",
     "coverage": "2026-07-05 ~ 2026-08-16",
     "updated": "2026-08-21",
-    "usage": "index2.html이 로딩 시 fetch — 주간·월간 요약 리포트에서만 언급"
+    "usage": "index2.html이 로딩 시 fetch — 주간·월간 요약 리포트에서만 언급",
+    "collected": [
+      "2026-08"
+    ]
   },
   "items": [
     {
