@@ -95,6 +95,7 @@ select:hover,select:focus{border-color:var(--coral)}
 .card-hd{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:14px}
 .eyebrow{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
 .ctitle{font-size:14px;font-weight:700;letter-spacing:-.01em}
+.wx-note{margin-top:10px;padding:10px 12px;border-left:3px solid var(--coral);background:#FCF6F4;border-radius:0 8px 8px 0;font-size:11.5px;line-height:1.65;color:var(--ink2)}
 .csub{font-size:11px;color:var(--muted);margin-top:3px}
 .legbox{display:flex;gap:11px;flex-wrap:wrap;align-items:center}
 .lg{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink2);font-weight:500}
@@ -362,12 +363,13 @@ select:hover,select:focus{border-color:var(--coral)}
 
   <div class="card" style="margin-bottom:14px">
     <div class="card-hd">
-      <div><div class="eyebrow">날씨 영향</div><div class="ctitle">강수량·기온대별 평균 관중</div><div class="csub">막대 위 = 평균 관중 · 괄호 = 경기 수 · 5mm+ 표본 적음 · 구간 차이를 보기 위해 y축은 0부터 시작하지 않음</div></div>
+      <div><div class="eyebrow">날씨 영향</div><div class="ctitle">강수량·기온대별 평균 관중</div><div class="csub">막대 위 = 평균 관중 · 괄호 = 개최 경기 수(취소 건수) · 구간 차이를 보기 위해 y축은 0부터 시작하지 않음</div></div>
     </div>
     <div class="g-11" style="display:grid;gap:18px">
       <div class="chwrap" style="height:240px"><canvas id="cRain"></canvas></div>
       <div class="chwrap" style="height:240px"><canvas id="cTemp"></canvas></div>
     </div>
+    <div id="wxNote" class="wx-note"></div>
   </div>
 
   <div class="grid g-11">
@@ -508,7 +510,7 @@ async function loadData(){
   try{const rc=await fetch('./cancellations.json?t='+Date.now(),{cache:'no-store'});
     if(rc.ok){const dc=await rc.json();
       CANCELS=(dc.items||[]).map(c=>{const[y,m,d]=String(c.date).split('-').map(Number);
-        return{date:c.date,yr:y,mo:m,day:d,away:normTeam(c.away)||c.away,home:normTeam(c.home)||c.home,venue:c.venue||'',reason:c.reason||'취소'};});
+        return{date:c.date,yr:y,mo:m,day:d,away:normTeam(c.away)||c.away,home:normTeam(c.home)||c.home,venue:c.venue||'',reason:c.reason||'취소',temp:c.temp_avg==null?null:+c.temp_avg,rain:c.rain_mm==null?null:+c.rain_mm};});
       /* 수집에 성공한 달 목록. 없으면(구버전 파일) 가장 이른 기록 이후를 수집분으로 간주 */
       CANC_MONTHS=new Set((dc._meta&&dc._meta.collected)||[]);
       CANC_FROM=CANCELS.length?CANCELS.map(c=>c.date).sort()[0]:null;}
@@ -1022,11 +1024,11 @@ function wxBar(id,bins,cols,sc){
   if(CH[id])CH[id].destroy();
   const ymin=sc?sc.min:0, ymax=sc?sc.max:undefined;
   CH[id]=new Chart($(id),{type:'bar',
-    data:{labels:bins.map(b=>`${b.lb}\n(${b.n})`),datasets:[{data:bins.map(b=>b.a),backgroundColor:cols,borderRadius:6,maxBarThickness:64}]},
+    data:{labels:bins.map(b=>`${b.lb}\n(${b.n}${b.c?` · 취소 ${b.c}`:''})`),datasets:[{data:bins.map(b=>b.a),backgroundColor:cols,borderRadius:6,maxBarThickness:64}]},
     options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:22}},
       plugins:{legend:{display:false},
         datalabels:{display:true,anchor:'end',align:'top',formatter:(v,c)=>bins[c.dataIndex].n?fmt(v):'',color:'#16202C',font:{family:"'JetBrains Mono'",size:10,weight:'700'}},
-        tooltip:{callbacks:{title:c=>c[0].label.replace(/\n/g,' '),label:c=>`평균 ${fmt(c.parsed.y)}명 · ${bins[c.dataIndex].n}경기`}}},
+        tooltip:{callbacks:{title:c=>c[0].label.replace(/\n/g,' '),label:c=>{const b=bins[c.dataIndex];const L=[`평균 ${fmt(c.parsed.y)}명 · 개최 ${b.n}경기`];if(b.c)L.push(`취소 ${b.c}경기 (취소율 ${(b.c/(b.c+b.n)*100).toFixed(0)}%)`);return L;}}}},
       scales:{x:{grid:{display:false},ticks:{color:'#8A93A0',font:{size:10},maxRotation:0}},
         y:{min:ymin,max:ymax,beginAtZero:false,grid:{color:'#F1F3F6'},ticks:{maxTicksLimit:6,callback:v=>(v/1000).toFixed(v%1000?1:0)+'천',color:'#8A93A0',font:{size:10}}}}},
     plugins:[ChartDataLabels]});
@@ -1041,18 +1043,48 @@ function wxScale(binSets){
          max:Math.ceil(mx/1000)*1000};
 }
 function renderWeather(){
-  const rDefs=[['맑음\n0mm',g=>g.rain<=0],['0~5mm',g=>g.rain>0&&g.rain<=5],['5mm+',g=>g.rain>5]];
-  const rBins=rDefs.map(([lb,f])=>{const gs=filtered.filter(g=>g.rain!=null&&f(g));return{lb,a:avg(gs.map(g=>g.att)),n:gs.length};});
-  // 5mm+ 는 우천취소·돔구장 영향으로 표본이 적어 저신뢰 → 라벨 표시 + 흐린 색
-  if(rBins[2]) rBins[2].lb='5mm+\n표본적음';
+  /* 현재 필터(연도·홈팀)에 해당하는 취소 경기 — 개최 경기와 같은 모집단이어야 취소율이 성립 */
+  const hs=new Set(filtered.map(g=>g.home));
+  const cx=CANCELS.filter(c=>selYears.includes(c.yr)&&hs.has(c.home));
+  const cW=cx.filter(c=>c.rain!=null&&c.temp!=null);
 
-  const tDefs=[['15°C\n미만',g=>g.temp<15],['15~20°C',g=>g.temp>=15&&g.temp<20],['20~25°C',g=>g.temp>=20&&g.temp<25],
-    ['25~30°C',g=>g.temp>=25&&g.temp<30],['30°C\n이상',g=>g.temp>=30]];
-  const tBins=tDefs.map(([lb,f])=>{const gs=filtered.filter(g=>g.temp!=null&&f(g));return{lb,a:avg(gs.map(g=>g.att)),n:gs.length};});
+  const rDefs=[['맑음\n0mm',v=>v<=0],['0~5mm',v=>v>0&&v<=5],['5mm+',v=>v>5]];
+  const rBins=rDefs.map(([lb,f])=>{
+    const gs=filtered.filter(g=>g.rain!=null&&f(g.rain));
+    return{lb,a:avg(gs.map(g=>g.att)),n:gs.length,c:cW.filter(c=>f(c.rain)).length};});
+
+  const tDefs=[['15°C\n미만',v=>v<15],['15~20°C',v=>v>=15&&v<20],['20~25°C',v=>v>=20&&v<25],
+    ['25~30°C',v=>v>=25&&v<30],['30°C\n이상',v=>v>=30]];
+  const tBins=tDefs.map(([lb,f])=>{
+    const gs=filtered.filter(g=>g.temp!=null&&f(g.temp));
+    return{lb,a:avg(gs.map(g=>g.att)),n:gs.length,c:cW.filter(c=>f(c.temp)).length};});
 
   const sc=wxScale([rBins,tBins]);
   wxBar('cRain',rBins,['#E85A3C','#7E93B0','#C2C9D3'],sc);
   wxBar('cTemp',tBins,['#7E93B0','#5E83A8','#C98A2E','#E07B3C','#E85A3C'],sc);
+  renderWeatherNote(rBins,tBins,cx,cW);
+}
+
+/* 생존편향 경고 — 비가 많이 오면 경기가 취소되므로, 높은 강수 구간에 남은 경기는
+   '비가 와도 강행한 경기'다. 취소율을 함께 보여 평균값 해석을 넘겨짚지 않게 한다. */
+function renderWeatherNote(rBins,tBins,cx,cW){
+  const el=$('wxNote'); if(!el) return;
+  if(!cx.length){el.innerHTML='';return;}
+  if(!cW.length){
+    el.innerHTML=`이 조건에서 취소된 경기 <b>${cx.length}건</b>은 관중 집계에 없습니다. `+
+      `취소 경기의 날씨가 수집되면 구간별 취소율을 함께 볼 수 있습니다(fetch_cancel_weather.py).`;
+    return;}
+  const p=[];
+  const rTop=rBins[rBins.length-1], rate=b=>b.c/(b.c+b.n)*100;
+  p.push(`이 조건의 취소 경기 <b>${cW.length}건</b>은 관중 집계에서 빠져 있습니다.`);
+  if(rTop&&rTop.c){
+    p.push(`강수 5mm+ 구간은 개최 ${rTop.n}경기·취소 ${rTop.c}경기로 <b>취소율 ${rate(rTop).toFixed(0)}%</b>입니다. `+
+      `비가 많이 온 날은 상당수가 취소되므로, 남은 경기는 강행할 만한 흥행 카드나 돔구장에 쏠립니다. `+
+      `이 구간의 평균 관중이 낮은 강수 구간보다 높게 나오더라도 <b>비가 관중을 늘린 것으로 읽으면 안 됩니다</b>.`);
+  }
+  const tTop=tBins[tBins.length-1];
+  if(tTop&&tTop.c) p.push(`30℃ 이상 구간도 취소 ${tTop.c}경기(취소율 ${rate(tTop).toFixed(0)}%)로 같은 왜곡이 있습니다.`);
+  el.innerHTML=p.join(' ');
 }
 
 /* ════════ 대진 히트맵 (관중 · 점유율) ════════ */
