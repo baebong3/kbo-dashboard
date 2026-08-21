@@ -420,8 +420,7 @@ select:hover,select:focus{border-color:var(--coral)}
     <h3>구장별 매진기준</h3>
     <table class="cap" id="capTable"></table>
     <p style="font-size:11px;color:var(--muted);margin:6px 0 0">
-      위 표는 점유율 계산에 실제로 쓰이는 값(caps.json)에서 자동 생성됩니다.
-      <b>신뢰도</b> 상 = 실측에서 상한이 평평하게 확정 · 중 = 공식자료와 부합하나 연도별 편차 있음.
+      위 표는 점유율 계산에 실제로 쓰이는 값에서 자동 생성됩니다.
     </p>
     <h3>유의사항</h3>
     <ul>
@@ -1125,7 +1124,6 @@ const _mtb=$('btnMTLbl'); if(_mtb) _mtb.addEventListener('click',()=>{showMTLbl=
 /* 데이터 설명 모달의 매진기준 표 — caps.js에서 자동 생성(손으로 적으면 재보정 때마다 어긋남) */
 function renderCapTable(){
   const el=$('capTable'), C=window.KBO_CAPS; if(!el||!C) return;
-  const CONF={high:'상',med:'중',low:'하'};
   const era=e=>{const a=e.min,b=e.max;
     return a==null&&b==null?'전 기간':a==null?`~${b}`:b==null?`${a}~`:a===b?`${a}`:`${a}~${b}`;};
   /* 잠실처럼 조건이 완전히 같은 구단은 한 줄로 합친다 */
@@ -1137,7 +1135,7 @@ function renderCapTable(){
     const val=es.map(e=>`${fmt(e.cap)}<span class="cy"> (${era(e)})</span>`).join(' · ');
     const ps=t0.postseason?` · 포스트시즌 ${fmt(t0.postseason)}`:'';
     return{sort:es[es.length-1].cap,
-      html:`<tr><td>${venue} (${ts.join('·')})</td><td>${val}${ps}<span class="cy"> — 신뢰도 ${CONF[t0.confidence]||'－'}</span></td></tr>`};
+      html:`<tr><td>${venue} (${ts.join('·')})</td><td>${val}${ps}</td></tr>`};
   }).sort((a,b)=>b.sort-a.sort).map(r=>r.html);
   const vs=Object.keys(C.venues||{}).map(v=>`${v} ${fmt(C.venues[v])}`).join(' · ');
   if(vs) rows.push(`<tr><td>제2·중립구장</td><td>${vs}</td></tr>`);
@@ -1359,7 +1357,7 @@ function renderMonthReport(mo){
   }else if(!(CANC_MONTHS.size?CANC_MONTHS.has(`${yr}-${String(mo).padStart(2,'0')}`)
              :(CANC_FROM&&`${yr}-${String(mo).padStart(2,'0')}-31`>=CANC_FROM))){
     /* 이 달은 수집된 적이 없음 — '취소 0건'으로 오독되지 않도록 명시 */
-    items.push(`<b>경기 취소</b> 자료 없음 — 이 달은 취소 경기 수집 대상에 포함되지 않았습니다.`);
+    items.push(`<b>경기 취소</b> 자료 없음 — 이 달의 취소 경기 자료가 아직 수집되지 않았습니다.`);
   }else{
     items.push(`<b>경기 취소</b> 없음 — 편성된 경기가 모두 정상 진행됐습니다.`);
   }
