@@ -1291,16 +1291,28 @@ function renderWeekReport(){
     return {t,n:gs.length,occ,sells,rank,weR,allSell:sells===gs.length&&gs.length>=2};});
   const allSold=stats.filter(x=>x.allSell).sort((a,b)=>b.n-a.n);
   const byOcc=stats.slice().sort((a,b)=>b.occ-a.occ), hi=byOcc[0], lo=byOcc[byOcc.length-1];
+  /* 원정팀 동원력 지수: 시즌 전체에서 '그 팀이 원정일 때'의 평균 점유율.
+     구장 크기·홈 성적보다 상대 카드 영향을 먼저 검토하기 위한 기준(관중 수가 아닌 점유율이라 구장 크기와 독립). */
+  const awayIdx={}; {const acc={}; cur.forEach(g=>{(acc[g.away]=acc[g.away]||[]).push(g.occ);});
+    Object.keys(acc).forEach(t=>{awayIdx[t]=acc[t].reduce((a,b)=>a+b,0)/acc[t].length;});}
+  const oppOf=t=>{const gs=byTeam[t]||[];const xs=gs.map(g=>awayIdx[g.away]).filter(v=>v!=null);
+    return xs.length?{oi:xs.reduce((a,b)=>a+b,0)/xs.length,opps:[...new Set(gs.map(g=>g.away))].join('·')}:null;};
   const sellN=wk.filter(g=>g.occ>=1).length, rainN=wk.filter(g=>g.rainY).length;
   let lead=`지난주(<b>${md(lastTue)}~${md(lastSun)}</b>) <b>${n}경기</b>가 열려 총 <b>${man(tot)}만 명</b>(경기당 평균 <b>${fmt(Math.round(avgA))}명</b>)이 입장했습니다.<br>`+
     `올해 평균(${fmt(Math.round(sAvg))}명)보다 <b class="${updn?'up':'dn'}">${fmt(Math.round(Math.abs(diff)))}명</b> ${updn?'많았':'적었'}습니다(${diffP>=0?'+':''}${diffP.toFixed(0)}%).`;
   const items=[];
   items.push(`주간 평균 <b>좌석 점유율 ${(occW*100).toFixed(0)}%</b> (시즌 ${(sOcc*100).toFixed(0)}%) · <b>매진 ${sellN}경기</b>(전체 ${n}경기 중).`);
   if(allSold.length) items.push(`<b>홈경기 전 경기 매진</b>: ${allSold.map(x=>`${nm(x.t)} ${x.n}경기`).join(', ')} — 한 경기도 빈자리 없이 채웠습니다.`);
-  if(hi){const r=[];if(hi.rank&&hi.rank<=4)r.push(`홈팀 ${hi.rank}위 상위권`);if(hi.weR>=0.5)r.push('주말 경기 비중↑');if(cap(hi.t,recent,null)<17000)r.push('소규모 구장');
+  if(hi){const r=[];const ox=oppOf(hi.t);const oppHi=ox&&ox.oi>=sOcc+0.04;
+    if(oppHi)r.push(`원정 상대 동원력 높음(${ox.opps} — 시즌 원정 점유율 ${(ox.oi*100).toFixed(0)}%)`);
+    if(hi.rank&&hi.rank<=4)r.push(`홈팀 ${hi.rank}위 상위권`);if(hi.weR>=0.5)r.push('주말 경기 비중↑');
+    if(!oppHi&&cap(hi.t,recent,null)<17000)r.push('소규모 구장');
     items.push(`<b>점유율 최고</b>: ${nm(hi.t)} ${(hi.occ*100).toFixed(0)}%${hi.n>1?`(홈 ${hi.n}경기)`:''} — ${r.length?r.join('·')+' 영향':'흥행 호조'}.`);}
-  if(lo&&lo.t!==hi.t){const r=[];if(lo.rank&&lo.rank>=7)r.push(`홈팀 ${lo.rank}위 하위권`);if(lo.weR<0.5)r.push('주중 비중↑');if(cap(lo.t,recent,null)>=20000)r.push('대형 구장');
-    items.push(`<b>점유율 최저</b>: ${nm(lo.t)} ${(lo.occ*100).toFixed(0)}%${lo.n>1?`(홈 ${lo.n}경기)`:''} — ${r.length?r.join('·')+' 영향으로 보입니다':'상대적으로 저조'}.`);}
+  if(lo&&lo.t!==hi.t){const r=[];const ox=oppOf(lo.t);const oppLo=ox&&ox.oi<=sOcc-0.04;
+    if(oppLo)r.push(`원정 상대 동원력 낮음(${ox.opps} — 시즌 원정 점유율 ${(ox.oi*100).toFixed(0)}%, 리그 ${(sOcc*100).toFixed(0)}%)`);
+    if(lo.rank&&lo.rank>=7)r.push(`홈팀 ${lo.rank}위 하위권`);if(lo.weR<0.5)r.push('주중 비중↑');
+    if(!oppLo&&cap(lo.t,recent,null)>=20000)r.push('대형 구장');
+    items.push(`<b>점유율 최저</b>: ${nm(lo.t)} ${(lo.occ*100).toFixed(0)}%${lo.n>1?`(홈 ${lo.n}경기)`:''} — ${r.length?r.slice(0,2).join(' · ')+' 영향으로 보입니다':'상대적으로 저조'}.`);}
   if(rainN) items.push(`<b>날씨</b>: ${n}경기 중 ${rainN}경기에서 비가 관측됐습니다.`);
   const wkC=CANCELS.filter(c=>{const t=+new Date(c.date);return t>=t0&&t<=t1;});
   if(wkC.length) items.push(`<b>경기 취소 ${wkC.length}경기</b>: ${fmtCancels(wkC,true)}.`);
