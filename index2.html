@@ -28,6 +28,7 @@ html{-webkit-text-size-adjust:100%}
 body{font-family:var(--sans);background:var(--bg);color:var(--ink);font-size:13px;line-height:1.5;min-height:100vh}
 
 .hd{position:sticky;top:0;z-index:50;background:rgba(245,246,248,.88);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+#staleBadge{font-size:11px;font-weight:800;color:#fff;background:#D33;border-radius:999px;padding:3px 10px;margin-left:8px;vertical-align:3px}
 .hd-in{max-width:1260px;margin:0 auto;padding:13px 22px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
 .brand{display:flex;align-items:baseline;gap:9px}
 .brand h1{font-size:18px;font-weight:800;letter-spacing:-.02em}
@@ -76,7 +77,8 @@ select:hover,select:focus{border-color:var(--coral)}
 .note b{color:var(--coral-d);font-weight:700}
 
 .yrcard{padding:6px 10px;margin-bottom:11px;overflow-x:auto}
-.yrtab{width:100%;border-collapse:collapse;font-size:12px;min-width:560px}
+.yrtab{width:100%;border-collapse:collapse;font-size:12px;min-width:560px;table-layout:fixed}
+.yrtab th:nth-child(1){width:15%}.yrtab th:nth-child(2){width:11%}.yrtab th:nth-child(3){width:21%}.yrtab th:nth-child(4){width:21%}.yrtab th:nth-child(5){width:16%}.yrtab th:nth-child(6){width:16%}
 .yrtab th{font-size:10px;font-weight:700;letter-spacing:.04em;color:var(--muted);text-transform:uppercase;text-align:right;padding:8px 10px;border-bottom:1px solid var(--line)}
 .yrtab th:first-child{text-align:left}
 .yrtab td{padding:9px 10px;text-align:right;font-family:var(--mono);font-weight:600;border-bottom:1px solid var(--line2)}
@@ -94,6 +96,7 @@ select:hover,select:focus{border-color:var(--coral)}
 .card-hd{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:14px}
 .eyebrow{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
 .ctitle{font-size:14px;font-weight:700;letter-spacing:-.01em}
+.wx-note{margin-top:10px;padding:10px 12px;border-left:3px solid var(--coral);background:#FCF6F4;border-radius:0 8px 8px 0;font-size:11.5px;line-height:1.65;color:var(--ink2)}
 .csub{font-size:11px;color:var(--muted);margin-top:3px}
 .legbox{display:flex;gap:11px;flex-wrap:wrap;align-items:center}
 .lg{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink2);font-weight:500}
@@ -204,6 +207,7 @@ select:hover,select:focus{border-color:var(--coral)}
 #dataModal .m-x{float:right;border:0;background:#F1F3F6;width:30px;height:30px;border-radius:8px;font-size:18px;cursor:pointer;color:#5A6473;font-weight:700;line-height:1}
 #dataModal table.cap{width:100%;border-collapse:collapse;font-size:11.5px;margin-top:4px}
 #dataModal table.cap td{border-bottom:1px solid #EEF1F4;padding:4px 6px}
+#dataModal table.cap .cy{color:var(--muted);font-weight:400}
 #dataModal table.cap td:first-child{font-weight:700;color:var(--ink);white-space:nowrap}
 /* ════════ 월간 리포트 모달 ════════ */
 #reportModal{position:fixed;inset:0;background:rgba(20,26,38,.55);display:none;align-items:flex-start;justify-content:center;z-index:9999;padding:40px 16px;overflow:auto}
@@ -226,7 +230,7 @@ select:hover,select:focus{border-color:var(--coral)}
 <header class="hd">
   <div class="hd-in">
     <div class="brand">
-      <h1><span class="mk"></span>KBO 관중 분석 콘솔</h1>
+      <h1><span class="mk"></span>KBO 관중 분석 콘솔</h1><span id="staleBadge" style="display:none"></span>
     </div>
     <div id="modeToggle"><button class="on" data-m="reg">정규시즌</button><button data-m="ps">포스트시즌</button></div>
     <div class="hd-meta">
@@ -360,12 +364,13 @@ select:hover,select:focus{border-color:var(--coral)}
 
   <div class="card" style="margin-bottom:14px">
     <div class="card-hd">
-      <div><div class="eyebrow">날씨 영향</div><div class="ctitle">강수량·기온대별 평균 관중</div><div class="csub">막대 위 = 평균 관중 · 괄호 = 경기 수 · 5mm+ 표본 적음</div></div>
+      <div><div class="eyebrow">날씨 영향</div><div class="ctitle">강수량·기온대별 평균 관중</div><div class="csub">막대 위 = 평균 관중 · 괄호 = 개최 경기 수(취소 건수) · 구간 차이를 보기 위해 y축은 0부터 시작하지 않음</div></div>
     </div>
     <div class="g-11" style="display:grid;gap:18px">
       <div class="chwrap" style="height:240px"><canvas id="cRain"></canvas></div>
       <div class="chwrap" style="height:240px"><canvas id="cTemp"></canvas></div>
     </div>
+    <div id="wxNote" class="wx-note"></div>
   </div>
 
   <div class="grid g-11">
@@ -404,34 +409,28 @@ select:hover,select:focus{border-color:var(--coral)}
     <ul>
       <li><b>관중·경기 결과</b> — KBO 한국야구위원회 공식 기록</li>
       <li><b>날씨(기온·강수량·풍속)</b> — Open-Meteo 과거 기상 데이터(각 구장 좌표·경기 시간대 기준)</li>
-      <li><b>구장 수용인원</b> — 각 구단 홈구장 공식 발표 수용인원(신구장·제2구장·중립구장 보정)</li>
+      <li><b>매진기준(구장 수용인원)</b> — KBO가 매진으로 판정·기록하는 인원(만원기준). 공식 좌석수·최대수용과는 다릅니다. 구단&times;연도별 실측 관중의 상한값으로 보정했습니다.</li>
+      <li><b>취소 경기</b> — KBO 공식 경기일정·결과의 [비고] 칸(우천취소·폭염취소·그라운드사정 등)</li>
       <li><b>순위·승률·게임차</b> — 경기 당일 경기 직전(前) 기준 산출</li>
     </ul>
     <h3>지표 정의</h3>
     <ul>
       <li><b>경기당 평균 관중</b> = 관중 합 &divide; 경기 수</li>
-      <li><b>좌석 점유율</b> = 관중 &divide; 구장 수용인원</li>
-      <li><b>완전 매진</b> = 점유율 100% 이상</li>
+      <li><b>좌석 점유율</b> = min(관중 &divide; 매진기준, 100%) — 매진기준을 넘겨 기록된 경기가 있어 100%에서 자릅니다</li>
+      <li><b>완전 매진</b> = 점유율 100% 이상(구단 공식 매진 발표와 다를 수 있음) · 수용 초과 입장(입석 등)도 100%로 표기</li>
       <li><b>동일 기간 비교</b> = 진행 중인 시즌의 최신 경기일까지로 과거 시즌을 잘라 같은 기간끼리 비교</li>
     </ul>
-    <h3>주요 구장 수용인원</h3>
-    <table class="cap">
-      <tr><td>잠실 (LG·두산)</td><td>25,000 (~2021) &rarr; 23,750 (2022~)</td></tr>
-      <tr><td>고척 (키움)</td><td>16,000 (포스트시즌 16,300)</td></tr>
-      <tr><td>대구 (삼성)</td><td>24,000</td></tr>
-      <tr><td>문학 (SSG)</td><td>27,800 (~2020·SK) &rarr; 23,000 (2021~)</td></tr>
-      <tr><td>사직 (롯데)</td><td>27,500 (~2016) · 24,500 (2017~21) · 22,990 (2022~23) · 23,079 (2024~)</td></tr>
-      <tr><td>수원 (kt)</td><td>18,700</td></tr>
-      <tr><td>대전 (한화)</td><td>17,000 (2025 신구장) / 13,000 (이전)</td></tr>
-      <tr><td>마산·창원 (NC)</td><td>마산 11,000 (~2018) &rarr; 창원 17,983 (2019~)</td></tr>
-      <tr><td>광주 (KIA)</td><td>20,500</td></tr>
-      <tr><td>제2·중립구장</td><td>포항 12,247 · 울산 12,000 · 청주 9,500 등</td></tr>
-    </table>
+    <h3>구장별 매진기준</h3>
+    <table class="cap" id="capTable"></table>
+    <p style="font-size:11px;color:var(--muted);margin:6px 0 0">
+      위 표는 점유율 계산에 실제로 쓰이는 값에서 자동 생성됩니다.
+    </p>
     <h3>유의사항</h3>
     <ul>
       <li>2026 시즌은 진행 중이라 수치가 잠정값입니다(매일 오전 자동 갱신, 전일 경기 반영).</li>
       <li>2021년은 코로나19로 무관중·제한관중 경기가 많아 관중 0 경기를 제외하고 집계해, 평균이 실제보다 높게 보일 수 있습니다.</li>
-      <li>우천취소 등 미개최 경기는 제외됩니다.</li>
+      <li>우천·폭염 등으로 취소된 경기는 관중 집계에서 제외되며, 취소 내역은 주간·월간 요약 리포트에서 따로 확인할 수 있습니다.</li>
+      <li>제2구장(포항·울산·청주) 경기는 해당 구장의 매진기준을 적용합니다. 경기 데이터에 구장 정보가 없어, 개최가 확인된 경기를 개별 지정하는 방식입니다.</li>
     </ul>
     <p style="margin-top:16px;color:var(--muted);font-size:11.5px">제작 (주)서던포스트</p>
   </div>
@@ -467,7 +466,7 @@ const NMP={'LG트윈스':'LG','두산베어스':'두산','삼성라이온즈':'�
 function normTeam(s){if(!s)return'';s=(''+s).trim();if(NM[s])return NM[s];for(const k in NMP)if(s.includes(k))return NMP[k];return s;}
 
 /* ════════ 상태 ════════ */
-let ALL=[], filtered=[], selYears=[], YEARS=[];
+let ALL=[], filtered=[], selYears=[], YEARS=[], CANCELS=[], CANC_FROM=null, CANC_MONTHS=new Set();
 let samePeriod=true;
 const STAD={'LG':'잠실','두산':'잠실','삼성':'대구','KIA':'광주','SSG':'문학','롯데':'사직','kt':'수원','한화':'대전','NC':'창원','키움':'고척'};
 const YPAL=['#E85A3C','#2B3A55','#3A7CA5','#D98A2B','#5C8A72','#8E5BC4','#B5651D'];
@@ -509,6 +508,14 @@ const man=n=>Math.round(n/10000);
 function banner(msg,type){const b=$('banner');b.className=`banner show ${type}`;$('bannerMsg').textContent=msg;
   if(type==='ok')setTimeout(()=>b.classList.remove('show'),5000);}
 async function loadData(){
+  try{const rc=await fetch('./cancellations.json?t='+Date.now(),{cache:'no-store'});
+    if(rc.ok){const dc=await rc.json();
+      CANCELS=(dc.items||[]).map(c=>{const[y,m,d]=String(c.date).split('-').map(Number);
+        return{date:c.date,yr:y,mo:m,day:d,away:normTeam(c.away)||c.away,home:normTeam(c.home)||c.home,venue:c.venue||'',reason:c.reason||'취소',temp:c.temp_avg==null?null:+c.temp_avg,rain:c.rain_mm==null?null:+c.rain_mm};});
+      /* 수집에 성공한 달 목록. 없으면(구버전 파일) 가장 이른 기록 이후를 수집분으로 간주 */
+      CANC_MONTHS=new Set((dc._meta&&dc._meta.collected)||[]);
+      CANC_FROM=CANCELS.length?CANCELS.map(c=>c.date).sort()[0]:null;}
+  }catch(e){CANCELS=[];}
   try{
     const r=await fetch('./kbo_games.json?t='+Date.now(),{cache:'no-store'});
     if(r.ok){const d=await r.json();
@@ -554,7 +561,9 @@ function ingest(raw){
     if(!home||!att||att<100)return null;
     const yr=+(g.yr||g.year);if(!yr||yr<2016||yr===2020)return null;
     const vn=g.venue||g.stadium||((window.KBO_CAPS&&KBO_CAPS.venue_games)?KBO_CAPS.venue_games[g.game_id]:null)||null;
-    return{yr,mo:+(g.mo||g.month),day:+g.day,dow,dowN:DOWNAME[dow],home,away,att,venue:vn,occ:Math.min(att/cap(home,yr,vn),1),
+    const cp=cap(home,yr,vn)||null;
+    return{yr,mo:+(g.mo||g.month),day:+g.day,dow,dowN:DOWNAME[dow],home,away,att,venue:vn,
+      capV:cp,occR:cp?att/cp:null,occ:cp?Math.min(att/cp,1):0,
       series:g.series||([5,6,0].includes(dow)?'WE':'WD'),
       temp:g.temp_avg??null,rain:g.rain_mm??null,rainY:g.rain_yn??(g.rain_mm>0),
       date:g.date||null,wx:g.weather||null,homeRank:g.home_rank??null,awayRank:g.away_rank??null,rankGap:g.rank_gap??null};
@@ -589,10 +598,13 @@ function buildYearToggle(){
 function yearMatch(g){return selYears.includes(g.yr);}
 function refresh(){
   filtered=ALL.filter(g=>yearMatch(g)&&baseMatch(g));
+  /* 동일 기간 비교가 켜져 있으면 분석 모집단 전체(모든 KPI·차트)에 동일하게 적용 —
+     연도 요약표만 잘리고 상단 지표는 전체를 쓰던 모집단 불일치 수정 */
+  const _spc=spCut(); if(_spc!=null) filtered=filtered.filter(g=>g.mo*100+g.day<=_spc);
   const lab=selYears.slice().sort((a,b)=>a-b).join(' · ');
   if($('yrTag'))$('yrTag').textContent=lab||'—';
   if($('spNote')){const _t=spNoteText();$('spNote').textContent=_t;const _fi=document.querySelector('.fb-in');if(_fi)_fi.classList.toggle('has-note',!!_t);}
-  renderKPIs();renderYearSummary();renderInsight();renderImpact();renderSplit();renderTrend();renderMonthlyHeat();renderScatter();renderScatter2();renderRankTier();renderSellout();renderRain();renderTemp();renderMatchup();renderFoot();
+  renderKPIs();renderYearSummary();renderInsight();renderImpact();renderSplit();renderTrend();renderMonthlyHeat();renderScatter();renderScatter2();renderRankTier();renderSellout();renderWeather();renderMatchup();renderFoot();
 }
 
 function spCut(){
@@ -627,7 +639,9 @@ function renderKPIs(){
   $('kAvg').innerHTML=fmt(avg(atts))+'<span class="u">명</span>';
   $('kAvgS').innerHTML=cmpBadge(m25?m25.a:null,m26?m26.a:null,fmt,'');
   $('kOcc').innerHTML=(o*100).toFixed(1)+'<span class="u">%</span>';
-  $('kOccS').innerHTML=cmpBadge(m25?+(m25.o*100).toFixed(1):null,m26?+(m26.o*100).toFixed(1):null,v=>v.toFixed(1),'%');
+  const _cw=filtered.filter(g=>g.capV);
+  const _wocc=_cw.length?_cw.reduce((s2,g)=>s2+g.att,0)/_cw.reduce((s2,g)=>s2+g.capV,0)*100:null;
+  $('kOccS').innerHTML=cmpBadge(m25?+(m25.o*100).toFixed(1):null,m26?+(m26.o*100).toFixed(1):null,v=>v.toFixed(1),'%')+(_wocc!=null?` <span class="cmp fl">가중 ${_wocc.toFixed(1)}%</span>`:'');
   $('kSell').innerHTML=Math.round(sell/filtered.length*100)+'<span class="u">%</span>';
   $('kSellS').innerHTML=`완전 매진 <b style="color:var(--coral-d);font-family:var(--mono)">${sell}</b>경기`;
   $('kTot').innerHTML=fmt(tot)+'<span class="u">명</span>';
@@ -642,14 +656,14 @@ function renderYearSummary(){
   const yrs=selYears.slice().sort((a,b)=>a-b);
   const row=(yr)=>{const m=metricsFor(yr);const dot=`<i style="background:${yColor(yr)}"></i>`;
     return m
-    ? `<tr><td class="yt-yr">${dot}${yr}</td><td>${fmt(m.n)}</td><td>${man(m.tot)}만</td><td>${fmt(m.a)}</td><td>${(m.o*100).toFixed(1)}%</td><td>${(m.sell*100).toFixed(0)}%</td></tr>`
+    ? `<tr><td class="yt-yr">${dot}${yr}</td><td>${fmt(m.n)}</td><td>${fmt(m.tot)}</td><td>${fmt(m.a)}</td><td>${(m.o*100).toFixed(1)}%</td><td>${(m.sell*100).toFixed(0)}%</td></tr>`
     : `<tr><td class="yt-yr">${dot}${yr}</td><td colspan="5" style="text-align:center;color:var(--muted);font-family:var(--sans)">해당 조건 경기 없음</td></tr>`;};
   let deltaRow='';
   if(yrs.length===2){const a=metricsFor(yrs[0]),b=metricsFor(yrs[1]);
     if(a&&b){const dv=(x,y)=>{const d=x?(y-x)/Math.abs(x)*100:0;const c=d>0.5?'up':d<-0.5?'dn':'';const ar=d>0.5?'\u25B2':d<-0.5?'\u25BC':'\u2014';return `<span class="d ${c}">${ar}${Math.abs(d).toFixed(d>=10?0:1)}%</span>`;};
       deltaRow=`<tr style="border-top:1px solid var(--line)"><td class="yt-yr" style="color:var(--muted);font-weight:600">${yrs[0]} \u2192 ${yrs[1]} 증감</td>`+
         `<td>${dv(a.n,b.n)}</td><td>${dv(a.tot,b.tot)}</td><td>${dv(a.a,b.a)}</td><td>${dv(a.o,b.o)}</td><td>${dv(a.sell,b.sell)}</td></tr>`;}}
-  $('yrTab').innerHTML=`<thead><tr><th>시즌</th><th>경기수</th><th>누적 관중</th><th>경기당 평균</th><th>점유율</th><th>완전매진</th></tr></thead>`+
+  $('yrTab').innerHTML=`<thead><tr><th>시즌</th><th>경기수</th><th>누적 관중(명)</th><th>경기당 평균(명)</th><th>점유율</th><th>완전매진</th></tr></thead>`+
     `<tbody>${yrs.map(row).join('')}${deltaRow}</tbody>`;
 }
 
@@ -665,7 +679,7 @@ function renderInsight(){
   const gap=wd?Math.round((we-wd)/wd*100):0;
   el.innerHTML=`<b>${yr}</b> 조건 내 ${fmt(filtered.length)}경기 · 경기당 평균 <b>${fmt(a)}명</b> · 누적 ${man(tot)}만 명. `+
     (top?`최다 동원 홈구장 <b>${top.t}</b>(평균 ${fmt(top.m)}명). `:``)+
-    (we&&wd?`주말이 주중보다 <b>${gap>=0?'+':''}${gap}%</b>로 가장 큰 변수입니다.`:``);
+    (we&&wd?`주말–주중 평균 차이는 <b>${gap>=0?'+':''}${gap}%</b>(단순 비교 기준)입니다.`:``);
 }
 
 /* ════════ 상황 영향도 (시그니처) ════════ */
@@ -743,8 +757,8 @@ const mtPtLabels={id:'mtPtLabels',afterDatasetsDraw(ch){
     const ys=items.map(it=>it.ly), mx=Math.max(...ys), mn=Math.min(...ys);
     if(mx>area.bottom-4){const o=mx-(area.bottom-4); items.forEach(it=>it.ly-=o);}
     if(mn<area.top+4){const o=(area.top+4)-mn; items.forEach(it=>it.ly+=o);}
-    // 짝수 월은 점 오른쪽, 홀수 월은 왼쪽에 배치해 좌우로도 분산
-    const right=xi%2===0;
+    // 짝수 월은 점 오른쪽, 홀수 월은 왼쪽 배치 — 단, 마지막 월은 구단명 자리 보호를 위해 항상 왼쪽
+    const right=(xi%2===0)&&xi!==nX-1;
     ctx.textAlign=right?'left':'right';
     items.forEach(it=>{
       const tx=it.x+(right?7:-7), txt=(it.v/1000).toFixed(1);
@@ -794,8 +808,8 @@ function renderMonthlyHeat(){
     const ys=items.map(it=>it.y), mx=Math.max(...ys), mn=Math.min(...ys);
     if(mx>area.bottom){const o=mx-area.bottom; items.forEach(it=>it.y-=o);}
     if(mn<area.top){const o=area.top-mn; items.forEach(it=>it.y+=o);}
-    ctx.save(); ctx.font='800 11px Pretendard,system-ui,sans-serif'; ctx.textBaseline='middle';
-    items.forEach(it=>{ ctx.fillStyle=it.c; ctx.fillText(it.t,it.x+6,it.y); });
+    ctx.save(); ctx.font='800 11px Pretendard,system-ui,sans-serif'; ctx.textBaseline='middle'; ctx.textAlign='left';
+    items.forEach(it=>{ ctx.lineWidth=3; ctx.strokeStyle='#fff'; ctx.strokeText(it.t,it.x+6,it.y); ctx.fillStyle=it.c; ctx.fillText(it.t,it.x+6,it.y); });
     ctx.restore();
   }};
   CH.monthTeam=new Chart(cv,{type:'line',data:{labels:months.map(m=>m+'월'),datasets:ds},
@@ -805,7 +819,7 @@ function renderMonthlyHeat(){
         tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y!=null?c.parsed.y.toLocaleString('ko-KR'):'-'}명`}}},
       scales:{x:{grid:{display:false},ticks:{color:'#5A6473',font:{size:11,weight:'700'}}},
         y:{grid:{color:'#F1F3F6'},ticks:{callback:v=>(v/1000)+'천',color:'#8A93A0',font:{size:10}}}}},
-    plugins:[ChartDataLabels,endLabels,mtPtLabels]});
+    plugins:[ChartDataLabels,mtPtLabels,endLabels]});
   // 점유율: 히트맵 유지
   function table(rgb,fmt){
     const rows=teams.map(t=>({t,cells:months.map(m=>{const gs=tmap[t].filter(g=>g.mo===m);if(!gs.length)return null;return gs.reduce((s,g)=>s+g.occ,0)/gs.length;})}));
@@ -1014,30 +1028,71 @@ function renderScatter2(){
 }
 
 /* ════════ 날씨 (강수량·기온) ════════ */
-function wxBar(id,bins,cols){
+function wxBar(id,bins,cols,sc){
   if(CH[id])CH[id].destroy();
+  const ymin=sc?sc.min:0, ymax=sc?sc.max:undefined;
   CH[id]=new Chart($(id),{type:'bar',
-    data:{labels:bins.map(b=>`${b.lb}\n(${b.n})`),datasets:[{data:bins.map(b=>b.a),backgroundColor:cols,borderRadius:6,maxBarThickness:64}]},
+    data:{labels:bins.map(b=>`${b.lb}\n(${b.n}${b.c?` · 취소 ${b.c}`:''})`),datasets:[{data:bins.map(b=>b.a),backgroundColor:cols,borderRadius:6,maxBarThickness:64}]},
     options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:22}},
       plugins:{legend:{display:false},
         datalabels:{display:true,anchor:'end',align:'top',formatter:(v,c)=>bins[c.dataIndex].n?fmt(v):'',color:'#16202C',font:{family:"'JetBrains Mono'",size:10,weight:'700'}},
-        tooltip:{callbacks:{title:c=>c[0].label.replace(/\n/g,' '),label:c=>`평균 ${fmt(c.parsed.y)}명 · ${bins[c.dataIndex].n}경기`}}},
+        tooltip:{callbacks:{title:c=>c[0].label.replace(/\n/g,' '),label:c=>{const b=bins[c.dataIndex];const L=[`평균 ${fmt(c.parsed.y)}명 · 개최 ${b.n}경기`];if(b.c)L.push(`취소 ${b.c}경기 (취소율 ${(b.c/(b.c+b.n)*100).toFixed(0)}%)`);return L;}}}},
       scales:{x:{grid:{display:false},ticks:{color:'#8A93A0',font:{size:10},maxRotation:0}},
-        y:{grid:{color:'#F1F3F6'},ticks:{callback:v=>(v/1000)+'천',color:'#8A93A0',font:{size:10}}}}},
+        y:{min:ymin,max:ymax,beginAtZero:false,grid:{color:'#F1F3F6'},ticks:{maxTicksLimit:6,callback:v=>(v/1000).toFixed(v%1000?1:0)+'천',color:'#8A93A0',font:{size:10}}}}},
     plugins:[ChartDataLabels]});
 }
-function renderRain(){
-  const defs=[['맑음\n0mm',g=>g.rain<=0],['0~5mm',g=>g.rain>0&&g.rain<=5],['5mm+',g=>g.rain>5]];
-  const bins=defs.map(([lb,f])=>{const gs=filtered.filter(g=>g.rain!=null&&f(g));return{lb,a:avg(gs.map(g=>g.att)),n:gs.length};});
-  // 5mm+ 는 우천취소·돔구장 영향으로 표본이 적어 저신뢰 → 라벨 표시 + 흐린 색
-  if(bins[2]) bins[2].lb='5mm+\n표본적음';
-  wxBar('cRain',bins,['#E85A3C','#7E93B0','#C2C9D3']);
+/* 두 차트의 y축을 같은 눈금으로 맞춘다 — 좌우 막대 높이를 곧바로 비교할 수 있어야 하므로.
+   0부터 그리면 차이가 안 보여, 표본이 있는 구간의 최솟값 아래로만 여유를 두고 1천 단위로 끊는다. */
+function wxScale(binSets){
+  const vals=[].concat(...binSets).filter(b=>b.n).map(b=>b.a);
+  if(vals.length<2) return null;
+  const mn=Math.min(...vals),mx=Math.max(...vals),rg=mx-mn;
+  return{min:Math.max(0,Math.floor((mn-Math.max(rg*0.55,mx*0.04))/1000)*1000),
+         max:Math.ceil(mx/1000)*1000};
 }
-function renderTemp(){
-  const defs=[['15°C\n미만',g=>g.temp<15],['15~20°C',g=>g.temp>=15&&g.temp<20],['20~25°C',g=>g.temp>=20&&g.temp<25],
-    ['25~30°C',g=>g.temp>=25&&g.temp<30],['30°C\n이상',g=>g.temp>=30]];
-  const bins=defs.map(([lb,f])=>{const gs=filtered.filter(g=>g.temp!=null&&f(g));return{lb,a:avg(gs.map(g=>g.att)),n:gs.length};});
-  wxBar('cTemp',bins,['#7E93B0','#5E83A8','#C98A2E','#E07B3C','#E85A3C']);
+function renderWeather(){
+  /* 현재 필터(연도·홈팀)에 해당하는 취소 경기 — 개최 경기와 같은 모집단이어야 취소율이 성립 */
+  const hs=new Set(filtered.map(g=>g.home));
+  const cx=CANCELS.filter(c=>selYears.includes(c.yr)&&hs.has(c.home));
+  const cW=cx.filter(c=>c.rain!=null&&c.temp!=null);
+
+  const rDefs=[['맑음\n0mm',v=>v<=0],['0~5mm',v=>v>0&&v<=5],['5mm+',v=>v>5]];
+  const rBins=rDefs.map(([lb,f])=>{
+    const gs=filtered.filter(g=>g.rain!=null&&f(g.rain));
+    return{lb,a:avg(gs.map(g=>g.att)),n:gs.length,c:cW.filter(c=>f(c.rain)).length};});
+
+  const tDefs=[['15°C\n미만',v=>v<15],['15~20°C',v=>v>=15&&v<20],['20~25°C',v=>v>=20&&v<25],
+    ['25~30°C',v=>v>=25&&v<30],['30°C\n이상',v=>v>=30]];
+  const tBins=tDefs.map(([lb,f])=>{
+    const gs=filtered.filter(g=>g.temp!=null&&f(g.temp));
+    return{lb,a:avg(gs.map(g=>g.att)),n:gs.length,c:cW.filter(c=>f(c.temp)).length};});
+
+  const sc=wxScale([rBins,tBins]);
+  wxBar('cRain',rBins,['#E85A3C','#7E93B0','#C2C9D3'],sc);
+  wxBar('cTemp',tBins,['#7E93B0','#5E83A8','#C98A2E','#E07B3C','#E85A3C'],sc);
+  renderWeatherNote(rBins,tBins,cx,cW);
+}
+
+/* 생존편향 경고 — 비가 많이 오면 경기가 취소되므로, 높은 강수 구간에 남은 경기는
+   '비가 와도 강행한 경기'다. 취소율을 함께 보여 평균값 해석을 넘겨짚지 않게 한다. */
+function renderWeatherNote(rBins,tBins,cx,cW){
+  const el=$('wxNote'); if(!el) return;
+  if(!cx.length){el.innerHTML='';return;}
+  if(!cW.length){
+    el.innerHTML=`이 조건에서 취소된 경기 <b>${cx.length}건</b>은 관중 집계에 없습니다. `+
+      `취소 경기의 날씨가 수집되면 구간별 취소율을 함께 볼 수 있습니다(fetch_cancel_weather.py).`;
+    return;}
+  const p=[];
+  const rTop=rBins[rBins.length-1], rate=b=>b.c/(b.c+b.n)*100;
+  p.push(`이 조건의 취소 경기 <b>${cW.length}건</b>은 관중 집계에서 빠져 있습니다.`);
+  if(rTop&&rTop.c){
+    p.push(`강수 5mm+ 구간은 개최 ${rTop.n}경기·취소 ${rTop.c}경기로 <b>취소율 ${rate(rTop).toFixed(0)}%</b>입니다. `+
+      `비가 많이 온 날은 상당수가 취소되므로, 남은 경기는 강행할 만한 흥행 카드나 돔구장에 쏠립니다. `+
+      `이 구간의 평균 관중이 낮은 강수 구간보다 높게 나오더라도 <b>비가 관중을 늘린 것으로 읽으면 안 됩니다</b>.`);
+  }
+  const tTop=tBins[tBins.length-1];
+  if(tTop&&tTop.c) p.push(`30℃ 이상 구간도 취소 ${tTop.c}경기(취소율 ${rate(tTop).toFixed(0)}%)로 같은 왜곡이 있습니다.`);
+  el.innerHTML=p.join(' ');
 }
 
 /* ════════ 대진 히트맵 (관중 · 점유율) ════════ */
@@ -1065,10 +1120,12 @@ function renderMatchup(){
 
 /* ════════ 푸터 ════════ */
 function renderFoot(){
+  const _ovN=ALL.filter(g=>g.occR&&g.occR>1.02).length;
   $('foot').innerHTML=`<b>출처</b> 관중 = KBO 공식 기록 · 경기 결과·순위 = visualbaseball 기반 산출 · `+
-    `<b>점유율</b> = 관중 ÷ 구장 수용인원(한화 2025 신구장 17,000석 반영) · <b>완전 매진</b> = 점유율 100% 이상 · `+
+    `<b>점유율</b> = 관중 ÷ 구단×연도별 매진기준(데이터 설명의 표 참조) · <b>완전 매진</b> = 점유율 100% 이상 · `+
+    (_ovN?`수용 초과 관측 ${_ovN}건은 100%로 표기(입석·수용인원 검토 대상) · `:``)+
     `<b>순위</b> = 경기 직전 승률(승÷(승+패)) 기준 · <b>주말</b> 금·토·일 / <b>주중</b> 화·수·목 · `+
-    `<b>영향도</b> = 조회 조건 전체 평균 대비 편차(괄호 = 경기 수) · <b>2021</b> 코로나로 무관중·제한관중 경기가 많아 관중 0 경기를 제외하고 집계(평균이 실제보다 높게 보일 수 있음) · <b>제2구장</b>(포항·울산·청주·사직 등)은 해당 구장 수용인원으로 점유율 계산. 제작 (주)서던포스트.`;
+    `<b>영향도</b> = 조회 조건 전체 평균 대비 편차(괄호 = 경기 수) — 단순 평균 차이로, 요인을 통제한 인과 효과가 아님 · <b>2021</b> 코로나로 무관중·제한관중 경기가 많아 관중 0 경기를 제외하고 집계(평균이 실제보다 높게 보일 수 있음) · <b>제2구장</b>(포항·울산·청주·사직 등)은 해당 구장 수용인원으로 점유율 계산. 제작 (주)서던포스트.`;
 }
 
 /* ════════ 이벤트 ════════ */
@@ -1081,7 +1138,18 @@ $('resetBtn').addEventListener('click',()=>{['fH','fA','fS','fM','fW'].forEach(i
   selYears=YEARS.slice(-2);buildYearToggle();refresh();});
 
 /* ════════ 시작 ════════ */
-window.addEventListener('load',async()=>{const ok=await loadData();if(ok){refresh();renderTodayReport();renderWeekReport();buildMonthTabs();}});
+window.addEventListener('load',async()=>{const ok=await loadData();if(ok){refresh();renderTodayReport();renderWeekReport();buildMonthTabs();checkFreshness();}});
+/* 시즌 중 데이터가 이틀 이상 오래되면 지연 배지 (수집 실패가 정상처럼 보이는 것 방지) */
+function checkFreshness(){
+  const b=$('staleBadge'); if(!b||!ALL.length) return;
+  const last=ALL.reduce((m2,g)=>g.date&&g.date>m2?g.date:m2,'');
+  if(!last) return;
+  const now=new Date(Date.now()+9*3600*1000);           /* KST */
+  const mo=now.getUTCMonth()+1;
+  if(mo<3||mo>11) return;                                /* 비시즌 제외 */
+  const diff=(Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate())-new Date(last+'T00:00:00Z').getTime())/86400000;
+  if(diff>=2){b.style.display='inline-block';b.textContent=`⚠ 데이터 지연 — 최근 경기 ${last.slice(5).replace('-','/')}`;}
+}
 
 /* ════════ 정규/포스트시즌 모드 토글 ════════ */
 document.getElementById('modeToggle').addEventListener('click',function(e){
@@ -1102,12 +1170,34 @@ function spNoteText(){
   const cut=spCut(); if(cut==null) return '';
   if(Math.floor(cut/100)>=11||(Math.floor(cut/100)===10&&(cut%100)>=15)) return '';
   const ys=selYears.length?selYears:YEARS, recent=Math.max.apply(null,ys);
-  return `※ ${recent}시즌 진행 기간(~${Math.floor(cut/100)}/${cut%100})과 동일한 기간 기준으로 비교 중`;
+  return `※ ${recent}시즌 진행 기간(~${Math.floor(cut/100)}/${cut%100}) 기준 — 상단 KPI·모든 차트·연도 비교에 동일 적용`;
 }
 const _spChk=$('spChk'); if(_spChk) _spChk.addEventListener('change',e=>{samePeriod=e.target.checked;refresh();});
 const _mtb=$('btnMTLbl'); if(_mtb) _mtb.addEventListener('click',()=>{showMTLbl=!showMTLbl;_mtb.classList.toggle('on',showMTLbl);_mtb.textContent='관중수 '+(showMTLbl?'ON':'OFF');renderMonthlyHeat();});
 
 /* ════════ 데이터 설명 모달 ════════ */
+/* 데이터 설명 모달의 매진기준 표 — caps.js에서 자동 생성(손으로 적으면 재보정 때마다 어긋남) */
+function renderCapTable(){
+  const el=$('capTable'), C=window.KBO_CAPS; if(!el||!C) return;
+  const era=e=>{const a=e.min,b=e.max;
+    return a==null&&b==null?'전 기간':a==null?`~${b}`:b==null?`${a}~`:a===b?`${a}`:`${a}~${b}`;};
+  /* 잠실처럼 조건이 완전히 같은 구단은 한 줄로 합친다 */
+  const grp={};
+  Object.keys(C.teams).forEach(t=>{const k=JSON.stringify(C.teams[t].eras);(grp[k]=grp[k]||[]).push(t);});
+  const rows=Object.keys(grp).map(k=>{
+    const ts=grp[k],t0=C.teams[ts[0]],es=t0.eras;
+    const venue=es[es.length-1].venue||'';
+    const val=es.map(e=>`${fmt(e.cap)}<span class="cy"> (${era(e)})</span>`).join(' · ');
+    const ps=t0.postseason?` · 포스트시즌 ${fmt(t0.postseason)}`:'';
+    return{sort:es[es.length-1].cap,
+      html:`<tr><td>${venue} (${ts.join('·')})</td><td>${val}${ps}</td></tr>`};
+  }).sort((a,b)=>b.sort-a.sort).map(r=>r.html);
+  const vs=Object.keys(C.venues||{}).map(v=>`${v} ${fmt(C.venues[v])}`).join(' · ');
+  if(vs) rows.push(`<tr><td>제2·중립구장</td><td>${vs}</td></tr>`);
+  el.innerHTML=rows.join('');
+}
+renderCapTable();
+
 const _db=$('dataBtn'); if(_db) _db.addEventListener('click',()=>$('dataModal').classList.add('on'));
 const _dx=$('dataModalClose'); if(_dx) _dx.addEventListener('click',()=>$('dataModal').classList.remove('on'));
 const _dm=$('dataModal'); if(_dm) _dm.addEventListener('click',e=>{if(e.target.id==='dataModal')_dm.classList.remove('on');});
@@ -1222,18 +1312,44 @@ function renderWeekReport(){
     return {t,n:gs.length,occ,sells,rank,weR,allSell:sells===gs.length&&gs.length>=2};});
   const allSold=stats.filter(x=>x.allSell).sort((a,b)=>b.n-a.n);
   const byOcc=stats.slice().sort((a,b)=>b.occ-a.occ), hi=byOcc[0], lo=byOcc[byOcc.length-1];
+  /* 원정팀 동원력 지수: 시즌 전체에서 '그 팀이 원정일 때'의 평균 점유율.
+     구장 크기·홈 성적보다 상대 카드 영향을 먼저 검토하기 위한 기준(관중 수가 아닌 점유율이라 구장 크기와 독립). */
+  const awayIdx={}; {const acc={}; cur.forEach(g=>{(acc[g.away]=acc[g.away]||[]).push(g.occ);});
+    Object.keys(acc).forEach(t=>{awayIdx[t]=acc[t].reduce((a,b)=>a+b,0)/acc[t].length;});}
+  const oppOf=t=>{const gs=byTeam[t]||[];const xs=gs.map(g=>awayIdx[g.away]).filter(v=>v!=null);
+    return xs.length?{oi:xs.reduce((a,b)=>a+b,0)/xs.length,opps:[...new Set(gs.map(g=>g.away))].join('·')}:null;};
   const sellN=wk.filter(g=>g.occ>=1).length, rainN=wk.filter(g=>g.rainY).length;
   let lead=`지난주(<b>${md(lastTue)}~${md(lastSun)}</b>) <b>${n}경기</b>가 열려 총 <b>${man(tot)}만 명</b>(경기당 평균 <b>${fmt(Math.round(avgA))}명</b>)이 입장했습니다.<br>`+
     `올해 평균(${fmt(Math.round(sAvg))}명)보다 <b class="${updn?'up':'dn'}">${fmt(Math.round(Math.abs(diff)))}명</b> ${updn?'많았':'적었'}습니다(${diffP>=0?'+':''}${diffP.toFixed(0)}%).`;
   const items=[];
   items.push(`주간 평균 <b>좌석 점유율 ${(occW*100).toFixed(0)}%</b> (시즌 ${(sOcc*100).toFixed(0)}%) · <b>매진 ${sellN}경기</b>(전체 ${n}경기 중).`);
   if(allSold.length) items.push(`<b>홈경기 전 경기 매진</b>: ${allSold.map(x=>`${nm(x.t)} ${x.n}경기`).join(', ')} — 한 경기도 빈자리 없이 채웠습니다.`);
-  if(hi){const r=[];if(hi.rank&&hi.rank<=4)r.push(`홈팀 ${hi.rank}위 상위권`);if(hi.weR>=0.5)r.push('주말 경기 비중↑');if(cap(hi.t,recent,null)<17000)r.push('소규모 구장');
+  if(hi){const r=[];const ox=oppOf(hi.t);const oppHi=ox&&ox.oi>=sOcc+0.04;
+    if(oppHi)r.push(`관중 동원력 높은 팀과 상대(${ox.opps} — 시즌 원정 점유율 ${(ox.oi*100).toFixed(0)}%)`);
+    if(hi.rank&&hi.rank<=4)r.push(`홈팀 ${hi.rank}위 상위권`);if(hi.weR>=0.5)r.push('주말 경기 비중↑');
+    if(!oppHi&&cap(hi.t,recent,null)<17000)r.push('소규모 구장');
     items.push(`<b>점유율 최고</b>: ${nm(hi.t)} ${(hi.occ*100).toFixed(0)}%${hi.n>1?`(홈 ${hi.n}경기)`:''} — ${r.length?r.join('·')+' 영향':'흥행 호조'}.`);}
-  if(lo&&lo.t!==hi.t){const r=[];if(lo.rank&&lo.rank>=7)r.push(`홈팀 ${lo.rank}위 하위권`);if(lo.weR<0.5)r.push('주중 비중↑');if(cap(lo.t,recent,null)>=20000)r.push('대형 구장');
-    items.push(`<b>점유율 최저</b>: ${nm(lo.t)} ${(lo.occ*100).toFixed(0)}%${lo.n>1?`(홈 ${lo.n}경기)`:''} — ${r.length?r.join('·')+' 영향으로 보입니다':'상대적으로 저조'}.`);}
+  if(lo&&lo.t!==hi.t){const r=[];const ox=oppOf(lo.t);const oppLo=ox&&ox.oi<=sOcc-0.04;
+    if(oppLo)r.push(`관중 동원력 낮은 팀과 상대(${ox.opps} — 시즌 원정 점유율 ${(ox.oi*100).toFixed(0)}%, 리그 ${(sOcc*100).toFixed(0)}%)`);
+    if(lo.rank&&lo.rank>=7)r.push(`홈팀 ${lo.rank}위 하위권`);if(lo.weR<0.5)r.push('주중 비중↑');
+    if(!oppLo&&cap(lo.t,recent,null)>=20000)r.push('대형 구장');
+    items.push(`<b>점유율 최저</b>: ${nm(lo.t)} ${(lo.occ*100).toFixed(0)}%${lo.n>1?`(홈 ${lo.n}경기)`:''} — ${r.length?r.slice(0,2).join(' · ')+' 영향으로 보입니다':'상대적으로 저조'}.`);}
   if(rainN) items.push(`<b>날씨</b>: ${n}경기 중 ${rainN}경기에서 비가 관측됐습니다.`);
+  const wkC=CANCELS.filter(c=>{const t=+new Date(c.date);return t>=t0&&t<=t1;});
+  if(wkC.length) items.push(`<b>경기 취소 ${wkC.length}경기</b>: ${fmtCancels(wkC,true)}.`);
   body.innerHTML=`<div class="t-lead">${lead}</div><ul class="t-list">${items.map(t=>`<li>${t}</li>`).join('')}</ul>`;
+}
+
+/* 취소 경기 목록: 같은 날짜는 한 번만 표기하고 경기를 묶어서 출력 */
+function fmtCancels(list,withReason){
+  const by={},order=[];
+  list.slice().sort((a,b)=>String(a.date)<String(b.date)?-1:1).forEach(c=>{
+    const k=`${c.mo}/${c.day}`; if(!by[k]){by[k]=[];order.push(k);} by[k].push(c);});
+  return order.map(k=>{
+    const gs=by[k], rs=[...new Set(gs.map(c=>c.reason))], uni=withReason&&rs.length===1;
+    const inner=gs.map(c=>`${c.away}-${c.home}(${c.venue}${withReason&&!uni?', '+c.reason:''})`).join('·');
+    return `<b>${k}</b> ${inner}${uni?` — ${rs[0]}`:''}`;
+  }).join(' / ');
 }
 
 /* ════════ 월별 리포트 ════════ */
@@ -1300,6 +1416,18 @@ function renderMonthReport(mo){
   }
   items.push(`<b>구단별 평균관중</b> 최다 ${nm(hiAvg.t)} ${fmt(Math.round(hiAvg.avg))}명 · 최소 ${nm(loAvg.t)} ${fmt(Math.round(loAvg.avg))}명.`);
   items.push(`<b>구단별 점유율</b> 최고 ${nm(hiOcc.t)} ${(hiOcc.occ*100).toFixed(0)}% · 최저 ${nm(loOcc.t)} ${(loOcc.occ*100).toFixed(0)}%.`);
+  const moC=CANCELS.filter(c=>c.yr===yr&&c.mo===mo);
+  if(moC.length){
+    const byR={}; moC.forEach(c=>{(byR[c.reason]=byR[c.reason]||[]).push(c);});
+    const rsum=Object.keys(byR).map(r=>`${r} ${byR[r].length}`).join(' · ');
+    items.push(`<b>경기 취소 ${moC.length}경기</b>(${rsum}) — ${fmtCancels(moC,Object.keys(byR).length>1)}.`);
+  }else if(!(CANC_MONTHS.size?CANC_MONTHS.has(`${yr}-${String(mo).padStart(2,'0')}`)
+             :(CANC_FROM&&`${yr}-${String(mo).padStart(2,'0')}-31`>=CANC_FROM))){
+    /* 이 달은 수집된 적이 없음 — '취소 0건'으로 오독되지 않도록 명시 */
+    items.push(`<b>경기 취소</b> 자료 없음 — 이 달의 취소 경기 자료가 아직 수집되지 않았습니다.`);
+  }else{
+    items.push(`<b>경기 취소</b> 없음 — 편성된 경기가 모두 정상 진행됐습니다.`);
+  }
   el.innerHTML=`<div class="t-lead">${lead}</div><ul class="t-list">${items.map(t=>`<li>${t}</li>`).join('')}</ul>`;
 }
 const _mt=$('monthTabs'); if(_mt) _mt.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;curMonthRep=+b.dataset.mo;[...e.currentTarget.children].forEach(c=>c.classList.toggle('on',+c.dataset.mo===curMonthRep));renderMonthReport(curMonthRep);});
