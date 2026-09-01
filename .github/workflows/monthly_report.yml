@@ -50,3 +50,14 @@ jobs:
           git commit -m "월간 리포트 자동 생성 $(date +%Y-%m)" || echo "변경 없음"
           git pull --no-rebase --no-edit -X ours origin main || true
           git push || true
+
+      # 리포트만 돌려도 사이트에 바로 반영되도록 gh-pages 배포까지 수행
+      # (일일 업데이트 워크플로의 배포 스텝과 동일 설정)
+      - name: GitHub Pages 배포
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./
+          publish_branch: gh-pages
+          exclude_assets: '.github,*.py,*.txt,*.md,*.bak,*.json.bak'
+          commit_message: "월간 리포트 배포 $(date +%Y-%m-%d)"
