@@ -252,12 +252,12 @@ body{font-family:'Pretendard','Pretendard Variable',-apple-system,sans-serif;col
 .kpi .v{font-size:20px;font-weight:800;letter-spacing:-.01em;font-family:'Pretendard','Pretendard Variable',sans-serif;font-variant-numeric:tabular-nums}
 .kpi .v small{font-size:11px;font-weight:600;color:#3A4759}
 .kpi .s{font-size:9px;color:#8A93A0;margin-top:4px}
-.sec{margin:13px 0 0}
-.sec-h{display:flex;align-items:baseline;gap:8px;margin-bottom:9px;border-bottom:2px solid #2B3A55;padding-bottom:5px}
+.sec{margin:9px 0 0}
+.sec-h{display:flex;align-items:baseline;gap:8px;margin-bottom:6px;border-bottom:2px solid #2B3A55;padding-bottom:4px}
 .sec-h .no{font-family:'Pretendard','Pretendard Variable',sans-serif;font-size:11px;font-weight:800;color:#E85A3C}
-.sec-h h2{font-size:14px;font-weight:800;letter-spacing:-.01em}
+.sec-h h2{font-size:13px;font-weight:800;letter-spacing:-.01em}
 .sec-h .sub{font-size:10px;color:#8A93A0;margin-left:auto;font-weight:500}
-.lead{font-size:11.5px;line-height:1.7;color:#39414E;background:#F7F8FA;border-left:3px solid #E85A3C;border-radius:8px;padding:10px 13px;margin-bottom:10px}
+.lead{font-size:10.8px;line-height:1.5;color:#39414E;background:#F7F8FA;border-left:3px solid #E85A3C;border-radius:8px;padding:8px 11px;margin-bottom:7px}
 .lead b{color:#C6452B;font-weight:700}
 .lead .up{color:#1F7A4D}.lead .dn{color:#C8413B}
 .cmp{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:10px 0}
@@ -267,10 +267,10 @@ body{font-family:'Pretendard','Pretendard Variable',-apple-system,sans-serif;col
 .cmp .box .big{font-size:16px;font-weight:800;font-family:'Pretendard','Pretendard Variable',sans-serif}
 .chip{font-family:'Pretendard','Pretendard Variable',sans-serif;font-size:10px;font-weight:700;padding:1px 7px;border-radius:6px}
 .chip.up{background:#E6F4EC;color:#1F7A4D}.chip.dn{background:#E7EAF0;color:#2B3A55}.chip.fl{background:#F1F3F6;color:#8A93A0}
-table{width:100%;border-collapse:collapse;font-size:10.5px;margin-top:6px}
-th{font-size:9px;letter-spacing:.04em;color:#8A93A0;text-transform:uppercase;text-align:right;padding:6px 7px;border-bottom:1.5px solid #2B3A55}
+table{width:100%;border-collapse:collapse;font-size:10px;margin-top:4px}
+th{font-size:8.7px;letter-spacing:.03em;color:#8A93A0;text-transform:uppercase;text-align:right;padding:4px 6px;border-bottom:1.5px solid #2B3A55}
 th:first-child{text-align:left}
-td{padding:6px 7px;text-align:right;font-family:'Pretendard','Pretendard Variable',sans-serif;font-variant-numeric:tabular-nums;border-bottom:1px solid #F1F3F6}
+td{padding:4px 6px;text-align:right;font-family:'Pretendard','Pretendard Variable',sans-serif;font-variant-numeric:tabular-nums;border-bottom:1px solid #F1F3F6}
 td:first-child{text-align:left;font-family:'Pretendard',sans-serif;font-weight:700}
 td .dot{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;vertical-align:middle}
 .up{color:#1F7A4D;font-weight:700}.dn{color:#C8413B;font-weight:700}
@@ -279,9 +279,9 @@ td .dot{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right
 .btrk{height:15px;background:#F1F3F6;border-radius:4px;overflow:hidden}
 .bfill{height:100%;background:#E85A3C;border-radius:4px}
 .bval{font-size:10px;font-family:'Pretendard','Pretendard Variable',sans-serif;font-weight:700;color:#16202C}
-.wx{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:4px}
-.wxcard{border:1px solid #E6E9EE;border-radius:10px;padding:12px 14px}
-.wxcard .t{font-size:10px;color:#8A93A0;font-weight:600;margin-bottom:7px}
+.wx{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:2px}
+.wxcard{border:1px solid #E6E9EE;border-radius:10px;padding:9px 12px}
+.wxcard .t{font-size:10px;color:#8A93A0;font-weight:600;margin-bottom:4px}
 .mwrap{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
 .mcard{border:1px solid #E6E9EE;border-radius:11px;padding:10px 11px}
 .mcard .mt{font-size:11.5px;font-weight:800;margin-bottom:2px}
@@ -306,7 +306,7 @@ td .dot{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right
 .kf li::before{content:counter(kf);position:absolute;left:9px;top:9px;width:19px;height:19px;border-radius:50%;background:#2B3A55;color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;font-family:'Pretendard','Pretendard Variable',sans-serif}
 .foot{margin-top:18px;padding-top:9px;border-top:1px solid #E6E9EE;font-size:9px;color:#8A93A0;line-height:1.6}
 .foot b{color:#3A4759}
-.note{font-size:9.5px;color:#8A93A0;margin-top:5px}
+.note{font-size:9px;color:#8A93A0;margin-top:3px}
 </style>
 """
 

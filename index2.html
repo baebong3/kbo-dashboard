@@ -28,7 +28,6 @@ html{-webkit-text-size-adjust:100%}
 body{font-family:var(--sans);background:var(--bg);color:var(--ink);font-size:13px;line-height:1.5;min-height:100vh}
 
 .hd{position:sticky;top:0;z-index:50;background:rgba(245,246,248,.88);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
-#staleBadge{font-size:11px;font-weight:800;color:#fff;background:#D33;border-radius:999px;padding:3px 10px;margin-left:8px;vertical-align:3px}
 .hd-in{max-width:1260px;margin:0 auto;padding:13px 22px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
 .brand{display:flex;align-items:baseline;gap:9px}
 .brand h1{font-size:18px;font-weight:800;letter-spacing:-.02em}
@@ -230,7 +229,7 @@ select:hover,select:focus{border-color:var(--coral)}
 <header class="hd">
   <div class="hd-in">
     <div class="brand">
-      <h1><span class="mk"></span>KBO 관중 분석 콘솔</h1><span id="staleBadge" style="display:none"></span>
+      <h1><span class="mk"></span>KBO 관중 분석 콘솔</h1>
     </div>
     <div id="modeToggle"><button class="on" data-m="reg">정규시즌</button><button data-m="ps">포스트시즌</button></div>
     <div class="hd-meta">
@@ -1138,18 +1137,8 @@ $('resetBtn').addEventListener('click',()=>{['fH','fA','fS','fM','fW'].forEach(i
   selYears=YEARS.slice(-2);buildYearToggle();refresh();});
 
 /* ════════ 시작 ════════ */
-window.addEventListener('load',async()=>{const ok=await loadData();if(ok){refresh();renderTodayReport();renderWeekReport();buildMonthTabs();checkFreshness();}});
-/* 시즌 중 데이터가 이틀 이상 오래되면 지연 배지 (수집 실패가 정상처럼 보이는 것 방지) */
-function checkFreshness(){
-  const b=$('staleBadge'); if(!b||!ALL.length) return;
-  const last=ALL.reduce((m2,g)=>g.date&&g.date>m2?g.date:m2,'');
-  if(!last) return;
-  const now=new Date(Date.now()+9*3600*1000);           /* KST */
-  const mo=now.getUTCMonth()+1;
-  if(mo<3||mo>11) return;                                /* 비시즌 제외 */
-  const diff=(Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate())-new Date(last+'T00:00:00Z').getTime())/86400000;
-  if(diff>=2){b.style.display='inline-block';b.textContent=`⚠ 데이터 지연 — 최근 경기 ${last.slice(5).replace('-','/')}`;}
-}
+window.addEventListener('load',async()=>{const ok=await loadData();if(ok){refresh();renderTodayReport();renderWeekReport();buildMonthTabs();}});
+
 
 /* ════════ 정규/포스트시즌 모드 토글 ════════ */
 document.getElementById('modeToggle').addEventListener('click',function(e){
