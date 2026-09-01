@@ -310,6 +310,48 @@ td .dot{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right
 </style>
 """
 
+REASON_ORDER=['우천취소','폭염취소','미세먼지취소','그라운드사정','기타']
+def cancel_section(y,m,sec_no='03'):
+    """월간 취소 경기: 홈팀 × 사유별 건수 표. 데이터 없으면 안내 한 줄."""
+    try:
+        import json as _j
+        cd=_j.load(open('cancellations.json',encoding='utf-8'))
+        items=cd.get('items',[])
+        upd=cd.get('_meta',{}).get('updated','')
+    except Exception:
+        items=[];upd=''
+    ym=f'{y}-{m:02d}'
+    cs=[c for c in items if str(c.get('date','')).startswith(ym)]
+    head=(f'<div class="sec"><div class="sec-h"><span class="no">{sec_no}</span><h2>취소 경기 (원인 · 팀별)</h2>'
+          '<span class="sub">홈팀 기준 · KBO 비고란 자동 수집</span></div>')
+    if not cs:
+        return head+'<div class="lead">이 달에는 집계된 취소 경기가 없습니다.</div></div>'
+    reasons=[r for r in REASON_ORDER if any((c.get('reason') or '기타')==r for c in cs)]
+    others=sorted(set((c.get('reason') or '기타') for c in cs)-set(reasons))
+    reasons+=others
+    per={}
+    for c in cs:
+        t=c.get('home','?'); r=c.get('reason') or '기타'
+        per.setdefault(t,{}).setdefault(r,0)
+        per[t][r]+=1
+    order=sorted(per.keys(),key=lambda t:-sum(per[t].values()))
+    th=''.join(f'<th>{r.replace("취소","")}</th>' for r in reasons)
+    rows=[]
+    for t in order:
+        tds=''.join(f'<td>{per[t].get(r,"") or "·"}</td>' for r in reasons)
+        rows.append(f'<tr><td><span class="dot" style="background:{TCOL.get(t,"#888")}"></span>{t}({STAD.get(t,"")})</td>'
+                    f'{tds}<td><b>{sum(per[t].values())}</b></td></tr>')
+    tot_r=''.join(f'<td><b>{sum(1 for c in cs if (c.get("reason") or "기타")==r)}</b></td>' for r in reasons)
+    played_note=f' · 집계 기준일 {upd}' if upd else ''
+    top_reason=max(reasons,key=lambda r:sum(1 for c in cs if (c.get("reason") or "기타")==r))
+    lead=(f'<div class="lead">이 달 취소는 총 <b>{len(cs)}경기</b>, 최다 사유는 '
+          f'<b>{top_reason}({sum(1 for c in cs if (c.get("reason") or "기타")==top_reason)}건)</b>입니다.'
+          f'{played_note}</div>')
+    tbl=('<table><thead><tr><th>홈팀(구장)</th>'+th+'<th>합계</th></tr></thead>'
+         '<tbody>'+''.join(rows)+f'<tr style="border-top:2px solid #D8DDE4"><td><b>전체</b></td>{tot_r}'
+         f'<td><b>{len(cs)}</b></td></tr></tbody></table>')
+    return head+lead+tbl+'</div>'
+
 def build_html(y,m,cur,prevM,prevY,tcur,tprev,rank_cur,rankrows,r,season,
                opp_rows,opp_beta,
                temp_cur,temp_prev,rain_gs,clear_gs):
@@ -609,7 +651,7 @@ def build_html(y,m,cur,prevM,prevY,tcur,tprev,rank_cur,rankrows,r,season,
     kf=kf[:6]
     summary_body=('<ol class="kf">'+''.join(f'<li>{x}</li>' for x in kf)+'</ol>') if kf else \
                  '<div class="lead">전월 비교 데이터가 부족해 종합 분석을 생략합니다.</div>'
-    sec_sum=('<div class="sec"><div class="sec-h"><span class="no">07</span><h2>종합 분석 (주요 결과)</h2>'
+    sec_sum=('<div class="sec"><div class="sec-h"><span class="no">08</span><h2>종합 분석 (주요 결과)</h2>'
              '<span class="sub">관중 증감의 원인 — 상대팀·순위·날씨 종합</span></div>'+summary_body+'</div>')
 
     foot=('<div class="foot"><b>출처</b> 관중·결과 = KBO 공식 기록 / visualbaseball 기반 산출 · '
@@ -620,7 +662,7 @@ def build_html(y,m,cur,prevM,prevY,tcur,tprev,rank_cur,rankrows,r,season,
     return (head
             +'<div class="page">'+cover+kpis+lead+sec1+sec2+'</div>'
             +'<div class="page">'+sec_month+sec_opp+'</div>'
-            +'<div class="page">'+sec3+sec4+'</div>'
+            +'<div class="page">'+sec3+sec4+cancel_section(y,m,'07')+'</div>'
             +'<div class="page">'+sec_sum+foot+'</div>'
             +'</body></html>')
 
