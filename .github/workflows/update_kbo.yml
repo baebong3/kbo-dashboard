@@ -75,6 +75,21 @@ jobs:
         run: python fetch_weather.py
         continue-on-error: true
 
+      # 5.5 취소 경기 수집 — KBO 일정 비고란 스크래핑(현재 달, 월초엔 전달 포함)
+      #     검증용 화면 캡처를 _cancels_capture/ 에 남기고 아래 스텝이 아티팩트로 보관
+      - name: 취소 경기 수집
+        run: python fetch_cancels.py
+        continue-on-error: true
+
+      - name: 취소 검증 캡처 보관 (Actions 아티팩트 · 7일)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cancels-capture
+          path: _cancels_capture/
+          if-no-files-found: ignore
+          retention-days: 7
+
       # 6. 배포 날짜 계산 (KST)
       - name: 배포 날짜 계산(KST)
         run: echo "DEPLOY_DATE=$(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M KST')" >> "$GITHUB_ENV"
@@ -84,7 +99,7 @@ jobs:
         run: |
           git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add kbo_games.json || true
+          git add kbo_games.json cancellations.json || true
           git diff --staged --quiet || git commit -m "KBO 데이터 자동 업데이트 ${DEPLOY_DATE}"
           git push || true
 
