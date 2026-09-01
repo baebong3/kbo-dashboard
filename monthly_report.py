@@ -310,48 +310,6 @@ td .dot{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right
 </style>
 """
 
-REASON_ORDER=['우천취소','폭염취소','미세먼지취소','그라운드사정','기타']
-def cancel_section(y,m,sec_no='03'):
-    """월간 취소 경기: 홈팀 × 사유별 건수 표. 데이터 없으면 안내 한 줄."""
-    try:
-        import json as _j
-        cd=_j.load(open('cancellations.json',encoding='utf-8'))
-        items=cd.get('items',[])
-        upd=cd.get('_meta',{}).get('updated','')
-    except Exception:
-        items=[];upd=''
-    ym=f'{y}-{m:02d}'
-    cs=[c for c in items if str(c.get('date','')).startswith(ym)]
-    head=(f'<div class="sec"><div class="sec-h"><span class="no">{sec_no}</span><h2>취소 경기 (원인 · 팀별)</h2>'
-          '<span class="sub">홈팀 기준 · KBO 비고란 자동 수집</span></div>')
-    if not cs:
-        return head+'<div class="lead">이 달에는 집계된 취소 경기가 없습니다.</div></div>'
-    reasons=[r for r in REASON_ORDER if any((c.get('reason') or '기타')==r for c in cs)]
-    others=sorted(set((c.get('reason') or '기타') for c in cs)-set(reasons))
-    reasons+=others
-    per={}
-    for c in cs:
-        t=c.get('home','?'); r=c.get('reason') or '기타'
-        per.setdefault(t,{}).setdefault(r,0)
-        per[t][r]+=1
-    order=sorted(per.keys(),key=lambda t:-sum(per[t].values()))
-    th=''.join(f'<th>{r.replace("취소","")}</th>' for r in reasons)
-    rows=[]
-    for t in order:
-        tds=''.join(f'<td>{per[t].get(r,"") or "·"}</td>' for r in reasons)
-        rows.append(f'<tr><td><span class="dot" style="background:{TCOL.get(t,"#888")}"></span>{t}({STAD.get(t,"")})</td>'
-                    f'{tds}<td><b>{sum(per[t].values())}</b></td></tr>')
-    tot_r=''.join(f'<td><b>{sum(1 for c in cs if (c.get("reason") or "기타")==r)}</b></td>' for r in reasons)
-    played_note=f' · 집계 기준일 {upd}' if upd else ''
-    top_reason=max(reasons,key=lambda r:sum(1 for c in cs if (c.get("reason") or "기타")==r))
-    lead=(f'<div class="lead">이 달 취소는 총 <b>{len(cs)}경기</b>, 최다 사유는 '
-          f'<b>{top_reason}({sum(1 for c in cs if (c.get("reason") or "기타")==top_reason)}건)</b>입니다.'
-          f'{played_note}</div>')
-    tbl=('<table><thead><tr><th>홈팀(구장)</th>'+th+'<th>합계</th></tr></thead>'
-         '<tbody>'+''.join(rows)+f'<tr style="border-top:2px solid #D8DDE4"><td><b>전체</b></td>{tot_r}'
-         f'<td><b>{len(cs)}</b></td></tr></tbody></table>')
-    return head+lead+tbl+'</div>'
-
 def build_html(y,m,cur,prevM,prevY,tcur,tprev,rank_cur,rankrows,r,season,
                opp_rows,opp_beta,
                temp_cur,temp_prev,rain_gs,clear_gs):
@@ -434,7 +392,7 @@ def build_html(y,m,cur,prevM,prevY,tcur,tprev,rank_cur,rankrows,r,season,
             '</div>')
     else:
         mh='<div class="lead">월별 추이를 그릴 데이터가 부족합니다.</div>'
-    sec_month=('<div class="sec"><div class="sec-h"><span class="no">04</span><h2>월별 추이 (관중 · 점유율)</h2>'
+    sec_month=('<div class="sec"><div class="sec-h"><span class="no">03</span><h2>월별 추이 (관중 · 점유율)</h2>'
                f'<span class="sub">{y}시즌 누적 · 홈경기 기준</span></div>'+mh+'</div>')
 
     # ── 상대팀 분석 (홈팀별: 전월 vs 이번달 상대 + 증감률) ──
@@ -464,7 +422,7 @@ def build_html(y,m,cur,prevM,prevY,tcur,tprev,rank_cur,rankrows,r,season,
                   '×n = 그 달 n경기 · 전월대비 = 해당 홈팀 평균 관중 증감률.</div>')
     else:
         opp_body='<div class="lead">이번달 홈경기 데이터가 부족합니다.</div>'
-    sec_opp=('<div class="sec"><div class="sec-h"><span class="no">05</span><h2>상대팀 분석 (홈경기 상대 구성)</h2>'
+    sec_opp=('<div class="sec"><div class="sec-h"><span class="no">04</span><h2>상대팀 분석 (홈경기 상대 구성)</h2>'
              '<span class="sub">전월 vs 이번달 맞이한 상대팀 · 홈 관중 증감</span></div>'
              '<div class="lead">홈 관중은 방문팀에 따라 달라집니다. 관중 동원력이 큰 팀(초록)과의 경기가 줄고 작은 팀(빨강)과의 경기가 늘면 관중이 감소하는 흐름을 읽을 수 있습니다.</div>'
              +opp_body+'</div>')
@@ -505,14 +463,14 @@ def build_html(y,m,cur,prevM,prevY,tcur,tprev,rank_cur,rankrows,r,season,
                    '<b>양의 상관 = 순위가 오를수록 관중 증가</b> · 정렬 = 이번달 평균관중 내림차순.</div>')
     else:
         rank_html='<div class="lead">전월 비교가 가능한 구단·순위 데이터가 부족해 순위-관중 분석을 생략했습니다.</div>'
-    sec3=('<div class="sec"><div class="sec-h"><span class="no">06</span><h2>순위가 관중에 미친 영향</h2>'
+    sec3=('<div class="sec"><div class="sec-h"><span class="no">05</span><h2>순위가 관중에 미친 영향</h2>'
           '<span class="sub">경기일 기준 평균 순위 · 전월 대비</span></div>'+rank_html+'</div>')
 
     # ── 날씨 영향 ──
     rn=len(rain_gs); cn=len(clear_gs)
     has_wx=(temp_cur is not None) or (rn+cn>0)
     if not has_wx:
-        sec4=('<div class="sec"><div class="sec-h"><span class="no">07</span><h2>날씨 영향 (기온 · 강수)</h2>'
+        sec4=('<div class="sec"><div class="sec-h"><span class="no">06</span><h2>날씨 영향 (기온 · 강수)</h2>'
               '<span class="sub">경기 시간대(14~21시) 기준</span></div>'
               '<div class="lead">이 달의 날씨 데이터가 아직 수집되지 않았습니다. '
               '<b>fetch_weather.py</b> 를 실행해 기온·강수를 채운 뒤 리포트를 다시 생성하면 표시됩니다.</div></div>')
@@ -544,7 +502,7 @@ def build_html(y,m,cur,prevM,prevY,tcur,tprev,rank_cur,rankrows,r,season,
             temp_delta='<span class="note">기온 데이터 없음</span>'
         else:
             temp_delta='<span class="note">전월 비교 없음</span>'
-        sec4=('<div class="sec"><div class="sec-h"><span class="no">07</span><h2>날씨 영향 (기온 · 강수)</h2>'
+        sec4=('<div class="sec"><div class="sec-h"><span class="no">06</span><h2>날씨 영향 (기온 · 강수)</h2>'
               '<span class="sub">경기 시간대(14~21시) 기준</span></div>'
               f'<div class="lead">{tline}{wline}</div>'
               '<div class="wx">'
@@ -651,7 +609,7 @@ def build_html(y,m,cur,prevM,prevY,tcur,tprev,rank_cur,rankrows,r,season,
     kf=kf[:6]
     summary_body=('<ol class="kf">'+''.join(f'<li>{x}</li>' for x in kf)+'</ol>') if kf else \
                  '<div class="lead">전월 비교 데이터가 부족해 종합 분석을 생략합니다.</div>'
-    sec_sum=('<div class="sec"><div class="sec-h"><span class="no">08</span><h2>종합 분석 (주요 결과)</h2>'
+    sec_sum=('<div class="sec"><div class="sec-h"><span class="no">07</span><h2>종합 분석 (주요 결과)</h2>'
              '<span class="sub">관중 증감의 원인 — 상대팀·순위·날씨 종합</span></div>'+summary_body+'</div>')
 
     foot=('<div class="foot"><b>출처</b> 관중·결과 = KBO 공식 기록 / visualbaseball 기반 산출 · '
@@ -661,13 +619,8 @@ def build_html(y,m,cur,prevM,prevY,tcur,tprev,rank_cur,rankrows,r,season,
 
     return (head
             +'<div class="page">'+cover+kpis+lead+sec1+sec2+'</div>'
-<<<<<<< HEAD
             +'<div class="page">'+sec_month+sec_opp+'</div>'
-            +'<div class="page">'+sec3+sec4+cancel_section(y,m,'07')+'</div>'
-=======
-            +'<div class="page">'+cancel_section(y,m)+sec_month+sec_opp+'</div>'
             +'<div class="page">'+sec3+sec4+'</div>'
->>>>>>> df5bb6571c95d529e5840a9548b8299f89e47dc4
             +'<div class="page">'+sec_sum+foot+'</div>'
             +'</body></html>')
 
