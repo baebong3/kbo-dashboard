@@ -434,7 +434,7 @@ def build_html(y,m,cur,prevM,prevY,tcur,tprev,rank_cur,rankrows,r,season,
             '</div>')
     else:
         mh='<div class="lead">월별 추이를 그릴 데이터가 부족합니다.</div>'
-    sec_month=('<div class="sec"><div class="sec-h"><span class="no">03</span><h2>월별 추이 (관중 · 점유율)</h2>'
+    sec_month=('<div class="sec"><div class="sec-h"><span class="no">04</span><h2>월별 추이 (관중 · 점유율)</h2>'
                f'<span class="sub">{y}시즌 누적 · 홈경기 기준</span></div>'+mh+'</div>')
 
     # ── 상대팀 분석 (홈팀별: 전월 vs 이번달 상대 + 증감률) ──
@@ -464,7 +464,7 @@ def build_html(y,m,cur,prevM,prevY,tcur,tprev,rank_cur,rankrows,r,season,
                   '×n = 그 달 n경기 · 전월대비 = 해당 홈팀 평균 관중 증감률.</div>')
     else:
         opp_body='<div class="lead">이번달 홈경기 데이터가 부족합니다.</div>'
-    sec_opp=('<div class="sec"><div class="sec-h"><span class="no">04</span><h2>상대팀 분석 (홈경기 상대 구성)</h2>'
+    sec_opp=('<div class="sec"><div class="sec-h"><span class="no">05</span><h2>상대팀 분석 (홈경기 상대 구성)</h2>'
              '<span class="sub">전월 vs 이번달 맞이한 상대팀 · 홈 관중 증감</span></div>'
              '<div class="lead">홈 관중은 방문팀에 따라 달라집니다. 관중 동원력이 큰 팀(초록)과의 경기가 줄고 작은 팀(빨강)과의 경기가 늘면 관중이 감소하는 흐름을 읽을 수 있습니다.</div>'
              +opp_body+'</div>')
@@ -505,14 +505,14 @@ def build_html(y,m,cur,prevM,prevY,tcur,tprev,rank_cur,rankrows,r,season,
                    '<b>양의 상관 = 순위가 오를수록 관중 증가</b> · 정렬 = 이번달 평균관중 내림차순.</div>')
     else:
         rank_html='<div class="lead">전월 비교가 가능한 구단·순위 데이터가 부족해 순위-관중 분석을 생략했습니다.</div>'
-    sec3=('<div class="sec"><div class="sec-h"><span class="no">05</span><h2>순위가 관중에 미친 영향</h2>'
+    sec3=('<div class="sec"><div class="sec-h"><span class="no">06</span><h2>순위가 관중에 미친 영향</h2>'
           '<span class="sub">경기일 기준 평균 순위 · 전월 대비</span></div>'+rank_html+'</div>')
 
     # ── 날씨 영향 ──
     rn=len(rain_gs); cn=len(clear_gs)
     has_wx=(temp_cur is not None) or (rn+cn>0)
     if not has_wx:
-        sec4=('<div class="sec"><div class="sec-h"><span class="no">06</span><h2>날씨 영향 (기온 · 강수)</h2>'
+        sec4=('<div class="sec"><div class="sec-h"><span class="no">07</span><h2>날씨 영향 (기온 · 강수)</h2>'
               '<span class="sub">경기 시간대(14~21시) 기준</span></div>'
               '<div class="lead">이 달의 날씨 데이터가 아직 수집되지 않았습니다. '
               '<b>fetch_weather.py</b> 를 실행해 기온·강수를 채운 뒤 리포트를 다시 생성하면 표시됩니다.</div></div>')
@@ -544,7 +544,7 @@ def build_html(y,m,cur,prevM,prevY,tcur,tprev,rank_cur,rankrows,r,season,
             temp_delta='<span class="note">기온 데이터 없음</span>'
         else:
             temp_delta='<span class="note">전월 비교 없음</span>'
-        sec4=('<div class="sec"><div class="sec-h"><span class="no">06</span><h2>날씨 영향 (기온 · 강수)</h2>'
+        sec4=('<div class="sec"><div class="sec-h"><span class="no">07</span><h2>날씨 영향 (기온 · 강수)</h2>'
               '<span class="sub">경기 시간대(14~21시) 기준</span></div>'
               f'<div class="lead">{tline}{wline}</div>'
               '<div class="wx">'
@@ -661,8 +661,13 @@ def build_html(y,m,cur,prevM,prevY,tcur,tprev,rank_cur,rankrows,r,season,
 
     return (head
             +'<div class="page">'+cover+kpis+lead+sec1+sec2+'</div>'
+<<<<<<< HEAD
             +'<div class="page">'+sec_month+sec_opp+'</div>'
             +'<div class="page">'+sec3+sec4+cancel_section(y,m,'07')+'</div>'
+=======
+            +'<div class="page">'+cancel_section(y,m)+sec_month+sec_opp+'</div>'
+            +'<div class="page">'+sec3+sec4+'</div>'
+>>>>>>> df5bb6571c95d529e5840a9548b8299f89e47dc4
             +'<div class="page">'+sec_sum+foot+'</div>'
             +'</body></html>')
 
