@@ -4,7 +4,7 @@
     "source": "KBO 공식 「경기일정・결과」 [비고] 칸 — fetch_cancels.py 자동 수집",
     "format": "away = 원정, home = 홈 (KBO 일정 표기 \"원정 vs 홈\"과 동일)",
     "coverage": "2026-04-09 ~ 2026-08-30",
-    "updated": "2026-09-01",
+    "updated": "2026-09-02",
     "usage": "index2.html이 로딩 시 fetch — 주간·월간 요약 리포트에서만 언급",
     "weather": "Open-Meteo 과거 기상(경기 시간대 14~21시) — fetch_cancel_weather.py"
   },
