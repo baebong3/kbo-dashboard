@@ -1,7 +1,7 @@
 """
 KBO 월간 관중 분석 리포트 생성기
 - kbo_games.json 에서 '지난달'(매월 1일 실행 시 직전 달)을 뽑아 다각도 분석
-- house-style HTML 생성 → Playwright 로 PDF 인쇄(차트는 전부 인라인 SVG/CSS, JS 의존 없음)
+- KBO 대시보드(서던 하우스) 스타일 HTML 생성 → Playwright 로 PDF 인쇄(차트는 전부 인라인 SVG/CSS, JS 의존 없음)
 - (선택) 생성한 PDF 를 메일로 첨부 발송
 
 실행:
@@ -115,57 +115,39 @@ def pearson(xs,ys):
     if dx==0 or dy==0: return None
     return num/(dx*dy)
 
-# ── SVG: 산점도(순위변화 × 관중변화) ────────────────────
-def svg_month_lines(months, order, att):
-    """월별 구단 평균관중 라인. 세로축 0 미시작(최소값 근처)으로 선 분산 + 오른쪽 끝 팀명."""
-    W,H=372,206; pl,pr,pt,pb=42,54,10,22; iw,ih=W-pl-pr,H-pt-pb
-    vals=[att[t][mo] for t in order for mo in months if att.get(t,{}).get(mo) is not None]
-    if not vals: return '<div class="note">데이터 없음</div>'
-    vmin,vmax=min(vals),max(vals); span=(vmax-vmin) or vmax or 1000
-    ymin=math.floor(max(0,vmin-span*0.10)/500)*500
-    ymax=math.ceil((vmax+span*0.10)/500)*500
-    if ymax<=ymin: ymax=ymin+1000
-    n=len(months)
-    def X(i): return pl+(i/(n-1) if n>1 else 0.5)*iw
-    def Y(v): return pt+(1-(v-ymin)/(ymax-ymin))*ih
+# ── SVG: 리그 월별 평균 관중 막대 ──────────────────────
+def svg_league_bars(months, cur, prev, y):
+    """리그 월별 경기당 평균 관중: 올해(네이비) vs 전년(연회색) 막대 + 올해 값 라벨 + 하단 전년비."""
+    ms=[mo for mo in months if cur.get(mo) is not None]
+    if not ms: return '<div class="note">데이터 없음</div>'
+    W,H=372,262; pl,pr,pt,pb=8,8,18,40; iw,ih=W-pl-pr,H-pt-pb
+    vmax=max([cur[mo] for mo in ms]+[prev.get(mo) or 0 for mo in ms])
+    ymax=math.ceil(vmax*1.08/2000)*2000
+    gw=iw/len(ms); bw=min(15,gw*0.3); gap=4
+    def Y(v): return pt+ih-(v/ymax)*ih
     s=[f'<svg viewBox="0 0 {W} {H}" xmlns="http://www.w3.org/2000/svg" font-family="Pretendard,sans-serif">']
-    for k in range(5):
-        v=ymin+(ymax-ymin)*k/4; yy=Y(v)
-        s.append(f'<line x1="{pl}" y1="{yy:.1f}" x2="{pl+iw}" y2="{yy:.1f}" stroke="#F1F3F6"/>')
-        s.append(f'<text x="{pl-4}" y="{yy+3:.1f}" text-anchor="end" font-size="8" fill="{MUTED}">{v/1000:.1f}천</text>')
-    for i,mo in enumerate(months):
-        s.append(f'<text x="{X(i):.1f}" y="{pt+ih+15}" text-anchor="middle" font-size="9" font-weight="700" fill="{MUTED}">{mo}월</text>')
-    ends=[]
-    for t in order:
-        pts=[(X(i),Y(att[t][mo])) for i,mo in enumerate(months) if att.get(t,{}).get(mo) is not None]
-        if not pts: continue
-        c=TCOL.get(t,'#888')
-        s.append(f'<polyline points="{" ".join(f"{x:.1f},{y:.1f}" for x,y in pts)}" fill="none" stroke="{c}" stroke-width="1.8"/>')
-        for x,y in pts: s.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="2.1" fill="{c}"/>')
-        ends.append({'t':t,'oy':pts[-1][1],'y':pts[-1][1],'c':c})
-    ends.sort(key=lambda e:e['y']); gap=9.0
-    blocks=[]
-    for it in ends:
-        nb={'sum':it['y'],'n':1,'items':[it]}
-        while blocks:
-            last=blocks[-1]; lastC=last['sum']/last['n']; nbC=nb['sum']/nb['n']
-            if (nbC-(nb['n']-1)*gap/2)-(lastC+(last['n']-1)*gap/2)<gap:
-                blocks.pop(); nb={'sum':last['sum']+nb['sum'],'n':last['n']+nb['n'],'items':last['items']+nb['items']}
-            else: break
-        blocks.append(nb)
-    for b in blocks:
-        c=b['sum']/b['n']; start=c-(b['n']-1)*gap/2
-        for j,it in enumerate(b['items']): it['y']=start+j*gap
-    ys=[e['y'] for e in ends]
-    if ys and max(ys)>pt+ih:
-        over=max(ys)-(pt+ih)
-        for e in ends: e['y']-=over
-    if ys and min(e['y'] for e in ends)<pt:
-        sh=pt-min(e['y'] for e in ends)
-        for e in ends: e['y']+=sh
-    for e in ends:
-        s.append(f'<text x="{pl+iw+4:.1f}" y="{e["y"]+3:.1f}" font-size="8.5" font-weight="800" fill="{e["c"]}">{e["t"]}</text>')
-    s.append('</svg>'); return ''.join(s)
+    for k in range(1,4):
+        yy=Y(ymax*k/4)
+        s.append(f'<line x1="{pl}" y1="{yy:.1f}" x2="{pl+iw}" y2="{yy:.1f}" stroke="#EEF1F5"/>')
+    s.append(f'<line x1="{pl}" y1="{pt+ih}" x2="{pl+iw}" y2="{pt+ih}" stroke="{INK}" stroke-width="1.6"/>')
+    for i,mo in enumerate(ms):
+        cx=pl+gw*(i+0.5)
+        pv=prev.get(mo); cv=cur[mo]
+        if pv:
+            s.append(f'<rect x="{cx-gap/2-bw:.1f}" y="{Y(pv):.1f}" width="{bw:.1f}" height="{pt+ih-Y(pv):.1f}" rx="1.5" fill="#D3D9E1"/>')
+            s.append(f'<text x="{cx-gap/2-bw/2:.1f}" y="{Y(pv)-4:.1f}" text-anchor="middle" font-size="6.8" font-weight="700" fill="{MUTED}">{pv/1000:.1f}</text>')
+        hi=(mo==ms[-1]); bc=CORAL if hi else '#5B6676'
+        s.append(f'<rect x="{cx+gap/2:.1f}" y="{Y(cv):.1f}" width="{bw:.1f}" height="{pt+ih-Y(cv):.1f}" rx="1.5" fill="{bc}"/>')
+        s.append(f'<text x="{cx+gap/2+bw/2:.1f}" y="{Y(cv)-4:.1f}" text-anchor="middle" font-size="{8.4 if hi else 7.6}" font-weight="800" fill="{CORAL if hi else INK}">{cv/1000:.1f}</text>')
+        s.append(f'<text x="{cx:.1f}" y="{pt+ih+13}" text-anchor="middle" font-size="9" font-weight="{800 if hi else 700}" fill="{CORAL if hi else "#3A4759"}">{mo}월</text>')
+        if pv:
+            d=(cv-pv)/pv*100
+            col=CORAL if d>=0.5 else NAVY if d<=-0.5 else MUTED
+            s.append(f'<text x="{cx:.1f}" y="{pt+ih+27}" text-anchor="middle" font-size="8" font-weight="800" fill="{col}">{d:+.0f}%</text>')
+    s.append(f'<text x="{pl}" y="{pt-6}" font-size="8" fill="{MUTED}">단위: 천 명</text>')
+    s.append('</svg>')
+    return ''.join(s)
+
 
 def html_month_heat(months, order, occ):
     """월별 구단 점유율 히트맵(CSS 표) + 시즌 평균 열(코랄 톤, 명암은 월별과 동일)."""
@@ -175,9 +157,9 @@ def html_month_heat(months, order, occ):
     def cell(v,avg=False):
         if v is None: return '<td class="hm-e">·</td>'
         r=(v-mn)/(mx-mn) if mx>mn else 0.6
-        rgb='232,90,60' if avg else '43,58,85'
+        rgb='22,32,44' if avg else '43,58,85'
         return f'<td style="background:rgba({rgb},{0.12+r*0.82:.2f});color:{"#fff" if r>0.55 else "#1F2733"}">{v*100:.0f}</td>'
-    head='<tr><th>구단</th>'+''.join(f'<th>{mo}월</th>' for mo in months)+'<th>평균</th></tr>'
+    head='<tr><th>구단</th>'+''.join(f'<th{" class=cur" if mo==months[-1] else ""}>{mo}월</th>' for mo in months)+'<th>평균</th></tr>'
     rows=[]
     for t in order:
         vs=[occ[t][mo] for mo in months if occ.get(t,{}).get(mo) is not None]
@@ -219,7 +201,7 @@ def bar_row(label, val, vmax, sub, delta=None):
     dchip=''
     if delta is not None:
         cls='up' if delta>0.5 else 'dn' if delta<-0.5 else 'fl'
-        arr='▲' if delta>0.5 else '▼' if delta<-0.5 else '—'
+        arr='▲' if delta>0.5 else '▼' if delta<-0.5 else '-'
         dchip=f'<span class="chip {cls}">{arr} {abs(delta):.0f}%</span>'
     return (f'<div class="brow"><div class="blab">{label}</div>'
             f'<div class="btrk"><div class="bfill" style="width:{w:.1f}%"></div></div>'
@@ -228,443 +210,431 @@ def bar_row(label, val, vmax, sub, delta=None):
 # ── HTML 빌드 ───────────────────────────────────────────
 CSS = """
 <style>
-@page{size:A4;margin:14mm 13mm}
+@page{size:A4;margin:12mm 13mm 12mm}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Pretendard','Pretendard Variable',-apple-system,sans-serif;color:#16202C;font-size:11px;line-height:1.55;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-.mono{font-family:'Pretendard','Pretendard Variable',sans-serif;font-feature-settings:'tnum' 1}
-.page{padding:0 0 6mm}
+:root{--ink:#16202C;--navy:#2B3A55;--coral:#E85A3C;--sub:#3A4759;--mut:#7A8595;--gray:#C9D0DA;--line:#E6E9EE;--soft:#F6F7F9}
+body{font-family:'Pretendard','Pretendard Variable',-apple-system,sans-serif;color:var(--ink);font-size:10.5px;line-height:1.5;font-variant-numeric:tabular-nums;-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#fff}
 .page+.page{page-break-before:always}
-/* 인쇄 단락 구분: 섹션/표/카드가 페이지 경계에서 쪼개지지 않게 */
-.sec{page-break-inside:avoid;break-inside:avoid}
-.sec-h{page-break-after:avoid;break-after:avoid}
-.cover,.kpis,.kpi,.cmp,.cmp .box,.wxcard,.lead,.wx,table,tr,.brow,.foot{page-break-inside:avoid;break-inside:avoid}
-.cover{background:linear-gradient(135deg,#2B3A55,#1E2A40);color:#fff;border-radius:14px;padding:30px 32px;margin-bottom:18px}
-.cover .eyebrow{font-size:11px;letter-spacing:.18em;color:#9DB0C8;font-weight:700;font-family:'Pretendard','Pretendard Variable',sans-serif}
-.cover h1{font-size:27px;font-weight:800;letter-spacing:-.02em;margin:8px 0 4px}
-.cover .period{font-size:13px;color:#C7D2E2;font-weight:600}
-.pbadge{display:inline-block;vertical-align:middle;margin-left:9px;font-size:12px;font-weight:800;color:#fff;background:#E85A3C;padding:2px 10px;border-radius:20px;letter-spacing:.02em}
-.cover .rule{width:46px;height:3px;background:#E85A3C;border-radius:2px;margin:16px 0 0}
-.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin:14px 0}
-.kpi{border:1px solid #E6E9EE;border-radius:11px;padding:11px 13px;position:relative;overflow:hidden}
-.kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:#E85A3C}
-.kpi.n2::before{background:#2B3A55}.kpi.n3::before{background:#C6452B}.kpi.n4::before{background:#6B7A8F}
-.kpi .l{font-size:9.5px;color:#8A93A0;font-weight:600;margin-bottom:5px}
-.kpi .v{font-size:20px;font-weight:800;letter-spacing:-.01em;font-family:'Pretendard','Pretendard Variable',sans-serif;font-variant-numeric:tabular-nums}
-.kpi .v small{font-size:11px;font-weight:600;color:#3A4759}
-.kpi .s{font-size:9px;color:#8A93A0;margin-top:4px}
-.sec{margin:9px 0 0}
-.sec-h{display:flex;align-items:baseline;gap:8px;margin-bottom:6px;border-bottom:2px solid #2B3A55;padding-bottom:4px}
-.sec-h .no{font-family:'Pretendard','Pretendard Variable',sans-serif;font-size:11px;font-weight:800;color:#E85A3C}
-.sec-h h2{font-size:13px;font-weight:800;letter-spacing:-.01em}
-.sec-h .sub{font-size:10px;color:#8A93A0;margin-left:auto;font-weight:500}
-.lead{font-size:10.8px;line-height:1.5;color:#39414E;background:#F7F8FA;border-left:3px solid #E85A3C;border-radius:8px;padding:8px 11px;margin-bottom:7px}
-.lead b{color:#C6452B;font-weight:700}
-.lead .up{color:#1F7A4D}.lead .dn{color:#C8413B}
-.cmp{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:10px 0}
-.cmp .box{border:1px solid #E6E9EE;border-radius:10px;padding:10px 13px}
-.cmp .box .t{font-size:10px;color:#8A93A0;font-weight:600;margin-bottom:4px}
-.cmp .box .row{display:flex;align-items:baseline;gap:8px}
-.cmp .box .big{font-size:16px;font-weight:800;font-family:'Pretendard','Pretendard Variable',sans-serif}
-.chip{font-family:'Pretendard','Pretendard Variable',sans-serif;font-size:10px;font-weight:700;padding:1px 7px;border-radius:6px}
-.chip.up{background:#E6F4EC;color:#1F7A4D}.chip.dn{background:#E7EAF0;color:#2B3A55}.chip.fl{background:#F1F3F6;color:#8A93A0}
-table{width:100%;border-collapse:collapse;font-size:10px;margin-top:4px}
-th{font-size:8.7px;letter-spacing:.03em;color:#8A93A0;text-transform:uppercase;text-align:right;padding:4px 6px;border-bottom:1.5px solid #2B3A55}
-th:first-child{text-align:left}
-td{padding:4px 6px;text-align:right;font-family:'Pretendard','Pretendard Variable',sans-serif;font-variant-numeric:tabular-nums;border-bottom:1px solid #F1F3F6}
-td:first-child{text-align:left;font-family:'Pretendard',sans-serif;font-weight:700}
-td .dot{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;vertical-align:middle}
-.up{color:#1F7A4D;font-weight:700}.dn{color:#C8413B;font-weight:700}
-.brow{display:grid;grid-template-columns:64px 1fr 150px;align-items:center;gap:9px;padding:2.5px 0}
-.blab{font-size:10.5px;font-weight:700;color:#3A4759;text-align:right}
-.btrk{height:15px;background:#F1F3F6;border-radius:4px;overflow:hidden}
-.bfill{height:100%;background:#E85A3C;border-radius:4px}
-.bval{font-size:10px;font-family:'Pretendard','Pretendard Variable',sans-serif;font-weight:700;color:#16202C}
-.wx{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:2px}
-.wxcard{border:1px solid #E6E9EE;border-radius:10px;padding:9px 12px}
-.wxcard .t{font-size:10px;color:#8A93A0;font-weight:600;margin-bottom:4px}
-.mwrap{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
-.mcard{border:1px solid #E6E9EE;border-radius:11px;padding:10px 11px}
-.mcard .mt{font-size:11.5px;font-weight:800;margin-bottom:2px}
-.mcard .ms{font-size:9px;color:#8A93A0;margin-bottom:7px}
-.hm{width:100%;border-collapse:separate;border-spacing:2px;font-size:9px;font-family:'Pretendard','Pretendard Variable',sans-serif}
-.hm th{font-size:8px;color:#8A93A0;font-weight:700;padding:2px 1px;text-align:center;border:0}
-.hm td{text-align:center;padding:3px 1px;border-radius:3px;border:0;font-weight:700}
-.hm td.hm-t{background:#F4F6F9;color:#16202C;font-family:'Pretendard',sans-serif;text-align:left;padding-left:4px;font-weight:800}
+.sec,.card,.kpi,table,tr,.mast,.hl,.pts{page-break-inside:avoid;break-inside:avoid}
+/* 마스트헤드: 보고서형 강조 타이틀 */
+.mast{background:var(--ink);color:#fff;border-radius:3px;padding:16px 20px 14px;display:flex;justify-content:space-between;align-items:flex-end;border-bottom:4px solid var(--coral)}
+.mast .eb{font-size:9.5px;font-weight:800;letter-spacing:.16em;color:var(--coral)}
+.mast h1{font-size:30px;font-weight:800;letter-spacing:-.03em;line-height:1.15;margin-top:6px}
+.mast .iss{text-align:right;line-height:1.35}
+.mast .iss b{display:block;font-size:20px;font-weight:800;letter-spacing:-.02em}
+.mast .iss span{font-size:9px;color:#AEB7C4;font-weight:600}
+.pbadge{display:inline-block;vertical-align:middle;margin-left:8px;font-size:10px;font-weight:800;color:#fff;background:var(--coral);padding:1px 8px;border-radius:2px;letter-spacing:0}
+.metarow{display:flex;justify-content:space-between;font-size:9px;color:var(--mut);font-weight:600;padding:6px 2px 0}
+.metarow b{color:var(--ink);font-weight:800}
+/* 결론 헤드라인 */
+.hl{margin-top:16px}
+.hl .rule{width:34px;height:4px;background:var(--coral);margin-bottom:9px}
+.hl h2{font-size:21px;font-weight:800;letter-spacing:-.025em;line-height:1.3}
+.hl p{font-size:10.5px;color:var(--sub);margin-top:5px}
+.hl p b{color:var(--ink)}
+/* KPI: 검정 상단선, 면 채움 없음 */
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:14px 0 0}
+.kpi{border-top:2.5px solid var(--ink);padding:7px 0 0}
+.kpi .l{font-size:9px;color:var(--mut);font-weight:700}
+.kpi .v{font-size:22px;font-weight:800;letter-spacing:-.03em;margin:2px 0 3px}
+.kpi .v small{font-size:10px;font-weight:700;color:var(--sub);margin-left:1px}
+.kpi .s{font-size:8.6px;color:var(--mut);font-weight:600;line-height:1.6}
+.kpi .s .up,.kpi .s .dn{font-weight:800}
+/* 핵심 포인트 */
+.pts{margin-top:16px;border-top:1px solid var(--ink);border-bottom:1px solid var(--line)}
+.pts .t{font-size:9px;font-weight:800;color:var(--mut);letter-spacing:.06em;padding:6px 0 2px}
+.pts ul{list-style:none}
+.pts li{display:grid;grid-template-columns:52px 1fr;gap:8px;align-items:baseline;padding:4px 0;border-top:1px solid #EEF0F3;font-size:10.4px;color:#26303C}
+.pts li:first-child{border-top:0}
+.tag{font-size:9px;font-weight:800;color:var(--coral)}
+.pts b{font-weight:800;color:var(--ink)}
+/* 섹션: 라벨 + 결론형 제목 */
+.sec{margin-top:20px}
+.sh{border-top:1px solid var(--ink);padding-top:6px;margin-bottom:8px}
+.sh .lab{display:flex;justify-content:space-between;font-size:9px;font-weight:800;color:var(--mut);letter-spacing:.04em}
+.sh .lab .no{color:var(--coral);margin-right:5px}
+.sh .lab .sub{font-weight:600;letter-spacing:0}
+.sh h2{font-size:15px;font-weight:800;letter-spacing:-.02em;margin-top:3px;line-height:1.35}
+.desc{font-size:9.6px;color:var(--sub);margin:-2px 0 6px}
+.desc b{color:var(--ink)}
+/* 표 */
+table{width:100%;border-collapse:collapse;font-size:10px}
+th{font-size:8.8px;color:var(--mut);font-weight:700;text-align:center;padding:5px 5px;border-bottom:1.5px solid var(--ink);white-space:nowrap}
+td{text-align:center;padding:6px 5px;border-bottom:1px solid #EEF0F3;white-space:nowrap}
+tbody tr:last-child td{border-bottom:1.5px solid var(--ink)}
+th:first-child,td:first-child{text-align:left;padding-left:2px}
+td:first-child{font-weight:700}
+tr.top td{font-weight:800}
+td .st{color:var(--mut);font-weight:600;font-size:9px;margin-left:3px}
+td .dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:6px;vertical-align:1px}
+tr.tot td{font-weight:800}
+.ib{display:grid;grid-template-columns:1fr 46px;align-items:center;gap:6px}
+.ib .tr{height:7px;background:#F0F2F5;overflow:hidden}
+.ib .tr i{display:block;height:100%;background:var(--gray)}
+tr.top .ib .tr i{background:var(--ink)}
+.ib span{text-align:right}
+.up{color:var(--coral);font-weight:800}.dn{color:var(--navy);font-weight:800}.na{color:#C5CCD5}
+/* 카드 */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.card{border-top:1px solid var(--line);padding-top:7px}
+.card .ct{font-size:11px;font-weight:800}
+.card .cs{font-size:8.6px;color:var(--mut);margin:1px 0 6px;font-weight:600}
+.card .ins{border-left:3px solid var(--coral);padding:1px 0 1px 7px;font-size:9.4px;font-weight:700;color:var(--ink);margin-top:7px}
+.lg2{display:flex;gap:10px;font-size:8.6px;color:var(--sub);font-weight:700;margin-top:2px}
+.lg2 i{display:inline-block;width:9px;height:9px;margin-right:4px;vertical-align:-1px}
+/* 히트맵 */
+.hm{width:100%;border-collapse:separate;border-spacing:2px;font-size:8.8px}
+.hm th{font-size:8px;color:var(--mut);font-weight:700;padding:2px 1px;text-align:center;border:0}
+.hm th.cur{color:var(--coral);font-weight:800}
+.hm td{text-align:center;padding:3.2px 1px;border-radius:2px;border:0;font-weight:700}
+.hm td.hm-t{background:none;text-align:left;padding-left:2px;font-weight:800;color:var(--ink)}
 .hm td.hm-e{background:#F8FAFC;color:#CBD2DA}
-.legend{display:flex;flex-wrap:wrap;gap:6px 12px;justify-content:center;margin-top:11px}
-.legend .lg{display:flex;align-items:center;gap:4px;font-size:9.5px;color:#3A4759;font-weight:600}
-.legend .lg i{width:9px;height:9px;border-radius:2px}
-.opc{line-height:1.6}
-.opp{display:inline-block;padding:1px 4px;margin:1px 1px;border-radius:4px;font-size:8.8px;font-weight:700;background:#F4F6F9}
-.opt{font-size:10px}
-.opt th,.opt td{padding:4px 6px}
-.opp.ou{color:#1E874B;background:#E9F6EE}
-.opp.od{color:#D64528;background:#FCEAE4}
-.opp.on{color:#6B7682;background:#F1F3F6}
-.kf{margin:6px 0 0;padding:0;list-style:none;counter-reset:kf}
-.kf li{counter-increment:kf;position:relative;padding:9px 11px 9px 36px;margin-bottom:7px;border:1px solid #E6E9EE;border-radius:9px;font-size:11px;line-height:1.62;color:#2A3340}
-.kf li::before{content:counter(kf);position:absolute;left:9px;top:9px;width:19px;height:19px;border-radius:50%;background:#2B3A55;color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;font-family:'Pretendard','Pretendard Variable',sans-serif}
-.foot{margin-top:18px;padding-top:9px;border-top:1px solid #E6E9EE;font-size:9px;color:#8A93A0;line-height:1.6}
-.foot b{color:#3A4759}
-.note{font-size:9px;color:#8A93A0;margin-top:3px}
+.hm tr:last-child td{border-bottom:0}
+/* 상대팀 */
+.opp{display:inline-block;padding:0 4px;margin:1px 1px;border-radius:2px;font-size:8.8px;font-weight:700;line-height:15px}
+.opp.ou{color:#C6452B;background:#FDECE7}.opp.od{color:var(--navy);background:#E3E8F0}.opp.on{color:#5B6676;background:#EEF0F3}
+td.opc{white-space:normal;text-align:left;line-height:1.55}
+/* 날씨 */
+.wv{font-size:24px;font-weight:800;letter-spacing:-.03em}
+.brow{display:grid;grid-template-columns:30px 1fr 92px;align-items:center;gap:8px;padding:3px 0}
+.blab{font-size:9.5px;font-weight:800;color:var(--sub)}
+.btrk{height:11px;background:#F0F2F5;overflow:hidden}
+.bfill{height:100%;background:var(--gray)}
+.bfill.c{background:var(--coral)}
+.bval{font-size:9.5px;font-weight:700;text-align:right}
+.note{font-size:8.6px;color:var(--mut);margin-top:5px;line-height:1.55}
+.empty{font-size:9.8px;color:var(--sub);background:var(--soft);padding:8px 11px}
+.mini{display:flex;justify-content:space-between;align-items:center;font-size:9px;color:var(--mut);font-weight:700;padding-bottom:6px;border-bottom:2.5px solid var(--ink)}
+.mini b{color:var(--ink);font-weight:800}.mini .c{color:var(--coral)}
+.foot{margin-top:18px;padding-top:8px;border-top:1px solid var(--ink);font-size:8.4px;color:var(--mut);line-height:1.65}
+.foot b{color:var(--sub)}
 </style>
 """
 
-REASON_ORDER=['우천취소','폭염취소','미세먼지취소','그라운드사정','기타']
-def cancel_section(y,m,sec_no='03'):
-    """월간 취소 경기: 홈팀 × 사유별 건수 표. 데이터 없으면 안내 한 줄."""
+
+def month_cancels(y,m):
     try:
-        import json as _j
-        cd=_j.load(open('cancellations.json',encoding='utf-8'))
-        items=cd.get('items',[])
-        upd=cd.get('_meta',{}).get('updated','')
+        cd=json.load(open('cancellations.json',encoding='utf-8'))
+        items=cd.get('items',[]); upd=cd.get('_meta',{}).get('updated','')
     except Exception:
-        items=[];upd=''
+        return [],''
     ym=f'{y}-{m:02d}'
-    cs=[c for c in items if str(c.get('date','')).startswith(ym)]
-    head=(f'<div class="sec"><div class="sec-h"><span class="no">{sec_no}</span><h2>취소 경기 (원인 · 팀별)</h2>'
-          '<span class="sub">홈팀 기준 · KBO 비고란 자동 수집</span></div>')
+    return [c for c in items if str(c.get('date','')).startswith(ym)],upd
+
+REASON_ORDER=['우천취소','폭염취소','미세먼지취소','그라운드사정','기타']
+def sec_head(no,lab,title,sub=''):
+    """섹션 머리: 번호·분류 라벨(작게) + 결론형 제목(굵게)"""
+    return (f'<div class="sh"><div class="lab"><span><span class="no">{no}</span>{lab}</span>'
+            f'<span class="sub">{sub}</span></div><h2>{title}</h2></div>')
+
+def cancel_section(y,m,sec_no='06'):
+    """월간 취소 경기: 홈팀 × 사유별 건수 표."""
+    cs,upd=month_cancels(y,m)
     if not cs:
-        return head+'<div class="lead">이 달에는 집계된 취소 경기가 없습니다.</div></div>'
+        return ('<div class="sec">'+sec_head(sec_no,'취소 경기','이 달 취소 경기 없음','홈팀 기준 · KBO 비고란 자동 수집')
+                +'<div class="empty">이 달 집계된 취소 경기 없음</div></div>')
     reasons=[r for r in REASON_ORDER if any((c.get('reason') or '기타')==r for c in cs)]
-    others=sorted(set((c.get('reason') or '기타') for c in cs)-set(reasons))
-    reasons+=others
+    reasons+=sorted(set((c.get('reason') or '기타') for c in cs)-set(reasons))
     per={}
     for c in cs:
         t=c.get('home','?'); r=c.get('reason') or '기타'
-        per.setdefault(t,{}).setdefault(r,0)
-        per[t][r]+=1
+        per.setdefault(t,{}).setdefault(r,0); per[t][r]+=1
     order=sorted(per.keys(),key=lambda t:-sum(per[t].values()))
     th=''.join(f'<th>{r.replace("취소","")}</th>' for r in reasons)
     rows=[]
     for t in order:
-        tds=''.join(f'<td>{per[t].get(r,"") or "·"}</td>' for r in reasons)
-        rows.append(f'<tr><td><span class="dot" style="background:{TCOL.get(t,"#888")}"></span>{t}({STAD.get(t,"")})</td>'
+        tds=''.join(f'<td>{per[t].get(r) or "<span class=na>-</span>"}</td>' for r in reasons)
+        rows.append(f'<tr><td><span class="dot" style="background:{TCOL.get(t,"#888")}"></span>{t}<span class="st">{STAD.get(t,"")}</span></td>'
                     f'{tds}<td><b>{sum(per[t].values())}</b></td></tr>')
-    tot_r=''.join(f'<td><b>{sum(1 for c in cs if (c.get("reason") or "기타")==r)}</b></td>' for r in reasons)
-    played_note=f' · 집계 기준일 {upd}' if upd else ''
-    top_reason=max(reasons,key=lambda r:sum(1 for c in cs if (c.get("reason") or "기타")==r))
-    lead=(f'<div class="lead">이 달 취소는 총 <b>{len(cs)}경기</b>, 최다 사유는 '
-          f'<b>{top_reason}({sum(1 for c in cs if (c.get("reason") or "기타")==top_reason)}건)</b>입니다.'
-          f'{played_note}</div>')
-    tbl=('<table><thead><tr><th>홈팀(구장)</th>'+th+'<th>합계</th></tr></thead>'
-         '<tbody>'+''.join(rows)+f'<tr style="border-top:2px solid #D8DDE4"><td><b>전체</b></td>{tot_r}'
-         f'<td><b>{len(cs)}</b></td></tr></tbody></table>')
-    return head+lead+tbl+'</div>'
+    cnt=lambda r:sum(1 for c in cs if (c.get('reason') or '기타')==r)
+    tot_r=''.join(f'<td>{cnt(r)}</td>' for r in reasons)
+    top=max(reasons,key=cnt)
+    ttl=(f'취소 {len(cs)}경기, 전부 {top.replace("취소","")}' if cnt(top)==len(cs)
+         else f'취소 {len(cs)}경기, 최다 사유 {top.replace("취소","")} {cnt(top)}건')
+    head='<div class="sec">'+sec_head(sec_no,'취소 경기',ttl,'홈팀 기준 · KBO 비고란 자동 수집'+(f' · 기준일 {upd}' if upd else ''))
+    desc=''
+    tbl=('<table><thead><tr><th>홈팀</th>'+th+'<th>합계</th></tr></thead><tbody>'+''.join(rows)
+         +f'<tr class="tot"><td>전체</td>{tot_r}<td>{len(cs)}</td></tr></tbody></table>')
+    return head+desc+tbl+'</div>'
 
 def build_html(y,m,cur,prevM,prevY,tcur,tprev,rank_cur,rankrows,r,season,
                opp_rows,opp_beta,
-               temp_cur,temp_prev,rain_gs,clear_gs):
+               temp_cur,temp_prev,rain_gs,clear_gs,league=None):
     head=('<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8">'
           '<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">'
           +CSS+'</head><body>')
+    pm=m-1 if m>1 else 12
+    NA='<span class="na">-</span>'
+    def rel(c,p):
+        return None if p in (None,0) else (c-p)/abs(p)*100
+    def chip(d,unit='%',lab=''):
+        if d is None: return f'{lab} -'
+        dec=1 if unit in ('%p','℃') else 0
+        if round(d,dec)==0: return f'{lab} 0{unit}'
+        cls='up' if d>0 else 'dn'; arr='▲' if d>0 else '▼'
+        return f'{lab} <span class="{cls}">{arr}{abs(d):.{dec}f}{unit}</span>'
+    def signed(d,dec=0,unit='%'):
+        if d is None: return NA
+        if round(d,dec)==0: return f'<span class="na" style="color:#8A93A0;font-weight:700">0{unit}</span>'
+        return f'<span class="{"up" if d>=0 else "dn"}">{d:+.{dec}f}{unit}</span>'
+    def tname(t):
+        return f'<span class="dot" style="background:{TCOL.get(t,"#888")}"></span>{t}<span class="st">{STAD.get(t,"")}</span>'
 
-    # ── 표지 + 요약 ──
-    def chip(cur_v,prev_v):
-        if prev_v in (None,0): return '<span class="chip fl">— 비교불가</span>'
-        d=(cur_v-prev_v)/abs(prev_v)*100
-        cls='up' if d>0.5 else 'dn' if d<-0.5 else 'fl'; arr='▲' if d>0.5 else '▼' if d<-0.5 else '—'
-        return f'<span class="chip {cls}">{arr} {abs(d):.0f}%</span>'
-    momTxt=''
-    if prevM:
-        d=(cur['avg']-prevM['avg'])/prevM['avg']*100
-        momTxt=f'전월({m-1}월) 평균 {f(prevM["avg"])}명 대비 <b class="{"up" if d>=0 else "dn"}">{abs(d):.0f}% {"증가" if d>=0 else "감소"}</b>'
-    pyTxt=''
-    if prevY:
-        d=(cur['avg']-prevY['avg'])/prevY['avg']*100
-        pyTxt=f' · 전년 동월({y-1}년 {m}월) 대비 <b class="{"up" if d>=0 else "dn"}">{abs(d):.0f}% {"증가" if d>=0 else "감소"}</b>'
+    dM=rel(cur['avg'],prevM['avg'] if prevM else None)
+    dY=rel(cur['avg'],prevY['avg'] if prevY else None)
     prov=(date.today().year==y and date.today().month==m)
     pbadge='<span class="pbadge">잠정</span>' if prov else ''
-    cover=(f'<div class="cover"><div class="eyebrow">KBO ATTENDANCE MONTHLY REPORT</div>'
-           f'<h1>{y}년 {m}월 관중 분석 리포트{pbadge}</h1>'
-           f'<div class="period">{y}.{m:02d} · 정규시즌 {cur["n"]}경기{" · 진행 중 잠정 집계" if prov else ""} · (주)서던포스트</div>'
-           f'<div class="rule"></div></div>')
+
+    # ── 마스트헤드: 보고서명(강조) ──
+    hd=(f'<div class="mast"><div><div class="eb">KBO ATTENDANCE MONTHLY REPORT</div>'
+        f'<h1>KBO 월간 관중 리포트{pbadge}</h1></div>'
+        f'<div class="iss"><b>{y}년 {m}월호</b><span>발행 {date.today():%Y.%m.%d} · 서던포스트</span></div></div>'
+        f'<div class="metarow"><span>분석 대상 <b>{y}년 {m}월 정규시즌 {cur["n"]}경기</b> · 홈경기 관중 기준{" · 진행 중 잠정" if prov else ""}</span>'
+        f'<span>(주)서던포스트 데이터분석</span></div>')
+
+    # ── KPI 5 ──
+    cs,_=month_cancels(y,m)
+    occD=(cur['occ']-prevM['occ'])*100 if prevM else None
+    occY=(cur['occ']-prevY['occ'])*100 if prevY else None
+    totY=rel(cur['tot'],prevY['tot'] if prevY else None)
+    sellP=cur['sell']-prevM['sell'] if prevM else None
     kpis=('<div class="kpis">'
           f'<div class="kpi"><div class="l">경기당 평균 관중</div><div class="v">{f(cur["avg"])}<small>명</small></div>'
-          f'<div class="s">{chip(cur["avg"],prevM["avg"] if prevM else None)} vs 전월</div></div>'
-          f'<div class="kpi n2"><div class="l">총 관중</div><div class="v">{man(cur["tot"])}<small>만명</small></div>'
-          f'<div class="s">{cur["n"]}경기 합산</div></div>'
-          f'<div class="kpi n3"><div class="l">평균 좌석 점유율</div><div class="v">{cur["occ"]*100:.0f}<small>%</small></div>'
-          f'<div class="s">{chip(cur["occ"],prevM["occ"] if prevM else None)} vs 전월</div></div>'
-          f'<div class="kpi n4"><div class="l">완전 매진</div><div class="v">{cur["sell"]}<small>경기</small></div>'
-          f'<div class="s">전체 {cur["n"]}경기 중 {cur["sell"]/cur["n"]*100:.0f}%</div></div>'
+          f'<div class="s">{chip(dM,"%","전월")} · {chip(dY,"%","전년")}</div></div>'
+          f'<div class="kpi"><div class="l">총 관중</div><div class="v">{man(cur["tot"])}<small>만 명</small></div>'
+          f'<div class="s">{cur["n"]}경기 합산{" · "+chip(totY,"%","전년") if prevY else ""}</div></div>'
+          f'<div class="kpi"><div class="l">평균 좌석 점유율</div><div class="v">{cur["occ"]*100:.1f}<small>%</small></div>'
+          f'<div class="s">{chip(occD,"%p","전월")} · {chip(occY,"%p","전년")}</div></div>'
+          f'<div class="kpi"><div class="l">완전 매진</div><div class="v">{cur["sell"]}<small>경기</small></div>'
+          f'<div class="s">전체의 {cur["sell"]/cur["n"]*100:.0f}%'
+          +(f' · 전월 {prevM["sell"]}경기' if prevM else '')+'</div></div>'
+          f'<div class="kpi"><div class="l">취소 경기</div><div class="v">{len(cs)}<small>경기</small></div>'
+          f'<div class="s">우천 {sum(1 for c in cs if (c.get("reason") or "")=="우천취소")}경기</div></div>'
           '</div>')
-    lead=(f'<div class="lead"><b>{y}년 {m}월</b> 정규시즌 {cur["n"]}경기에 총 <b>{man(cur["tot"])}만 명</b>이 입장해 '
-          f'경기당 평균 <b>{f(cur["avg"])}명</b>(좌석 점유율 {cur["occ"]*100:.0f}%)을 기록했습니다. '
-          f'{momTxt}{pyTxt}.</div>')
 
-    # ── 전체 변화(전월/전년 비교 박스) ──
-    def cmpbox(title,c,p,plabel):
-        if not p:
-            return f'<div class="box"><div class="t">{title}</div><div class="row"><span class="big">{f(c["avg"])}명</span><span class="chip fl">{plabel} 데이터 없음</span></div></div>'
-        d=(c['avg']-p['avg'])/p['avg']*100
-        cls='up' if d>=0 else 'dn'
-        return (f'<div class="box"><div class="t">{title}</div><div class="row">'
-                f'<span class="big">{f(c["avg"])}명</span>'
-                f'<span class="chip {cls}">{"▲" if d>=0 else "▼"} {abs(d):.0f}%</span>'
-                f'<span class="mono" style="font-size:10px;color:#8A93A0">{plabel} {f(p["avg"])}명</span></div></div>')
-    sec1=('<div class="sec"><div class="sec-h"><span class="no">01</span><h2>전체 관중 현황 · 변화</h2>'
-          '<span class="sub">경기당 평균 관중 기준</span></div>'
-          '<div class="cmp">'+cmpbox(f'전월 대비 ({m-1}월)',cur,prevM,f'{m-1}월')
-          +cmpbox(f'전년 동월 대비 ({y-1}년 {m}월)',cur,prevY,f'{y-1}.{m}')+'</div></div>')
-
-    # ── 팀별 현황 (표) ──
-    rows=[]
-    order=sorted(tcur.keys(),key=lambda t:-tcur[t]['avg'])
-    for t in order:
-        c=tcur[t]; p=tprev.get(t)
-        d=((c['avg']-p['avg'])/p['avg']*100) if p else None
-        dtd=(f'<span class="{"up" if d>=0 else "dn"}">{d:+.0f}%</span>' if d is not None else '<span style="color:#C5CCD5">—</span>')
-        rkv=rank_cur.get(t)
-        rk=f'{rkv:.1f}위' if rkv is not None else '—'
-        rows.append(f'<tr><td><span class="dot" style="background:{TCOL.get(t,"#888")}"></span>{t}({STAD.get(t,"")})</td>'
-                    f'<td>{c["n"]}</td><td>{f(c["avg"])}</td><td>{c["occ"]*100:.0f}%</td><td>{rk}</td><td>{dtd}</td></tr>')
-    sec2=('<div class="sec"><div class="sec-h"><span class="no">02</span><h2>구단별 현황 · 전월 대비</h2>'
-          '<span class="sub">홈경기 기준 · 평균 관중 내림차순</span></div>'
-          '<table><thead><tr><th>구단(구장)</th><th>경기</th><th>평균관중</th><th>점유율</th><th>평균순위</th><th>전월비</th></tr></thead>'
-          f'<tbody>{"".join(rows)}</tbody></table></div>')
-
-    # ── 월별 추이 (관중 라인 + 점유율 히트맵, 좌우) ──
-    if season and season.get('months'):
-        mh=('<div class="mwrap">'
-            '<div class="mcard"><div class="mt">월별 홈구장 평균 관중</div><div class="ms">구단별 · 선형 (세로축 0 미시작 · 오른쪽 끝 구단명)</div>'
-            f'{svg_month_lines(season["months"],season["order"],season["att"])}</div>'
-            '<div class="mcard"><div class="mt">월별 좌석 점유율</div><div class="ms">진할수록 만석 · 오른쪽=시즌 평균(%)</div>'
-            f'{html_month_heat(season["months"],season["order"],season["occ"])}</div>'
-            '</div>')
-    else:
-        mh='<div class="lead">월별 추이를 그릴 데이터가 부족합니다.</div>'
-    sec_month=('<div class="sec"><div class="sec-h"><span class="no">03</span><h2>월별 추이 (관중 · 점유율)</h2>'
-               f'<span class="sub">{y}시즌 누적 · 홈경기 기준</span></div>'+mh+'</div>')
-
-    # ── 상대팀 분석 (홈팀별: 전월 vs 이번달 상대 + 증감률) ──
-    def opp_list(counter):
-        if not counter: return '<span style="color:#C5CCD5">—</span>'
-        items=sorted(counter.items(),key=lambda kv:-(opp_beta.get(kv[0],0)))
-        out=[]
-        for a,n in items:
-            b=opp_beta.get(a,0)
-            cls='ou' if b>300 else 'od' if b<-300 else 'on'
-            out.append(f'<span class="opp {cls}">{a}{("×"+str(n)) if n>1 else ""}</span>')
-        return ' '.join(out)
-    if opp_rows:
-        otr=[]
-        for x in opp_rows:
-            pct=x['pct']
-            pchip=(f'<span class="{"up" if pct>=0 else "dn"}">{pct:+.0f}%</span>' if pct is not None
-                   else '<span style="color:#C5CCD5">—</span>')
-            otr.append(f'<tr><td><span class="dot" style="background:{TCOL.get(x["h"],"#888")}"></span>{x["h"]}({STAD.get(x["h"],"")})</td>'
-                       f'<td class="opc">{opp_list(x["prev_opp"])}</td>'
-                       f'<td class="opc">{opp_list(x["cur_opp"])}</td>'
-                       f'<td>{pchip}</td></tr>')
-        opp_body=('<table class="opt"><thead><tr><th>홈팀(구장)</th><th>전월 홈경기 상대팀</th><th>이번달 홈경기 상대팀</th><th>전월대비</th></tr></thead>'
-                  f'<tbody>{"".join(otr)}</tbody></table>'
-                  '<div class="note">※ 상대팀 이름 색 = 그 팀이 방문할 때 홈 평균 대비 관중 동원력 — '
-                  '<span class="opp ou">초록</span> 평균 이상 / <span class="opp od">빨강</span> 평균 이하 / 회색 비슷 (시즌 누적 기준) · '
-                  '×n = 그 달 n경기 · 전월대비 = 해당 홈팀 평균 관중 증감률.</div>')
-    else:
-        opp_body='<div class="lead">이번달 홈경기 데이터가 부족합니다.</div>'
-    sec_opp=('<div class="sec"><div class="sec-h"><span class="no">04</span><h2>상대팀 분석 (홈경기 상대 구성)</h2>'
-             '<span class="sub">전월 vs 이번달 맞이한 상대팀 · 홈 관중 증감</span></div>'
-             '<div class="lead">홈 관중은 방문팀에 따라 달라집니다. 관중 동원력이 큰 팀(초록)과의 경기가 줄고 작은 팀(빨강)과의 경기가 늘면 관중이 감소하는 흐름을 읽을 수 있습니다.</div>'
-             +opp_body+'</div>')
-
-    # ── 순위 영향 (표) ──
-    if rankrows:
-        rtxt=''
-        if r is not None:
-            strength=('뚜렷한' if abs(r)>=0.5 else '약한' if abs(r)>=0.25 else '미미한')
-            sign=('양의' if r>0 else '음의')
-            tail=('순위가 오른 구단일수록 관중이 늘고, 떨어진 구단일수록 줄어드는 경향입니다.' if r>0.1 else
-                  '순위가 올라도 관중이 줄거나, 떨어져도 관중이 느는 등 반대 방향 경향입니다.' if r<-0.1 else
-                  '순위 변화가 관중에 미친 영향은 제한적이었습니다.')
-            rtxt=(f'이번달 <b>순위 변화</b>와 <b>관중 변화</b>는 <b>{sign} 상관(r={r:.2f})</b>으로 '
-                  f'{strength} 관계를 보입니다. {tail}')
-        rr=sorted(rankrows,key=lambda x:-x['a1'])   # 이번달 평균관중 높은 순
-        trows=[]
-        for x in rr:
-            ch=x['r0']-x['r1']   # +면 순위 상승(좋아짐)
-            rkchip=(f'<span class="up">▲{ch:.1f}</span>' if ch>0.05 else
-                    f'<span class="dn">▼{abs(ch):.1f}</span>' if ch<-0.05 else '<span style="color:#C5CCD5">—</span>')
-            da=x['dAtt']; dchip=f'<span class="{"up" if da>=0 else "dn"}">{da:+.0f}%</span>'
-            rc=x.get('rec')
-            if rc:
-                pr=f'{rc["pct"]:.3f}'; pr=pr[1:] if pr.startswith('0') else pr
-                rectd=f'{rc["w"]}승 {rc["d"]}무 {rc["l"]}패 <span style="color:#8A93A0">({pr})</span>'
-            else:
-                rectd='<span style="color:#C5CCD5">—</span>'
-            trows.append(f'<tr><td><span class="dot" style="background:{TCOL.get(x["t"],"#888")}"></span>{x["t"]}({STAD.get(x["t"],"")})</td>'
-                         f'<td style="white-space:nowrap">{rectd}</td>'
-                         f'<td>{x["r0"]:.1f}위</td><td>{x["r1"]:.1f}위</td><td>{rkchip}</td>'
-                         f'<td>{f(x["a0"])}</td><td>{f(x["a1"])}</td><td>{dchip}</td></tr>')
-        rank_html=(f'<div class="lead">{rtxt}</div>'
-                   '<table><thead><tr><th>구단(구장)</th><th>이번달 성적</th><th>전월 순위</th><th>이번달 순위</th><th>순위변화</th>'
-                   '<th>전월 평균관중</th><th>이번달 평균관중</th><th>관중 변화</th></tr></thead>'
-                   f'<tbody>{"".join(trows)}</tbody></table>'
-                   '<div class="note">※ 성적 = 그 달 홈·원정 전체 승·무·패(괄호는 승률=승/(승+패)) · 순위 = 해당 구단의 경기일 기준 순위를 그 달 전체로 평균(소수 1자리) · 순위변화 ▲상승 / ▼하락 · '
-                   '<b>양의 상관 = 순위가 오를수록 관중 증가</b> · 정렬 = 이번달 평균관중 내림차순.</div>')
-    else:
-        rank_html='<div class="lead">전월 비교가 가능한 구단·순위 데이터가 부족해 순위-관중 분석을 생략했습니다.</div>'
-    sec3=('<div class="sec"><div class="sec-h"><span class="no">05</span><h2>순위가 관중에 미친 영향</h2>'
-          '<span class="sub">경기일 기준 평균 순위 · 전월 대비</span></div>'+rank_html+'</div>')
-
-    # ── 날씨 영향 ──
-    rn=len(rain_gs); cn=len(clear_gs)
-    has_wx=(temp_cur is not None) or (rn+cn>0)
-    if not has_wx:
-        sec4=('<div class="sec"><div class="sec-h"><span class="no">06</span><h2>날씨 영향 (기온 · 강수)</h2>'
-              '<span class="sub">경기 시간대(14~21시) 기준</span></div>'
-              '<div class="lead">이 달의 날씨 데이터가 아직 수집되지 않았습니다. '
-              '<b>fetch_weather.py</b> 를 실행해 기온·강수를 채운 뒤 리포트를 다시 생성하면 표시됩니다.</div></div>')
-    else:
-        ravg=sum(g['att'] for g in rain_gs)/rn if rn else 0
-        cavg=sum(g['att'] for g in clear_gs)/cn if cn else 0
-        raind=((ravg-cavg)/cavg*100) if cavg else 0
-        tempd=(temp_cur-temp_prev) if (temp_cur is not None and temp_prev is not None) else None
-        tline=''
-        if temp_cur is not None:
-            tline=f'이번달 경기 시간대 평균 기온은 <b>{temp_cur:.1f}℃</b>'
-            if tempd is not None:
-                tline+=f', 전월 대비 <b class="{"up" if tempd>=0 else "dn"}">{tempd:+.1f}℃</b>'
-            tline+='입니다. '
-        if rn:
-            wline=(f'{rn+cn}경기 중 <b>우천(강수) {rn}경기</b>, 맑은 날 {cn}경기였고, '
-                   f'우천 경기 평균 관중은 <b>{f(ravg)}명</b>으로 맑은 날({f(cavg)}명) 대비 '
-                   f'<b class="{"up" if raind>=0 else "dn"}">{abs(raind):.0f}% {"높" if raind>=0 else "낮"}았</b>습니다.')
-        else:
-            wline=f'{cn}경기 모두 강수 없이 진행됐습니다(맑은 날 평균 {f(cavg)}명).'
-        bmax=max(ravg,cavg,1)
-        wbars=(bar_row('맑음',cavg,bmax,f'{f(cavg)}명 ({cn})')
-               +(bar_row('우천',ravg,bmax,f'{f(ravg)}명 ({rn})') if rn else ''))
-        temp_big=f'{temp_cur:.1f}℃' if temp_cur is not None else '—'
-        if tempd is not None:
-            temp_delta=(f'<span class="chip {"up" if tempd>=0 else "dn"}">{"▲" if tempd>=0 else "▼"} {abs(tempd):.1f}℃</span> '
-                        f'vs 전월 {temp_prev:.1f}℃')
-        elif temp_cur is None:
-            temp_delta='<span class="note">기온 데이터 없음</span>'
-        else:
-            temp_delta='<span class="note">전월 비교 없음</span>'
-        sec4=('<div class="sec"><div class="sec-h"><span class="no">06</span><h2>날씨 영향 (기온 · 강수)</h2>'
-              '<span class="sub">경기 시간대(14~21시) 기준</span></div>'
-              f'<div class="lead">{tline}{wline}</div>'
-              '<div class="wx">'
-              f'<div class="wxcard"><div class="t">기온 · 전월 대비</div>'
-              f'<div class="mono" style="font-size:22px;font-weight:800">{temp_big}</div>'
-              f'<div style="margin-top:3px">{temp_delta}</div></div>'
-              f'<div class="wxcard"><div class="t">강수 영향 · 평균 관중</div>{wbars}</div>'
-              '</div>'
-              '<div class="note">※ 데이터에는 예보 강수확률이 없어 <b>실제 강수량/우천여부</b> 기준으로 분석했습니다.</div></div>')
-
-    # ── 종합 분석 (주요 결과 5가지 내외) ──
-    rk={x['t']:(x['r0'],x['r1']) for x in rankrows}     # 전월→이번달 평균순위
-    oshift={}                                            # 상대 구성 변화(+면 인기팀↑)
+    # ── 핵심 포인트 (개조식) ──
+    rk={x['t']:(x['r0'],x['r1']) for x in rankrows}
+    oshift={}
     for x in opp_rows:
         def om(cnt):
             tot=sum(cnt.values())
             return sum(opp_beta.get(a,0)*n for a,n in cnt.items())/tot if tot else 0
         oshift[x['h']]=om(x['cur_opp'])-om(x['prev_opp'])
+    def zone(x): return '상위권' if x<=3.5 else '하위권' if x>=7.5 else '중위권'
+    def rank_txt(t):
+        """순위 변화는 방향과 무관하게 항상 표기(상승·하락·유지 + 현재 위치)"""
+        if t not in rk: return None
+        r0,r1=rk[t]; imp=r0-r1
+        if abs(imp)>=1.0: w='순위 상승' if imp>0 else '순위 하락'
+        elif abs(imp)>=0.05: w='순위 소폭 상승' if imp>0 else '순위 소폭 하락'
+        else: return f'순위 유지 {r1:.1f}위({zone(r1)})'
+        return f'{w} {r0:.1f}→{r1:.1f}위({zone(r1)})'
     def reasons(t,gain):
         rs=[]
-        if t in rk:
-            r0,r1=rk[t]; imp=r0-r1
-            if gain and imp>=1.0: rs.append(f'순위 상승({r0:.1f}→{r1:.1f}위)')
-            elif gain and imp>=0.3: rs.append('순위 소폭 상승')
-            elif (not gain) and imp<=-1.0: rs.append(f'연패 등으로 순위 하락({r0:.1f}→{r1:.1f}위)')
-            elif (not gain) and imp<=-0.3: rs.append('순위 소폭 하락')
+        rt=rank_txt(t)
+        if rt: rs.append(rt)
         sh=oshift.get(t)
         if sh is not None:
-            if gain and sh>=500: rs.append('관중 동원력 높은 팀과의 홈경기 증가')
-            elif gain and sh>=150: rs.append('상대 구성 다소 유리')
-            elif (not gain) and sh<=-500: rs.append('관중 동원력 낮은 팀과의 홈경기 증가')
-            elif (not gain) and sh<=-150: rs.append('상대 구성 다소 불리')
+            if gain and sh>=150: rs.append('인기 원정팀 홈경기 증가')
+            elif (not gain) and sh<=-150: rs.append('인기 원정팀 홈경기 감소')
         return rs[:2]
-    chg=[]
-    for t in tcur:
-        p=tprev.get(t)
-        if not p or p['avg']==0: continue
-        chg.append({'t':t,'d':(tcur[t]['avg']-p['avg'])/p['avg']*100})
-    chg.sort(key=lambda x:x['d'])
-    kf=[]; named=set()
-    # 1) 전체 흐름
-    dM=((cur['avg']-prevM['avg'])/prevM['avg']*100) if prevM else None
-    dY=((cur['avg']-prevY['avg'])/prevY['avg']*100) if prevY else None
-    if dM is not None:
-        wd=('늘었습니다' if dM>1 else '줄었습니다' if dM<-1 else '전월과 비슷했습니다')
-        seg=f'전월 대비 <b class="{"up" if dM>=0 else "dn"}">{dM:+.1f}%</b>'
-        if dY is not None: seg+=f', 전년 동월 대비 <b class="{"up" if dY>=0 else "dn"}">{dY:+.1f}%</b>'
-        kf.append(f'이번달 경기당 평균 관중은 <b>{f(cur["avg"])}명</b>으로 {seg}, 전반적으로 {wd}.')
-    # 2) 증가 대표 1팀(특별한 이유 있는)
-    rep=None
-    for c in [c for c in chg if c['d']>0][::-1]:
-        rs=reasons(c['t'],True)
-        if rs: rep=(c,rs); break
-    if rep:
-        c,rs=rep; named.add(c['t'])
-        kf.append(f'관중이 가장 많이 늘어난 구단은 <b>{c["t"]} ({c["d"]:+.0f}%)</b>로, {" · ".join(rs)} 영향으로 보입니다.')
-    # 3) 감소 대표 1팀
-    rep=None
-    for c in [c for c in chg if c['d']<0]:
-        rs=reasons(c['t'],False)
-        if rs: rep=(c,rs); break
-    if rep:
-        c,rs=rep; named.add(c['t'])
-        kf.append(f'관중이 가장 많이 줄어든 구단은 <b>{c["t"]} ({c["d"]:+.0f}%)</b>로, {" · ".join(rs)} 영향으로 보입니다.')
-    # 4) 상대팀 구성 효과 (위에서 안 다룬 구단 위주)
-    chgD={c['t']:c['d'] for c in chg}
-    if oshift:
-        mx=max(oshift,key=lambda k:oshift[k]); mn=min(oshift,key=lambda k:oshift[k])
-        bits=[]
-        if oshift[mx]>=400 and mx not in named:
-            dmx=chgD.get(mx)
-            if dmx is not None and dmx<-1:
-                bits.append(f'<b>{mx}</b>은 관중 동원력 높은 팀과의 홈경기가 늘어 유리했지만, 평균관중은 오히려 <b class="dn">{dmx:+.0f}%</b> 감소했습니다')
-            else:
-                bits.append(f'<b>{mx}</b>은 관중 동원력 높은 팀과의 홈경기가 늘어 유리했습니다'+(f'(평균관중 <b class="up">{dmx:+.0f}%</b>)' if dmx is not None and dmx>1 else ''))
-        if oshift[mn]<=-400 and mn not in named:
-            dmn=chgD.get(mn)
-            if dmn is not None and dmn>1:
-                bits.append(f'<b>{mn}</b>은 관중 동원력 낮은 팀과의 경기가 많아 불리했지만, 그럼에도 평균관중은 <b class="up">{dmn:+.0f}%</b> 증가했습니다')
-            else:
-                bits.append(f'<b>{mn}</b>은 관중 동원력 낮은 팀과의 경기가 많아 불리했습니다')
-        if bits: kf.append('상대팀 구성 측면에서, '+' &nbsp;/&nbsp; '.join(bits)+'.')
-    # 5) 순위-관중 상관 (유의할 때만 방향 단정)
+    chg=sorted([{'t':t,'d':rel(tcur[t]['avg'],tprev[t]['avg'])} for t in tcur if tprev.get(t) and tprev[t]['avg']],
+               key=lambda x:x['d'])
+    pts=[]
+    ups=[c for c in chg if c['d']>0]; dns=[c for c in chg if c['d']<0]
+    if ups:
+        c=ups[-1]; rs=reasons(c['t'],True)
+        pts.append(('최대 증가',f'<b>{c["t"]}</b> {signed(c["d"])}'+(f' · {" · ".join(rs)}' if rs else '')))
+    if dns:
+        c=dns[0]; rs=reasons(c['t'],False)
+        pts.append(('최대 감소',f'<b>{c["t"]}</b> {signed(c["d"])}'+(f' · {" · ".join(rs)}' if rs else '')))
     if r is not None and rankrows:
-        if r>0.1:
-            downs=[x['t'] for x in sorted(rankrows,key=lambda x:x['r1']-x['r0'],reverse=True) if x['r1']-x['r0']>=1.0][:3]
-            ups2=[x['t'] for x in sorted(rankrows,key=lambda x:x['r0']-x['r1'],reverse=True) if x['r0']-x['r1']>=1.0][:3]
-            cl=[]
-            if downs: cl.append(f'순위가 떨어진 {"·".join(downs)} 등은 관중도 함께 줄었습니다')
-            if ups2: cl.append(f'순위가 오른 {"·".join(ups2)} 등은 관중이 늘었습니다')
-            tailb=(' '+' &nbsp;/&nbsp; '.join(cl)+'.') if cl else ''
-            kf.append(f'순위와 관중은 <b>양의 상관(r={r:.2f})</b>을 보였습니다.{tailb}')
-        elif r<-0.1:
-            kf.append(f'순위와 관중은 <b>음의 상관(r={r:.2f})</b>으로, 순위 변화와 관중이 반대로 움직인 이례적 흐름이었습니다.')
-        else:
-            kf.append(f'이번달 순위 변화와 관중 사이의 관계는 뚜렷하지 않았습니다(r={r:.2f}).')
-    # 6) 날씨(강수 영향 뚜렷할 때만)
+        lab=('양의 상관' if r>0.1 else '음의 상관' if r<-0.1 else '관계 미약')
+        txt=(' · 순위 오른 구단 관중 증가 경향' if r>=0.25 else ' · 순위와 반대 방향 움직임' if r<=-0.25 else '')
+        def grp(cond):
+            xs=[x['dAtt'] for x in rankrows if cond(x['r0']-x['r1'])]
+            return (len(xs),sum(xs)/len(xs)) if xs else (0,None)
+        nu,au=grp(lambda d:d>=0.05); nd,ad=grp(lambda d:d<=-0.05); nf,af=grp(lambda d:abs(d)<0.05)
+        gb=[]
+        if nu: gb.append(f'순위 상승 {nu}개 구단 관중 평균 {signed(au)}')
+        if nd: gb.append(f'하락 {nd}개 구단 {signed(ad)}')
+        if nf: gb.append(f'유지 {nf}개 구단 {signed(af)}')
+        pts.append(('순위',' · '.join(gb)+f' · <b>{lab} (r={r:.2f})</b>'))
+    if oshift:
+        mx=max(oshift,key=oshift.get); mn=min(oshift,key=oshift.get); bits=[]
+        if oshift[mx]>=300: bits.append(f'<b>{mx}</b> 유리(인기 원정팀 증가)')
+        if oshift[mn]<=-300: bits.append(f'<b>{mn}</b> 불리(인기 원정팀 감소)')
+        if bits: pts.append(('상대팀',' · '.join(bits)))
     if rain_gs and clear_gs:
-        rn=len(rain_gs); cn=len(clear_gs)
-        ravg=sum(g['att'] for g in rain_gs)/rn; cavg=sum(g['att'] for g in clear_gs)/cn
-        rd=(ravg-cavg)/cavg*100 if cavg else 0
-        if abs(rd)>=8 and rn>=3:
-            kf.append(f'우천 {rn}경기 평균({f(ravg)}명)은 맑은 날 대비 <b class="{"up" if rd>=0 else "dn"}">{rd:+.0f}%</b>로, 날씨도 일부 영향을 줬습니다.')
-    kf=kf[:6]
-    summary_body=('<ol class="kf">'+''.join(f'<li>{x}</li>' for x in kf)+'</ol>') if kf else \
-                 '<div class="lead">전월 비교 데이터가 부족해 종합 분석을 생략합니다.</div>'
-    sec_sum=('<div class="sec"><div class="sec-h"><span class="no">08</span><h2>종합 분석 (주요 결과)</h2>'
-             '<span class="sub">관중 증감의 원인 — 상대팀·순위·날씨 종합</span></div>'+summary_body+'</div>')
+        rn=len(rain_gs); ravg=sum(g['att'] for g in rain_gs)/rn
+        cavg=sum(g['att'] for g in clear_gs)/len(clear_gs); rd=rel(ravg,cavg)
+        if rd is not None and abs(rd)>=8 and rn>=3:
+            pts.append(('날씨',f'우천 {rn}경기 평균 {f(ravg)}명 · 맑은 날 대비 {signed(rd)}'))
+    # 결론 헤드라인(해석형)
+    if dM is None: hl=f'{m}월 경기당 평균 {f(cur["avg"])}명'
+    else:
+        hl=(f'{m}월 경기당 평균 {f(cur["avg"])}명, 전월 대비 '
+            +(f'{abs(dM):.0f}% {"증가" if dM>0 else "감소"}' if abs(dM)>=0.5 else '보합'))
+        if dY is not None and abs(dY)>=0.5:
+            hl+=f' · 전년 동월 대비 {abs(dY):.0f}% {"증가" if dY>0 else "감소"}'
+    lead_bits=[]
+    if ups: lead_bits.append(f'최대 증가 <b>{ups[-1]["t"]} {ups[-1]["d"]:+.0f}%</b>')
+    if dns: lead_bits.append(f'최대 감소 <b>{dns[0]["t"]} {dns[0]["d"]:+.0f}%</b>')
+    lead_bits.append(f'완전 매진 <b>{cur["sell"]}경기</b>')
+    hlH=f'<div class="hl"><div class="rule"></div><h2>{hl}</h2></div>'
+    ptsH=('<div class="pts"><div class="t">핵심 포인트</div><ul>'
+          +''.join(f'<li><span class="tag">{t}</span><span>{x}</span></li>' for t,x in pts[:6])+'</ul></div>')
 
-    foot=('<div class="foot"><b>출처</b> 관중·결과 = KBO 공식 기록 / visualbaseball 기반 산출 · '
-          '날씨 = Open-Meteo 과거 기상(구장 좌표·경기 시간대) · 점유율 = 관중 ÷ 구장 수용인원 · '
-          '순위 = 경기 직전 기준. <b>완전 매진</b> = 점유율 100% 이상. '
-          '진행 중 시즌은 잠정값일 수 있습니다. 제작 (주)서던포스트.</div>')
+    # ── 01 구단별 현황 ──
+    order=sorted(tcur.keys(),key=lambda t:-tcur[t]['avg'])
+    amax=max(tcur[t]['avg'] for t in order) if order else 1
+    rows=[]
+    for t in order:
+        c=tcur[t]; p=tprev.get(t)
+        d=rel(c['avg'],p['avg']) if p else None
+        od=(c['occ']-p['occ'])*100 if p else None
+        rkv=rank_cur.get(t)
+        if t in rk:
+            ch=rk[t][0]-rk[t][1]
+            rkc=(f'<span class="up">▲{ch:.1f}</span>' if ch>=0.05 else f'<span class="dn">▼{abs(ch):.1f}</span>' if ch<=-0.05 else NA)
+        else: rkc=NA
+        rows.append(f'<tr{" class=top" if order.index(t)<3 else ""}><td>{tname(t)}</td><td>{c["n"]}</td>'
+                    f'<td style="width:30%"><div class="ib"><div class="tr"><i style="width:{c["avg"]/amax*100:.1f}%"></i></div><span>{f(c["avg"])}</span></div></td>'
+                    f'<td>{c["occ"]*100:.1f}%</td><td>{f"{rkv:.1f}" if rkv is not None else NA}</td><td>{rkc}</td>'
+                    f'<td>{signed(d)}</td><td>{signed(od,1,"%p")}</td></tr>')
+    t1=f'평균 관중 1위 {order[0]} {f(tcur[order[0]]["avg"])}명' if order else '구단별 현황'
+    if ups: t1+=f' · 최대 증가 {ups[-1]["t"]} {ups[-1]["d"]:+.0f}%'
+    sec1=('<div class="sec">'+sec_head('01','구단별 현황',t1,'홈경기 기준 · 평균 관중 내림차순')
+          +'<table><thead><tr><th>구단</th><th>경기</th><th>평균 관중(명)</th><th>점유율</th><th>평균 순위</th><th>순위 변화</th>'
+          f'<th>관중 전월비</th><th>점유율 전월비</th></tr></thead><tbody>{"".join(rows)}</tbody></table></div>')
+
+    # ── 02 시즌 추이 ──
+    ins_l=ins_h=''
+    t2='시즌 추이'
+    if league and league['cur'].get(m) and league['prev'].get(m):
+        ly=rel(league['cur'][m],league['prev'][m])
+        t2=f'{m}월 리그 평균 {f(league["cur"][m])}명, 전년 동월 대비 {ly:+.0f}%'
+        nup=sum(1 for mo in league['months'] if league['prev'].get(mo) and league['cur'][mo]>league['prev'][mo])
+        ins_l=f'{len(league["months"])}개월 중 {nup}개월 전년 대비 증가'
+    if season and season.get('months'):
+        so=season['occ']; lm=season['months'][-1]
+        full=[t for t in season['order'] if so.get(t,{}).get(lm) is not None and so[t][lm]>=0.95]
+        ins_h=(f'{m}월 점유율 95% 이상 {len(full)}개 구단'+(f' ({"·".join(full)})' if full else ''))
+    if season and season.get('months'):
+        lb=(svg_league_bars(league['months'],league['cur'],league['prev'],y) if league else '')
+        mh=('<div class="two">'
+            f'<div class="card"><div class="ct">리그 월별 평균 관중</div><div class="cs">{y}년 vs {y-1}년 · 경기당 · 하단 = 전년 동월비</div>'
+            f'{lb}<div class="lg2"><span><i style="background:{CORAL}"></i>{y}년 {m}월</span><span><i style="background:#5B6676"></i>{y}년</span><span><i style="background:#D3D9E1"></i>{y-1}년</span></div>'
+            f'<div class="ins">{ins_l}</div></div>'
+            '<div class="card"><div class="ct">구단별 월 좌석 점유율(%)</div><div class="cs">진할수록 만석 · 오른쪽 = 시즌 평균</div>'
+            f'{html_month_heat(season["months"],season["order"],season["occ"])}<div class="ins">{ins_h}</div></div>'
+            '</div>')
+    else:
+        mh='<div class="empty">월별 추이 데이터 부족</div>'
+    sec2=('<div class="sec">'+sec_head('02','시즌 추이',t2,f'{y}시즌 누적 · 홈경기 기준')+mh+'</div>')
+
+    # ── 03 상대팀 ──
+    def opp_list(counter):
+        if not counter: return NA
+        items=sorted(counter.items(),key=lambda kv:-(opp_beta.get(kv[0],0)))
+        out=[]
+        for a,n in items:
+            b=opp_beta.get(a,0); cls='ou' if b>300 else 'od' if b<-300 else 'on'
+            out.append(f'<span class="opp {cls}">{a}{("×"+str(n)) if n>1 else ""}</span>')
+        return ''.join(out)
+    if opp_rows:
+        otr=''.join(f'<tr><td>{tname(x["h"])}</td><td class="opc">{opp_list(x["prev_opp"])}</td>'
+                    f'<td class="opc">{opp_list(x["cur_opp"])}</td><td>{signed(x["pct"])}</td></tr>' for x in opp_rows)
+        ob=(f'<table><thead><tr><th>홈팀</th><th>{pm}월 홈경기 상대</th><th>{m}월 홈경기 상대</th><th>관중 전월비</th></tr></thead>'
+            f'<tbody>{otr}</tbody></table>'
+            '<div class="note">상대팀 색 = 방문 시 홈 평균 대비 관중 동원력(시즌 누적) · '
+            '<span class="opp ou">코랄</span> 평균 이상 · <span class="opp od">네이비</span> 평균 이하 · <span class="opp on">회색</span> 비슷 · ×n = 경기 수</div>')
+    else:
+        ob='<div class="empty">이 달 홈경기 데이터 부족</div>'
+    t3='상대팀 구성 변화'
+    if oshift:
+        mx=max(oshift,key=oshift.get); mn=min(oshift,key=oshift.get); b3=[]
+        if oshift[mx]>=150: b3.append(f'인기 원정팀 증가 {mx}')
+        if oshift[mn]<=-150: b3.append(f'감소 {mn}')
+        if b3: t3=' · '.join(b3)
+    sec3=('<div class="sec">'+sec_head('03','상대팀 구성',t3,'인기 원정팀 증가 시 홈 관중 유리')+ob+'</div>')
+
+    # ── 04 순위 ──
+    if rankrows:
+        trows=[]
+        for x in sorted(rankrows,key=lambda x:-x['a1']):
+            ch=x['r0']-x['r1']
+            rkc=(f'<span class="up">▲{ch:.1f}</span>' if ch>0.05 else f'<span class="dn">▼{abs(ch):.1f}</span>' if ch<-0.05 else NA)
+            rc=x.get('rec')
+            if rc:
+                pr=f'{rc["pct"]:.3f}'; pr=pr[1:] if pr.startswith('0') else pr
+                rec=f'{rc["w"]}-{rc["d"]}-{rc["l"]}<span class="st">{pr}</span>'
+            else: rec=NA
+            trows.append(f'<tr><td>{tname(x["t"])}</td><td>{rec}</td><td>{x["r0"]:.1f}</td><td>{x["r1"]:.1f}</td><td>{rkc}</td>'
+                         f'<td>{f(x["a0"])}</td><td>{f(x["a1"])}</td><td>{signed(x["dAtt"])}</td></tr>')
+        rdesc=''
+        if r is not None:
+            lab=('양의 상관' if r>0.1 else '음의 상관' if r<-0.1 else '관계 미약')
+            rdesc=''
+        rh=(rdesc+'<table><thead><tr><th>구단</th><th>성적(승-무-패 승률)</th><th>전월 순위</th><th>이번달 순위</th><th>변화</th>'
+            f'<th>전월 평균</th><th>이번달 평균</th><th>관중 변화</th></tr></thead><tbody>{"".join(trows)}</tbody></table>'
+            '<div class="note">성적 = 그 달 홈·원정 전체 · 순위 = 경기일 기준 순위의 월 평균 · 정렬 = 이번달 평균 관중 내림차순</div>')
+    else:
+        rh='<div class="empty">전월 비교 가능한 순위 데이터 부족</div>'
+    t4='순위와 관중'
+    if r is not None and rankrows:
+        lab=('양의 상관' if r>0.1 else '음의 상관' if r<-0.1 else '관계 미약')
+        t4=f'순위 변화와 관중 변화 {lab}(r={r:.2f})'+(', 순위 오른 구단 관중 증가' if r>=0.25 else '')
+    sec4=('<div class="sec">'+sec_head('04','순위와 관중',t4,'경기일 기준 평균 순위 · 전월 대비')+rh+'</div>')
+
+    # ── 05 날씨 ──
+    rn=len(rain_gs); cn=len(clear_gs)
+    if temp_cur is None and rn+cn==0:
+        wb='<div class="empty">날씨 데이터 미수집 · fetch_weather.py 실행 후 재생성</div>'
+    else:
+        ravg=sum(g['att'] for g in rain_gs)/rn if rn else 0
+        cavg=sum(g['att'] for g in clear_gs)/cn if cn else 0
+        tempd=(temp_cur-temp_prev) if (temp_cur is not None and temp_prev is not None) else None
+        bmax=max(ravg,cavg,1)
+        def br(lab,v,n,cls=''):
+            return (f'<div class="brow"><div class="blab">{lab}</div><div class="btrk"><div class="bfill {cls}" style="width:{max(2,v/bmax*100):.1f}%"></div></div>'
+                    f'<div class="bval">{f(v)}명 <span class="st" style="color:#8A93A0">{n}경기</span></div></div>')
+        tchip=(f'{chip(tempd,"℃","전월")} <span style="color:#8A93A0">전월 {temp_prev:.1f}℃</span>' if tempd is not None else '')
+        rd=rel(ravg,cavg) if rn and cavg else None
+        wb=('<div class="two">'
+            f'<div class="card"><div class="ct">경기 시간대 평균 기온</div><div class="cs">14~21시 · 구장 좌표 기준</div>'
+            f'<div class="wv">{f"{temp_cur:.1f}℃" if temp_cur is not None else "-"}</div><div style="margin-top:4px;font-size:9px">{tchip}</div></div>'
+            f'<div class="card"><div class="ct">강수 여부별 평균 관중</div><div class="cs">'
+            +(f'우천 경기 맑은 날 대비 {signed(rd)}' if rd is not None else '이 달 우천 경기 없음')+'</div>'
+            +br('맑음',cavg,cn)+(br('우천',ravg,rn,'c') if rn else '')+'</div></div>')
+    t5='날씨'
+    if rn and cn:
+        rd5=rel(sum(g['att'] for g in rain_gs)/rn,sum(g['att'] for g in clear_gs)/cn)
+        t5=f'우천 {rn}경기 평균 관중, 맑은 날 대비 {rd5:+.0f}%'
+    elif temp_cur is not None:
+        t5=f'경기 시간대 평균 {temp_cur:.1f}℃, 우천 경기 없음'
+    sec5=('<div class="sec">'+sec_head('05','날씨',t5,'실제 강수 여부 기준')+wb+'</div>')
+
+    foot=('<div class="foot"><b>출처</b> 관중·결과 KBO 공식 기록 · 날씨 Open-Meteo 과거 기상(구장 좌표, 경기 시간대) · 취소 KBO 일정 비고란<br>'
+          '<b>정의</b> 점유율 = 관중 ÷ 구장 수용인원 · 완전 매진 = 점유율 100% 이상 · 순위 = 경기 직전 기준 · 진행 중 시즌은 잠정값<br>'
+          '제작 (주)서던포스트</div>')
+    mini=lambda p:f'<div class="mini"><span><b>KBO 월간 관중 리포트</b> <span class="c">{y}년 {m}월호</span></span><span>{p}</span></div>'
 
     return (head
-            +'<div class="page">'+cover+kpis+lead+sec1+sec2+'</div>'
-            +'<div class="page">'+sec_month+sec_opp+'</div>'
-            +'<div class="page">'+sec3+sec4+cancel_section(y,m,'07')+'</div>'
-            +'<div class="page">'+sec_sum+foot+'</div>'
+            +'<div class="page">'+hd+hlH+kpis+ptsH+sec1+'</div>'
+            +'<div class="page">'+mini('2 / 3')+sec2+sec3+'</div>'
+            +'<div class="page">'+mini('3 / 3')+sec4+sec5+cancel_section(y,m,'06')+foot+'</div>'
             +'</body></html>')
+
+def league_monthly(games,y,upto_m):
+    def agg(yy,lim):
+        by={}
+        for g in games:
+            if g['yr']==yy and 3<=g['mo']<=lim: by.setdefault(g['mo'],[]).append(g['att'])
+        return {mo:sum(a)/len(a) for mo,a in by.items() if len(a)>=10}
+    cur=agg(y,upto_m); prev=agg(y-1,upto_m)
+    return {'months':sorted(cur),'cur':cur,'prev':prev}
+
 
 # ── 분석 파이프라인 ─────────────────────────────────────
 def opponent_analysis(games,y,m,py,pm):
@@ -738,7 +708,7 @@ def analyze(games,y,m):
     opp_rows,opp_beta=opponent_analysis(games,y,m,py,pm)
     return dict(cur=cur,prevM=prevM,prevY=prevY,tcur=tcur,tprev=tprev,
                 rank_cur=rank_cur,rankrows=rows,r=r,season=season_monthly_stats(games,y,m),
-                opp_rows=opp_rows,opp_beta=opp_beta,
+                opp_rows=opp_rows,opp_beta=opp_beta,league=league_monthly(games,y,m),
                 temp_cur=temp_cur,temp_prev=temp_prev,rain_gs=rain_gs,clear_gs=clear_gs)
 
 # ── PDF 인쇄 (Playwright) ───────────────────────────────
@@ -763,7 +733,7 @@ def send_mail(pdf_path,y,m):
     msg=EmailMessage()
     msg['Subject']=f'[KBO 관중 분석] {y}년 {m}월 월간 리포트'
     msg['From']=user; msg['To']=to
-    msg.set_content(f'{y}년 {m}월 KBO 관중 분석 월간 리포트를 첨부합니다.\n\n— 자동 발송 (주)서던포스트')
+    msg.set_content(f'{y}년 {m}월 KBO 관중 분석 월간 리포트를 첨부합니다.\n\n자동 발송 (주)서던포스트')
     msg.add_attachment(Path(pdf_path).read_bytes(),maintype='application',subtype='pdf',
                        filename=f'KBO_월간리포트_{y}-{m:02d}.pdf')
     with smtplib.SMTP_SSL('smtp.gmail.com',465) as s:
@@ -802,7 +772,7 @@ def generate_one(games,y,m,outdir,make_pdf=True):
     html=build_html(y,m,res['cur'],res['prevM'],res['prevY'],res['tcur'],res['tprev'],
                     res['rank_cur'],res['rankrows'],res['r'],res['season'],
                     res['opp_rows'],res['opp_beta'],
-                    res['temp_cur'],res['temp_prev'],res['rain_gs'],res['clear_gs'])
+                    res['temp_cur'],res['temp_prev'],res['rain_gs'],res['clear_gs'],res['league'])
     name=f'KBO_월간리포트_{y}-{m:02d}'
     (outdir/(name+'.html')).write_text(html,encoding='utf-8')
     if make_pdf:
