@@ -1177,7 +1177,8 @@ function renderCapTable(){
     const ts=grp[k],t0=C.teams[ts[0]],es=t0.eras;
     const venue=es[es.length-1].venue||'';
     const val=es.map(e=>`${fmt(e.cap)}<span class="cy"> (${era(e)})</span>`).join(' · ');
-    const ps=t0.postseason?` · 포스트시즌 ${fmt(t0.postseason)}`:'';
+    const pv=t0.postseason;   /* 숫자 또는 연도 구간 목록 [{min,max,cap}] */
+    const ps=pv==null?'':' · 포스트시즌 '+(typeof pv==='number'?fmt(pv):pv.map(e=>`${fmt(e.cap)}<span class="cy"> (${era(e)})</span>`).join(' · '));
     return{sort:es[es.length-1].cap,
       html:`<tr><td>${venue} (${ts.join('·')})</td><td>${val}${ps}</td></tr>`};
   }).sort((a,b)=>b.sort-a.sort).map(r=>r.html);
