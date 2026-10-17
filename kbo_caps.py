@@ -43,7 +43,13 @@ def cap(team, year=None, venue=None, postseason=False):
     C = load_caps()
     t = C["teams"].get(team)
     if postseason and t and t.get("postseason") is not None:
-        return t["postseason"]
+        ps = t["postseason"]
+        if isinstance(ps, (int, float)):
+            return ps
+        yy = int(year) if year else 9999
+        for era in ps:                       # 연도 구간별 PS 만원 기준. 맞는 구간 없으면 정규 기준으로
+            if _era_match(era, yy):
+                return era["cap"]
     if venue:
         v = str(venue)
         for name, val in C.get("venues", {}).items():
@@ -80,7 +86,11 @@ def to_js():
         "window.KBO_CAPS=" + payload + ";\n"
         "function cap(team,year,venue,postseason){\n"
         "  var C=window.KBO_CAPS, t=C.teams[team];\n"
-        "  if(postseason&&t&&t.postseason!=null)return t.postseason;\n"
+        "  if(postseason&&t&&t.postseason!=null){var ps=t.postseason;\n"
+        "    if(typeof ps==='number')return ps;\n"
+        "    var yy=parseInt(year)||9999;\n"
+        "    for(var j=0;j<ps.length;j++){var q=ps[j];\n"
+        "      if((q.min==null||yy>=q.min)&&(q.max==null||yy<=q.max))return q.cap;}}\n"
         "  if(venue){var v=''+venue;for(var k in C.venues){if(v.indexOf(k)>=0)return C.venues[k];}}\n"
         "  if(!t)return C.default_cap||20000;\n"
         "  var y=parseInt(year)||9999;\n"
@@ -105,3 +115,9 @@ if __name__ == "__main__":
                             ("NC", 2018, 11000), ("NC", 2020, 17983)]:
             got = cap(tm, yr)
             print(f"{'OK ' if got == exp else 'FAIL'} cap({tm},{yr})={got} (기대 {exp})")
+        for tm, yr, exp in [("KIA", 2024, 19300), ("KIA", 2026, 18900), ("KIA", 2017, 20500),
+                            ("LG", 2025, 23750), ("두산", 2026, 23650), ("LG", 2019, 25000),
+                            ("삼성", 2024, 23550), ("삼성", 2026, 23680), ("키움", 2019, 16300),
+                            ("한화", 2026, 16750), ("롯데", 2026, 23200)]:
+            got = cap(tm, yr, postseason=True)
+            print(f"{'OK ' if got == exp else 'FAIL'} PS cap({tm},{yr})={got} (기대 {exp})")
