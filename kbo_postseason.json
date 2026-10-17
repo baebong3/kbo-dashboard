@@ -1,7 +1,7 @@
 {
-  "updated": "2026-06-17",
-  "total": 83,
-  "source": "KBO",
+  "updated": "2026-10-17",
+  "total": 85,
+  "source": "KBO 게임센터 내부 API(GetKboGameList + REVIEW) — fetch_postseason.py",
   "games": [
     {
       "yr": 2019,
@@ -998,6 +998,30 @@
       "venue": "대전",
       "home_score": 1,
       "away_score": 4
+    },
+    {
+      "yr": 2026,
+      "date": "2026-10-14",
+      "series": "WC",
+      "game_no": 1,
+      "home": "LG",
+      "away": "두산",
+      "att": 23650,
+      "venue": "잠실",
+      "home_score": 4,
+      "away_score": 1
+    },
+    {
+      "yr": 2026,
+      "date": "2026-10-17",
+      "series": "준PO",
+      "game_no": 1,
+      "home": "KIA",
+      "away": "LG",
+      "att": 18900,
+      "venue": "광주",
+      "home_score": 5,
+      "away_score": 1
     }
   ]
 }
