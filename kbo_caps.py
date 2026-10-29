@@ -37,11 +37,16 @@ def _era_match(era, year):
 def cap(team, year=None, venue=None, postseason=False):
     """team/year/venue로 만원기준 수용인원 반환.
 
-    우선순위: postseason override > venue(제2구장) > team+year(시대) > default.
+    우선순위: 포스트시즌 중립 구장(ps_venues) > postseason override > venue(제2구장) > team+year(시대) > default.
     포스트시즌엔 cap(home, yr, venue, postseason=True) 로 호출.
     """
     C = load_caps()
     t = C["teams"].get(team)
+    if postseason and venue:                 # 중립 구장 포스트시즌(예: 2021 한국시리즈 고척) - 홈팀이 아니라 구장 기준
+        v = str(venue)
+        for name, val in C.get("ps_venues", {}).items():
+            if name in v:
+                return val
     if postseason and t and t.get("postseason") is not None:
         ps = t["postseason"]
         if isinstance(ps, (int, float)):
@@ -86,6 +91,7 @@ def to_js():
         "window.KBO_CAPS=" + payload + ";\n"
         "function cap(team,year,venue,postseason){\n"
         "  var C=window.KBO_CAPS, t=C.teams[team];\n"
+        "  if(postseason&&venue){var pv=''+venue;for(var n in (C.ps_venues||{})){if(pv.indexOf(n)>=0)return C.ps_venues[n];}}\n"
         "  if(postseason&&t&&t.postseason!=null){var ps=t.postseason;\n"
         "    if(typeof ps==='number')return ps;\n"
         "    var yy=parseInt(year)||9999;\n"
@@ -118,6 +124,8 @@ if __name__ == "__main__":
         for tm, yr, exp in [("KIA", 2024, 19300), ("KIA", 2026, 18900), ("KIA", 2017, 20500),
                             ("LG", 2025, 23750), ("두산", 2026, 23650), ("LG", 2019, 25000),
                             ("삼성", 2024, 23550), ("삼성", 2025, 23680), ("삼성", 2026, 23550), ("키움", 2019, 16300),
-                            ("한화", 2026, 16750), ("롯데", 2026, 23200)]:
+                            ("한화", 2026, 16750), ("KIA", 2025, 19300), ("롯데", 2026, 23200)]:
             got = cap(tm, yr, postseason=True)
             print(f"{'OK ' if got == exp else 'FAIL'} PS cap({tm},{yr})={got} (기대 {exp})")
+        got = cap("kt", 2021, "고척", postseason=True)
+        print(f"{'OK ' if got == 16300 else 'FAIL'} PS cap(kt,2021,고척)={got} (기대 16300, 중립 구장)")
