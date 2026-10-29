@@ -3,7 +3,7 @@
     "purpose": "KBO 좌석 점유율 산정용 구장 수용인원 단일 소스(Single Source of Truth)",
     "basis": "KBO 매진 판정 인원(만원기준). 공식 좌석수/최대수용과 다를 수 있음 — 점유율 계산은 만원기준이 정답.",
     "calibration": "kbo_games.json 실측 관중의 구단x연도별 상한(매진 시 기록값)으로 보정함. verify_kbo.py로 재보정 가능.",
-    "updated": "2026-10-17",
+    "updated": "2026-10-29",
     "occupancy_rule": "occ = min(att / cap, 1.0)  — 점유율은 100%를 넘지 않음",
     "postseason": "포스트시즌은 cap(team, year, venue, postseason=True). teams.<팀>.postseason = 연도 구간별 만원 기준 목록([{min,max,cap}]) 또는 숫자. 해당 연도 구간이 없으면 정규시즌 기준을 씀. 근거: kbo_postseason.json 실측 매진값(같은 관중 수가 여러 경기 반복) + 2026 KBO 발표(엑스포츠뉴스 2026-10-17 「광주 1만8900석 꽉 찼다」(https://www.xportsnews.com/article/2208491) · 경향신문 2026-10-14(https://khan.co.kr/article/202610142236005)). 정규시즌보다 적은 이유: PS는 중계·취재석 확대 등으로 판매 좌석이 줄어듦",
     "notes_2020_2021": "2020·2021은 코로나로 무관중/제한관중 경기가 많아 기록 경기 수가 720 미만인 것이 정상.",
@@ -232,10 +232,15 @@
         },
         {
           "min": 2025,
+          "max": 2025,
           "cap": 23680
+        },
+        {
+          "min": 2026,
+          "cap": 23550
         }
       ],
-      "postseason_note": "대구 PS 만원: 2024 23,550(4경기 동일) · 2025 23,680(6경기 동일)"
+      "postseason_note": "대구 PS 만원: 2024 23,550(4경기 동일) · 2025 23,680(6경기 동일) · 2026 23,550(PO 1·2차전 매진, 경북매일 2026-10-26 「2만3550석 매진」)"
     },
     "kt": {
       "confidence": "med",

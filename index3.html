@@ -135,7 +135,7 @@ async function load(){
     $('upd').textContent='kbo_postseason.json 없음';
   }
   YEARS=[...new Set(PS.map(g=>g.yr))].sort((a,b)=>a-b);
-  selYears=YEARS.slice();
+  selYears=YEARS.length?[YEARS[YEARS.length-1]]:[];   /* 기본: 가장 최근 시즌(2026)만 선택 · 연도 버튼으로 추가 선택 */
   buildYearToggle(); buildSeriesToggle(); refresh();
 }
 
