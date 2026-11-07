@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>KBO 관중 분석 콘솔 · 2025–2026 | (주)서던포스트</title>
+<title>KBO 관중 분석 콘솔 · 2025~2026 | (주)서던포스트</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -158,7 +158,7 @@ select:hover,select:focus{border-color:var(--coral)}
     </div>
     <div class="hd-meta">
       <span class="dot"></span>
-      <span id="updTime">데이터 로딩 중…</span>
+      <span id="updTime">데이터 로딩 중</span>
       <span class="src" id="srcBadge">—</span>
     </div>
   </div>
@@ -201,14 +201,14 @@ select:hover,select:focus{border-color:var(--coral)}
   <div class="grid g-21">
     <div class="card">
       <div class="card-hd">
-        <div><div class="eyebrow">상황별 영향도 — 무엇이 관중을 움직이나</div><div class="ctitle">전체 평균 대비 평균 관중 편차</div><div class="csub">기준선 = 현재 조건 전체 평균 · 막대 = ±%(괄호 경기 수)</div></div>
+        <div><div class="eyebrow">상황별 영향도 - 관중 증감 요인</div><div class="ctitle">전체 평균 대비 평균 관중 편차</div><div class="csub">기준선 = 현재 조건 전체 평균 · 막대 = ±%(괄호 경기 수)</div></div>
       </div>
       <div id="impact"></div>
       <div class="split" id="serSplit"></div>
     </div>
     <div class="card">
       <div class="card-hd">
-        <div><div class="eyebrow">시즌 흐름</div><div class="ctitle">월별 평균 관중</div><div class="csub">2025 vs 2026</div></div>
+        <div><div class="eyebrow">시즌 흐름</div><div class="ctitle">월별 평균 관중</div><div class="csub">2025년과 2026년 비교</div></div>
         <div class="legbox"><span class="lg"><i style="background:var(--navy)"></i>2025</span><span class="lg"><i style="background:var(--coral)"></i>2026</span></div>
       </div>
       <div class="chwrap" style="height:300px"><canvas id="cTrend"></canvas></div>
@@ -218,7 +218,7 @@ select:hover,select:focus{border-color:var(--coral)}
   <div class="grid g-11">
     <div class="card">
       <div class="card-hd">
-        <div><div class="eyebrow">구단별 동원력 ①</div><div class="ctitle">평균 관중 × 좌석 점유율</div><div class="csub">오른쪽 = 동원 많음 · 위쪽 = 만석에 가까움 · 점선 = 만석(100%)</div></div>
+        <div><div class="eyebrow">구단별 동원력 ①</div><div class="ctitle">평균 관중 × 좌석 점유율</div><div class="csub">오른쪽 = 동원 많음 · 위쪽 = 점유율 높음 · 점선 = 점유율 100%</div></div>
       </div>
       <div class="chwrap" style="height:300px"><canvas id="cScatter"></canvas></div>
     </div>
@@ -293,8 +293,8 @@ async function loadData(){
         $('updTime').textContent=(d.updated||'')+' 경기까지';
         const dup=window.__dupRemoved||0;
         banner(dup>0
-          ? `로드 완료 — 정리 ${dup.toLocaleString()}건(중복·가짜 매치업) 제거 후 2025·2026 ${ALL.length}경기 분석`
-          : `kbo_games.json 로드 완료 — 2025·2026 ${ALL.length}경기 분석`, dup>0?'warn':'ok');
+          ? `로드 완료 - 정리 ${dup.toLocaleString()}건(중복·가짜 매치업) 제거 후 2025·2026 ${ALL.length}경기 분석`
+          : `kbo_games.json 로드 완료 - 2025·2026 ${ALL.length}경기 분석`, dup>0?'warn':'ok');
         return true;}}
     throw new Error('no data');
   }catch(e){$('srcBadge').textContent='로드 실패';$('updTime').textContent='데이터 없음';
@@ -419,7 +419,7 @@ function renderInsight(){
   const we=avg(filtered.filter(g=>g.series==='WE').map(g=>g.att)),wd=avg(filtered.filter(g=>g.series==='WD').map(g=>g.att));
   const gap=wd?Math.round((we-wd)/wd*100):0;
   el.innerHTML=`<b>${yr}</b> 조건 내 ${fmt(filtered.length)}경기 · 경기당 평균 <b>${fmt(a)}명</b> · 누적 ${man(tot)}만 명. `+
-    (top?`최다 동원 홈구장 <b>${top.t}</b>(평균 ${fmt(top.m)}명). `:``)+
+    (top?`관중 최다 홈구장 <b>${top.t}</b>(평균 ${fmt(top.m)}명). `:``)+
     (we&&wd?`주말이 주중보다 <b>${gap>=0?'+':''}${gap}%</b>로 가장 큰 변수입니다.`:``);
 }
 
@@ -456,7 +456,7 @@ function renderSplit(){
   const gap=wdA?Math.round((weA-wdA)/wdA*100):0;
   $('serSplit').innerHTML=`
     <div class="tile wd"><div class="tile-l">주중 3연전 평균</div><div class="tile-v">${fmt(wdA)}</div><div class="tile-s">${wd.length}경기</div></div>
-    <div class="tile we"><div class="tile-l">주말 3연전 평균</div><div class="tile-v">${fmt(weA)}</div><div class="tile-s">${we.length}경기 · ${gap>=0?'+':''}${gap}% vs 주중</div></div>`;
+    <div class="tile we"><div class="tile-l">주말 3연전 평균</div><div class="tile-v">${fmt(weA)}</div><div class="tile-s">${we.length}경기 · ${gap>=0?'+':''}주중 대비 ${gap}%</div></div>`;
 }
 
 /* ════════ 월별 추이 ════════ */
@@ -493,7 +493,7 @@ const occLine={id:'occLine',afterDraw(chart){
   ctx.save();ctx.strokeStyle='rgba(43,58,85,.35)';ctx.lineWidth=1;ctx.setLineDash([5,4]);
   ctx.beginPath();ctx.moveTo(left,yp);ctx.lineTo(right,yp);ctx.stroke();
   ctx.setLineDash([]);ctx.fillStyle='#8A93A0';ctx.font='600 10px sans-serif';ctx.textAlign='right';
-  ctx.fillText('만석 100%',right-2,yp-4);ctx.restore();
+  ctx.fillText('점유율 100%',right-2,yp-4);ctx.restore();
 }};
 /* 산점도 라벨 충돌 회피 엔진 (점 주변 8방향 탐색 + 리더선) */
 function _ovl(a,b){return !(a.x+a.w<b.x||b.x+b.w<a.x||a.y+a.h<b.y||b.y+b.h<a.y);}

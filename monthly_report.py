@@ -184,7 +184,7 @@ def team_legend(order):
     s.append(f'<line x1="{X(0)}" y1="{pt}" x2="{X(0)}" y2="{pt+ih}" stroke="#D7DCE3" stroke-dasharray="4 3"/>')
     s.append(f'<line x1="{pl}" y1="{Y(0)}" x2="{pl+iw}" y2="{Y(0)}" stroke="#D7DCE3" stroke-dasharray="4 3"/>')
     # 축 라벨
-    s.append(f'<text x="{pl+iw}" y="{pt+ih+24}" text-anchor="end" font-size="10" fill="{MUTED}">순위 하락(계단) →</text>')
+    s.append(f'<text x="{pl+iw}" y="{pt+ih+24}" text-anchor="end" font-size="10" fill="{MUTED}">순위 하락 →</text>')
     s.append(f'<text x="{pl}" y="{pt+ih+24}" text-anchor="start" font-size="10" fill="{MUTED}">← 순위 상승</text>')
     s.append(f'<text x="{pl-6}" y="{pt+8}" text-anchor="end" font-size="10" fill="{MUTED}">관중↑</text>')
     s.append(f'<text x="{pl-6}" y="{pt+ih}" text-anchor="end" font-size="10" fill="{MUTED}">관중↓</text>')
@@ -450,7 +450,7 @@ def build_html(y,m,cur,prevM,prevY,tcur,tprev,rank_cur,rankrows,r,season,
         pts.append(('최대 감소',f'<b>{c["t"]}</b> {signed(c["d"])}'+(f' · {" · ".join(rs)}' if rs else '')))
     if r is not None and rankrows:
         lab=('양의 상관' if r>0.1 else '음의 상관' if r<-0.1 else '관계 미약')
-        txt=(' · 순위 오른 구단 관중 증가 경향' if r>=0.25 else ' · 순위와 반대 방향 움직임' if r<=-0.25 else '')
+        txt=(' · 순위 상승 구단 관중 증가 경향' if r>=0.25 else ' · 순위와 반대 방향 움직임' if r<=-0.25 else '')
         def grp(cond):
             xs=[x['dAtt'] for x in rankrows if cond(x['r0']-x['r1'])]
             return (len(xs),sum(xs)/len(xs)) if xs else (0,None)
@@ -523,10 +523,10 @@ def build_html(y,m,cur,prevM,prevY,tcur,tprev,rank_cur,rankrows,r,season,
     if season and season.get('months'):
         lb=(svg_league_bars(league['months'],league['cur'],league['prev'],y) if league else '')
         mh=('<div class="two">'
-            f'<div class="card"><div class="ct">리그 월별 평균 관중</div><div class="cs">{y}년 vs {y-1}년 · 경기당 · 하단 = 전년 동월비</div>'
+            f'<div class="card"><div class="ct">리그 월별 평균 관중</div><div class="cs">{y}년과 {y-1}년 비교 · 경기당 · 하단 = 전년 동월비</div>'
             f'{lb}<div class="lg2"><span><i style="background:{CORAL}"></i>{y}년 {m}월</span><span><i style="background:#5B6676"></i>{y}년</span><span><i style="background:#D3D9E1"></i>{y-1}년</span></div>'
             f'<div class="ins">{ins_l}</div></div>'
-            '<div class="card"><div class="ct">구단별 월 좌석 점유율(%)</div><div class="cs">진할수록 만석 · 오른쪽 = 시즌 평균</div>'
+            '<div class="card"><div class="ct">구단별 월 좌석 점유율(%)</div><div class="cs">진할수록 점유율 높음 · 오른쪽 = 시즌 평균</div>'
             f'{html_month_heat(season["months"],season["order"],season["occ"])}<div class="ins">{ins_h}</div></div>'
             '</div>')
     else:
@@ -584,7 +584,7 @@ def build_html(y,m,cur,prevM,prevY,tcur,tprev,rank_cur,rankrows,r,season,
     t4='순위와 관중'
     if r is not None and rankrows:
         lab=('양의 상관' if r>0.1 else '음의 상관' if r<-0.1 else '관계 미약')
-        t4=f'순위 변화와 관중 변화 {lab}(r={r:.2f})'+(', 순위 오른 구단 관중 증가' if r>=0.25 else '')
+        t4=f'순위 변화와 관중 변화 {lab}(r={r:.2f})'+(', 순위 상승 구단 관중 증가' if r>=0.25 else '')
     sec4=('<div class="sec">'+sec_head('04','순위와 관중',t4,'경기일 기준 평균 순위 · 전월 대비')+rh+'</div>')
 
     # ── 05 날씨 ──

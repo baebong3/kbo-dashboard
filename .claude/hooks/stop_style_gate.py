@@ -10,7 +10,7 @@ import glob, json, os, subprocess, sys, tempfile, time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-from style_check import DOC_EXT, check  # noqa: E402
+from style_check import DOC_EXT, GEN_EXT, check  # noqa: E402
 
 SKIP_DIRS = {".git", "node_modules", "__pycache__", ".venv", "venv", "tool-results"}
 SKIP_NAMES = {"CLAUDE.md", "SKILL.md", "README.md"}   # 규칙 설명 문서는 예시 표현을 담고 있어 제외
@@ -49,7 +49,7 @@ for root in dict.fromkeys(roots):
         dns[:] = [d for d in dns if d not in SKIP_DIRS]
         for fn in fns:
             fp = os.path.join(dp, fn)
-            if not fn.lower().endswith(DOC_EXT) or fn in SKIP_NAMES:
+            if not fn.lower().endswith(DOC_EXT + GEN_EXT) or fn in SKIP_NAMES or os.path.abspath(dp) == HERE:
                 continue
             if changed is not None and fp not in changed:
                 continue                      # git 저장소: 이번에 손대지 않은 파일은 제외
@@ -62,11 +62,13 @@ for fp in files:
         hits = check(fp, public=any(k in os.path.basename(fp) for k in PUBLIC_HINT))
     except Exception:
         continue
-    for label, word, no, ctx in hits[:30]:
-        report.append(f"- {os.path.relpath(fp, roots[0]) if fp.startswith(roots[0]) else fp}:{no} [{label}] '{word}' | {ctx}")
+    name = os.path.relpath(fp, roots[0]) if fp.startswith(roots[0]) else fp
+    for grade, cat, word, no, ctx, sug in hits[:30]:
+        report.append(f"- {name}:{no} [{grade}·{cat}] '{word}' → {sug} | {ctx}")
 
 if report:
-    reason = ("[문체 점검] 이번 작업에서 만들거나 고친 문서에 AI식 말투·표현이 남아 있음. "
+    reason = ("[문체 점검] 이번 작업에서 만들거나 고친 문서·생성기 문안에 AI식 말투·표현이 남아 있음. "
+              "'수정' 등급은 고치고, '확인' 등급은 문맥을 보고 유지 여부를 판단할 것(유지하면 사유를 사용자에게 알림). "
               "public-doc-korean-style 스킬과 대체표 기준으로 고친 뒤 마무리할 것. "
               "생성 스크립트가 만든 파일이면 산출물이 아니라 생성기 문안을 고칠 것. "
               "고유명사·인용문·표의 빈 칸처럼 고치면 안 되는 항목은 그대로 두고 이유를 사용자에게 알릴 것.\n"
