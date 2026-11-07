@@ -6,7 +6,7 @@ style_check.py로 검사하고, 걸린 표현이 있으면 종료를 막고 수�
 - 검사 위치: 프로젝트 폴더, 세션 스크래치패드(/tmp/claude-*)
 - 한 번 막은 뒤 다시 종료할 때(stop_hook_active)는 통과시켜 무한 반복을 막음
 """
-import glob, json, os, sys, tempfile, time
+import glob, json, os, subprocess, sys, tempfile, time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -25,18 +25,35 @@ if data.get("stop_hook_active"):
     sys.exit(0)
 
 marker = os.path.join(tempfile.gettempdir(), "claude-style-gate", f"{data.get('session_id', 'default')}.marker")
-since = os.path.getmtime(marker) if os.path.exists(marker) else time.time() - 2 * 3600
+since = os.path.getmtime(marker) if os.path.exists(marker) else time.time() - 30 * 60
 
 roots = [os.environ.get("CLAUDE_PROJECT_DIR") or data.get("cwd") or os.getcwd()]
 roots += glob.glob(os.path.join(tempfile.gettempdir(), "claude-*", "*", "*", "scratchpad"))
 
+def git_changed(root):
+    """git 저장소면 커밋되지 않은 변경·새 파일만 돌려줌 (새로 clone한 파일의 수정 시각에 속지 않게)"""
+    try:
+        out = subprocess.run(["git", "-C", root, "status", "--porcelain", "-z", "--untracked-files=all"],
+                             capture_output=True, text=True, timeout=20)
+    except Exception:
+        return None
+    if out.returncode != 0:
+        return None
+    return {os.path.join(root, e[3:]) for e in out.stdout.split("\0") if len(e) > 3}
+
+
 files = []
 for root in dict.fromkeys(roots):
+    changed = git_changed(root)
     for dp, dns, fns in os.walk(root):
         dns[:] = [d for d in dns if d not in SKIP_DIRS]
         for fn in fns:
             fp = os.path.join(dp, fn)
-            if fn.lower().endswith(DOC_EXT) and fn not in SKIP_NAMES and os.path.getmtime(fp) >= since:
+            if not fn.lower().endswith(DOC_EXT) or fn in SKIP_NAMES:
+                continue
+            if changed is not None and fp not in changed:
+                continue                      # git 저장소: 이번에 손대지 않은 파일은 제외
+            if os.path.getmtime(fp) >= since:
                 files.append(fp)
 
 report = []
