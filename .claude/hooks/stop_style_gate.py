@@ -13,7 +13,7 @@ sys.path.insert(0, HERE)
 from style_check import DOC_EXT, GEN_EXT, check  # noqa: E402
 
 SKIP_DIRS = {".git", "node_modules", "__pycache__", ".venv", "venv", "tool-results"}
-SKIP_NAMES = {"CLAUDE.md", "SKILL.md", "README.md"}   # 규칙 설명 문서는 예시 표현을 담고 있어 제외
+SKIP_NAMES = {"CLAUDE.md", "SKILL.md", "README.md", "style_corrections.md"}   # 규칙 설명 문서는 예시 표현을 담고 있어 제외
 PUBLIC_HINT = ("제안", "보고서", "결과보고", "계획서", "브리핑", "안내문", "과업")  # 파일명에 있으면 공문서 형식까지 검사
 
 data = {}
@@ -65,6 +65,15 @@ for fp in files:
     name = os.path.relpath(fp, roots[0]) if fp.startswith(roots[0]) else fp
     for grade, cat, word, no, ctx, sug in hits[:30]:
         report.append(f"- {name}:{no} [{grade}·{cat}] '{word}' → {sug} | {ctx}")
+
+# 표현 교정이 감지된 요청인데 규칙 파일을 고치지 않았으면 한 번 막음
+flag = os.path.join(tempfile.gettempdir(), "claude-style-gate", f"{data.get('session_id', 'default')}.correction")
+if os.path.exists(flag):
+    rules = os.path.join(HERE, "style_rules.py")
+    if os.path.getmtime(rules) < os.path.getmtime(flag):
+        report.insert(0, "- [교정 미반영] 이번 메시지의 표현 교정이 style_rules.py·대체표에 반영되지 않음. "
+                         "반영하거나, 교정이 아니었으면 그 사유를 사용자에게 알릴 것")
+    os.remove(flag)
 
 if report:
     reason = ("[문체 점검] 이번 작업에서 만들거나 고친 문서·생성기 문안에 AI식 말투·표현이 남아 있음. "

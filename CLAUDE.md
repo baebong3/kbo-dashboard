@@ -7,3 +7,11 @@
 - 규칙은 `.claude/hooks/style_rules.py`에 있음 - 정본 「AI·클로드식 표현 수정 대체표」(Claude Docs)에서 실제로 바로잡은 사례를 옮긴 것. 사용자가 새로 바로잡은 표현은 정본 문서에 먼저 추가하고, 이 파일에 규칙 한 줄을 추가
 - 월간 리포트 문안은 `monthly_report.py`에서 고침 (산출물 직접 수정 금지)
 - 고유명사·인용문·표의 빈 칸(—)·야구 용어(공수 교대 등)는 그대로 둠
+
+## 표현 교정 자동 반영
+- 사용자가 표현을 바로잡으면(UserPromptSubmit 훅 `detect_correction.py`가 감지) 같은 요청 안에서 바로 반영함
+  - 정본 대체표(Claude Docs) 해당 절에 행 추가
+  - `.claude/hooks/style_rules.py`에 규칙 추가
+  - `.claude/style_corrections.md`에 기록 (claude.ai 스킬로 옮길 개선안 목록)
+  - 커밋·푸시
+- 반영하지 않고 끝내려 하면 Stop 훅이 한 번 막음. 교정이 아니었으면 그 사유를 알림
