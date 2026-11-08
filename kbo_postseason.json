@@ -1,6 +1,6 @@
 {
-  "updated": "2026-11-07",
-  "total": 95,
+  "updated": "2026-11-08",
+  "total": 96,
   "source": "KBO 게임센터 내부 API(GetKboGameList + REVIEW) — fetch_postseason.py",
   "games": [
     {
@@ -1142,6 +1142,18 @@
       "venue": "대구",
       "home_score": 5,
       "away_score": 1
+    },
+    {
+      "yr": 2026,
+      "date": "2026-11-07",
+      "series": "KS",
+      "game_no": 4,
+      "home": "삼성",
+      "away": "kt",
+      "att": 23550,
+      "venue": "대구",
+      "home_score": 10,
+      "away_score": 5
     }
   ]
 }
