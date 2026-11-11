@@ -16,7 +16,7 @@ sys.path.insert(0, str(ROOT))
 from txc.config import YearRangeError, load_config, resolve_years  # noqa: E402
 from txc.normalize import (bizno_checksum_ok, norm_bizno, norm_name, norm_region,  # noqa: E402
                            norm_status, unit_factor)
-from txc.sources import kosis, nts  # noqa: E402
+from txc.sources import dart, kosis, nts  # noqa: E402
 from txc.store import Store  # noqa: E402
 from txc.validate import compare_group, run_validation  # noqa: E402
 from txc.sources.files import load_file_sources  # noqa: E402
@@ -144,6 +144,67 @@ class TestEndToEnd(unittest.TestCase):
             row = iw[(iw["업종"] == "종합유원시설업") & (iw["연도"] == 2022) & (iw["지표"] == "매출액")]
             self.assertEqual(row["테마파크업 현황"].iloc[0], 48000)
             self.assertEqual(len(res.firms), 6)
+        finally:
+            shutil.rmtree(tmp)
+
+
+class TestOfficialAndDart(unittest.TestCase):
+    def _cfg(self, tmp):
+        shutil.copytree(ROOT / "sample_data", tmp / "sample_data")
+        shutil.copy(ROOT / "config.sample.yaml", tmp / "config.yaml")
+        return load_config(tmp / "config.yaml")
+
+    def test_official_only_skips_nice(self):
+        tmp = Path(tempfile.mkdtemp())
+        try:
+            cfg = self._cfg(tmp)
+            cfg.raw["official_only"] = True
+            store = Store()
+            load_file_sources(cfg, store)
+            self.assertNotIn("NICE비즈라인", set(store.metrics["source"]))
+            self.assertIn("관광산업조사(업체별)", set(store.metrics["source"]))
+        finally:
+            shutil.rmtree(tmp)
+
+    def test_dart_fills_bizno_for_name_only_firm(self):
+        import io as _io
+        import zipfile as _zf
+        xml = ("<result><list><corp_code>00000001</corp_code><corp_name>별빛랜드</corp_name></list>"
+               "<list><corp_code>00000002</corp_code><corp_name>동명회사</corp_name></list>"
+               "<list><corp_code>00000003</corp_code><corp_name>동명회사</corp_name></list></result>").encode()
+        buf = _io.BytesIO()
+        with _zf.ZipFile(buf, "w") as z:
+            z.writestr("CORPCODE.xml", xml)
+
+        class Z:
+            content = buf.getvalue()
+            def raise_for_status(self): pass
+
+        def fake_get(url, params, timeout):
+            if url.endswith("corpCode.xml"):
+                return Z()
+            if url.endswith("company.json"):
+                return FakeResp({"status": "000", "bizr_no": "1860913909", "corp_cls": "E"})
+            if params["bsns_year"] == "2024":
+                return FakeResp({"status": "020", "message": "한도 초과"})
+            return FakeResp({"status": "000", "list": [
+                {"fs_div": "OFS", "fs_nm": "재무제표", "account_nm": "매출액", "thstrm_amount": "21,000,000,000"}]})
+
+        tmp = Path(tempfile.mkdtemp())
+        try:
+            cfg = self._cfg(tmp)
+            cfg.raw["dart"] = {"enabled": True, "api_key_env": "TXC_TEST_KEY", "pause_sec": 0,
+                               "cache": str(tmp / "c.xml")}
+            os.environ["TXC_TEST_KEY"] = "x"
+            store = Store()
+            with mock.patch.object(dart.requests, "get", side_effect=fake_get):
+                dart.load_dart(cfg, store, [("", "별빛랜드"), ("", "동명회사")])
+            st, m = store.status, store.metrics
+            self.assertEqual(st.loc[st.firm_name == "별빛랜드", "biz_no"].iloc[0], "1860913909")
+            self.assertFalse((st.firm_name == "동명회사").any())      # 후보 2개 → 연결 안 함
+            self.assertEqual(sorted(m["year"]), [2020, 2021, 2022, 2023])  # 2024에서 한도 초과로 멈춤
+            self.assertEqual(m["value"].iloc[0], 21000.0)
+            self.assertTrue(any("한도 초과" in x["내용"] for x in store.log))
         finally:
             shutil.rmtree(tmp)
 

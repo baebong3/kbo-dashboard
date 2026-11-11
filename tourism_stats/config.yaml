@@ -3,6 +3,7 @@
 # 2) python -m txc discover   → KOSIS 통계표ID 검색 결과(output/KOSIS_통계표_검색결과.xlsx)
 # 3) 아래 kosis.tables 에 통계표ID 입력, files 에 내려받은 파일 경로·열 이름 입력
 # 4) python -m txc run --start 2020 --end 2024 --csv
+official_only: true                 # true: official: false 인 출처(NICE 등 민간자료)는 읽지 않음
 years: {start: null, end: null}     # 비우면 작년 기준 최근 5년. 최소 3년 ~ 최대 5년
 output_dir: output
 
@@ -15,7 +16,7 @@ validation:
     - 관광산업조사(업체별)
     - 호텔업 운영현황
     - 테마파크업 현황
-    - NICE비즈라인
+    - NICE비즈라인                  # official_only: true 이면 쓰이지 않음
 
 industry_aliases:                   # 출처마다 다른 업종명을 하나로
   관광호텔업: [관광호텔, 호텔업(관광호텔), 관광호텔업(1~5성)]
@@ -66,16 +67,18 @@ nts:                                # 국세청 사업자등록 상태조회(휴
   enabled: true
   api_key_env: NTS_API_KEY
 
-dart:                               # 선택: 외감·공시 법인 재무(매출액·영업이익)
-  enabled: false
+dart:                               # 금융감독원 Open DART(무료). 기업개황·사업보고서 재무
+  enabled: true
   api_key_env: DART_API_KEY
   fs_div: OFS                       # OFS 개별, CFS 연결
-  max_firms: 300
+  max_firms: 500                    # 1회 실행 업체 수 상한(하루 호출 한도 20,000건)
+  pause_sec: 0.1
   cache: output/cache/CORPCODE.xml
 
 files:
   # ── NICE비즈라인: 기업검색 → 재무 엑셀 내려받기 (열 이름은 내려받은 파일에 맞게 수정)
   - name: NICE비즈라인
+    official: false                 # 민간(유료) 자료 → official_only: true 이면 제외
     org: NICE평가정보
     level: firm
     path: data/nice_bizline.xlsx
@@ -104,6 +107,7 @@ files:
 
   # ── 호텔업 운영현황(문체부·한국호텔업협회). 사업자번호 없으면 업체명으로 매칭
   - name: 호텔업 운영현황
+    official: true                  # 문체부 공표본 기준. 협회 자체 자료면 false
     org: 문화체육관광부·한국호텔업협회
     level: firm
     path: data/hotel_survey.xlsx
@@ -113,6 +117,7 @@ files:
 
   # ── 테마파크업(유원시설업) 현황 - 업종별 합계 자료
   - name: 테마파크업 현황
+    official: true                  # 문체부 공표본 기준. 협회 자체 자료면 false
     org: 문화체육관광부·한국종합유원시설협회
     level: industry
     path: data/themepark_industry.xlsx

@@ -38,6 +38,9 @@ def load_file_sources(cfg: Config, store: Store) -> None:
         if not spec.get("enabled", True):
             continue
         name = spec["name"]
+        if cfg.raw.get("official_only", False) and not spec.get("official", True):
+            store.info(name, "공식자료 아님(official: false) → official_only 설정으로 제외")
+            continue
         path = cfg.path(spec["path"])
         if not path.exists():
             store.warn(name, f"파일 없음 → 건너뜀: {path}")

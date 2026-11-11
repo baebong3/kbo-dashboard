@@ -172,6 +172,8 @@ def check_status(st: pd.DataFrame, m: pd.DataFrame, firms: pd.DataFrame, years: 
         notes = []
         statuses = {}
         for _, r in g.iterrows():
+            if not r["status"]:   # DART 기업개황 등 연결용 행
+                continue
             statuses[r["source"]] = r["status"]
             row[f"{r['source']}_상태"] = r["status"]
             if r["status_date"]:

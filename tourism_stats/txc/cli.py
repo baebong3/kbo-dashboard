@@ -28,12 +28,14 @@ def cmd_run(a: argparse.Namespace) -> int:
     store = Store()
     load_kosis(cfg, store)
     load_file_sources(cfg, store)
+    # DART를 먼저 돌려 사업자번호가 없는 업체(인허가 자료 등)의 번호를 채운 뒤 국세청 조회
     m, st = store.metrics, store.status
     firms = pd.concat([m.loc[m["level"] == "firm", ["biz_no", "firm_name"]], st[["biz_no", "firm_name"]]])
-    load_nts(cfg, store, [b for b in firms["biz_no"] if b])
-    pairs = (firms[(firms["biz_no"] != "") & (firms["firm_name"] != "")]
-             .drop_duplicates("biz_no")[["biz_no", "firm_name"]].itertuples(index=False, name=None))
-    load_dart(cfg, store, list(pairs))
+    firms = firms[firms["firm_name"] != ""].drop_duplicates()
+    load_dart(cfg, store, list(firms.itertuples(index=False, name=None)))
+    m, st = store.metrics, store.status
+    bizs = pd.concat([m.loc[m["level"] == "firm", "biz_no"], st["biz_no"]])
+    load_nts(cfg, store, [b for b in bizs if b])
 
     res = run_validation(cfg, store)
     out_dir = cfg.path(cfg.raw.get("output_dir", "output"))

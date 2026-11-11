@@ -30,6 +30,7 @@ dart: {enabled: false}
 
 files:
   - name: NICE비즈라인
+    official: false
     org: NICE평가정보
     level: firm
     path: sample_data/nice_bizline.csv
