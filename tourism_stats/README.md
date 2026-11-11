@@ -81,7 +81,8 @@ copy .env.example .env          :: 인증키 입력
 ## 공식자료만 쓰기
 
 `config.yaml` 맨 위 `official_only: true`(기본값)이면 `official: false`로 표시한 출처(NICE비즈라인 등 민간자료)는 읽지 않습니다.
-공식자료: KOSIS 관광산업조사, 국세청, DART, 지방행정 인허가, 관광산업조사 원자료, 문체부 공표 호텔업·테마파크업 자료.
+현재 사용: KOSIS 관광산업조사, 국세청 휴폐업, DART, 지방행정 인허가, 관광산업조사 업체별 원자료.
+호텔업 운영현황·테마파크업 현황은 작성기관·정확도 확인 전까지 `enabled: false`로 꺼 두었습니다(확인되면 `true`, `official: true`로 바꾸고 `source_priority`에 추가).
 
 ## DART 연결 (무료)
 

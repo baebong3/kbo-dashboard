@@ -14,8 +14,6 @@ validation:
     - DART
     - KOSIS
     - 관광산업조사(업체별)
-    - 호텔업 운영현황
-    - 테마파크업 현황
     - NICE비즈라인                  # official_only: true 이면 쓰이지 않음
 
 industry_aliases:                   # 출처마다 다른 업종명을 하나로
@@ -107,7 +105,8 @@ files:
 
   # ── 호텔업 운영현황(문체부·한국호텔업협회). 사업자번호 없으면 업체명으로 매칭
   - name: 호텔업 운영현황
-    official: true                  # 문체부 공표본 기준. 협회 자체 자료면 false
+    enabled: false                  # 작성기관·정확도 확인 전까지 제외(확인되면 true)
+    official: false
     org: 문화체육관광부·한국호텔업협회
     level: firm
     path: data/hotel_survey.xlsx
@@ -117,7 +116,8 @@ files:
 
   # ── 테마파크업(유원시설업) 현황 - 업종별 합계 자료
   - name: 테마파크업 현황
-    official: true                  # 문체부 공표본 기준. 협회 자체 자료면 false
+    enabled: false                  # 작성기관·정확도 확인 전까지 제외(확인되면 true)
+    official: false
     org: 문화체육관광부·한국종합유원시설협회
     level: industry
     path: data/themepark_industry.xlsx
