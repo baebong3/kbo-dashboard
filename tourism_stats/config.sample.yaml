@@ -1,0 +1,119 @@
+# ── 오프라인 예시 설정(가상 자료) ── 실제 사용은 config.yaml
+years: {start: 2020, end: 2024}      # 최소 3년 ~ 최대 5년
+output_dir: output
+
+validation:
+  relative_tolerance: 0.05            # 5% 이내 차이는 '일치'
+  absolute_tolerance: 0.5             # 반올림 오차(0.5 이하)는 '일치'
+  source_priority:                    # 채택값 우선순위(앞이 우선)
+    - DART
+    - KOSIS
+    - 관광산업조사(업체별)
+    - NICE비즈라인
+    - 호텔업 운영현황
+    - 테마파크업 현황
+
+industry_aliases:
+  관광호텔업: [관광호텔, 호텔업(관광호텔), 관광호텔업(1~5성)]
+  종합유원시설업: [테마파크업, 테마파크, 유원시설업(종합)]
+  일반유원시설업: [유원시설업(일반)]
+
+metric_aliases:
+  매출액: [총매출, 총매출액, 매출, 매출액합계]
+  종사자수: [종업원수, 종사자, 근로자수]
+  사업체수: [업체수, 사업체]
+  입장객수: [입장객, 이용객수]
+
+kosis: {enabled: false}
+nts: {enabled: false}
+dart: {enabled: false}
+
+files:
+  - name: NICE비즈라인
+    org: NICE평가정보
+    level: firm
+    path: sample_data/nice_bizline.csv
+    columns:
+      사업자등록번호: biz_no
+      기업명: firm_name
+      산업분류명: industry
+      주소: address
+      결산년도: year
+      매출액(천원): 매출액
+      영업이익(천원): 영업이익
+      종업원수: 종사자수
+    units: {매출액: 천원, 영업이익: 천원}
+
+  - name: 관광산업조사(업체별)
+    org: 문화체육관광부·한국문화관광연구원
+    level: firm
+    format: wide                      # 매출액_2022 처럼 지표_연도 열
+    path: sample_data/tourism_survey_firms.csv
+    columns: {사업자번호: biz_no, 사업체명: firm_name, 업종: industry, 시도: region}
+    default_unit: 백만원
+    remark: 조사 원자료(내부)
+
+  - name: 호텔업 운영현황
+    org: 한국호텔업협회(가정)
+    level: firm
+    path: sample_data/hotel_survey.csv
+    columns:
+      연도: year
+      호텔명: firm_name
+      지역: region
+      객실수: 객실수
+      객실매출(백만원): 객실매출
+      총매출(백만원): 매출액
+    fixed: {industry: 관광호텔업}
+    units: {객실매출: 백만원, 매출액: 백만원}
+
+  - name: 인허가(관광숙박업)
+    org: 행정안전부 지방행정인허가
+    level: status
+    path: sample_data/localdata_hotel.csv
+    columns:
+      사업장명: firm_name
+      소재지전체주소: address
+      업태구분명: industry
+      영업상태명: status
+      폐업일자: status_date
+      인허가일자: open_date
+      사업자등록번호: biz_no
+    derive_counts: true               # 인허가·폐업일로 연말 영업 사업체수 산출
+
+  - name: 인허가(유원시설업)
+    org: 행정안전부 지방행정인허가
+    level: status
+    path: sample_data/localdata_themepark.csv
+    columns:
+      사업장명: firm_name
+      소재지전체주소: address
+      업태구분명: industry
+      영업상태명: status
+      폐업일자: status_date
+      인허가일자: open_date
+    derive_counts: true
+
+  - name: KOSIS
+    org: 문화체육관광부(KOSIS 내려받기)
+    level: industry
+    path: sample_data/kosis_industry_offline.csv
+    columns: {연도: year, 업종: industry, 지역: region, 항목: metric, 값: value, 단위: unit}
+
+  - name: 테마파크업 현황
+    org: 한국종합유원시설협회(가정)
+    level: industry
+    path: sample_data/themepark_industry.csv
+    columns:
+      기준년도: year
+      구분: industry
+      사업체수(개): 사업체수
+      매출액(억원): 매출액
+      입장객수(명): 입장객수
+    units: {매출액: 억원}
+
+  - name: 국세청 휴폐업조회
+    org: 국세청(오프라인 예시)
+    level: status
+    path: sample_data/nts_status_offline.csv
+    columns: {b_no: biz_no, b_stt: status, end_dt: status_date}
